@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <template id="base_front_view" name="供应商信息">
+        <t t-call="website.layout">
+            <script type="module" src="/base_front_view/static/src/js/index.js"/>
+            <link rel="stylesheet" href="/base_front_view/static/src/css/index.css"/>
+            <div style="background-color:#fff;padding:0;">
+                <div id="app" t-att-data-id="supplier_id"/>
+            </div>
+        </t>
+    </template>
+</odoo>
