@@ -35,11 +35,14 @@
   </el-table>
   <el-pagination
       v-model:current-page="currentPage"
+      :page-sizes="[10, 20, 50, 100, 200, 500]"
+      v-model:page-size="pageSize"
+      @size-change="handleSizeChange"
       class="list-pagination"
       :page-size="params.limit || 15"
       small
+      layout="total, sizes, prev, pager, next, jumper"
       background
-      layout="total, prev, pager, next"
       :total="params?.count || 0"
       @current-change="handleCurrentChange"
   />
@@ -68,11 +71,12 @@ const props = defineProps({
 })
 const noLoadFields = inject('noloadFields');
 
+let pageSize = ref(20);
 let listTable = ref({})
 let currentPage = ref(1)
 let height = document.documentElement.clientHeight - 250
 
-let emits = defineEmits(['pageChange', 'editClick', 'selectClick'])
+let emits = defineEmits(['pageChange', 'editClick', 'selectClick', 'pageSizeChange'])
 const handleCurrentChange = () => {
   emits('pageChange', currentPage.value)
 }
@@ -86,6 +90,9 @@ const getDetail = (data) => {
       id: data.id
     }
   })
+}
+const handleSizeChange = (size) => {
+  emits('pageSizeChange', size);
 }
 
 defineExpose({

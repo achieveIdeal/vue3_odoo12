@@ -46,6 +46,7 @@
               :params="params"
               @pageChange="pageChange"
               @selectClick="selectClick"
+              @pageSizeChange="pageSizeChange"
               ref="listView"/>
   </template>
 </template>
@@ -150,6 +151,21 @@ const pageChange = async (currentPage: number, treeField: string) => {  // 列�
   let page = (currentPage - 1)
   if (params.type === 'list') {
     params.offset = (params.limit || 10) * page
+    const result = await loadTreeData(params)  // 加载列表
+    const initedList = await initListData(extras, result.listData, result.treeFieldsOption)
+    options.treeFieldsOption = initedList.fieldsOption
+    datas.listData = initedList.listDatas
+    searchOptions = initedList.searchOptions
+    params.count = result.count
+  } else if (params.type === 'form') {
+    params.tables[treeField].offset = params.tables[treeField].limit * page
+  }
+}
+
+const pageSizeChange = async (size) => {
+  if (params.type === 'list') {
+    params.offset = 0;
+    params.limit = size;
     const result = await loadTreeData(params)  // 加载列表
     const initedList = await initListData(extras, result.listData, result.treeFieldsOption)
     options.treeFieldsOption = initedList.fieldsOption

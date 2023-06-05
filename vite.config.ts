@@ -21,7 +21,6 @@ export default defineConfig({
         outDir: 'base_front_view',
         assetsDir: 'static',
         manifest: false,
-        chunkSizeWarningLimit: 1024,
         minify: 'terser', // 必须启用：terserOptions配置才会有效
         rollupOptions: {
             output: {
