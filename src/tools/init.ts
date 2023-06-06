@@ -58,8 +58,9 @@ export const initFormData = async (extras, formData, formFieldsOption, noloadFie
     setFormAttribute(formData, formFieldsOption, extras);
     return {formFieldsOption, formData}
 }
-export const setTreeAttribute = (lineData, formData, treeFieldsOption, extras) => {
+export const setTreeAttribute = (treeField, lineData, formData, treeFieldsOption, extras) => {
     let attributes = extras.attributes ? extras.attributes[treeField]?.fields : {};
+    if (!attributes) return
     for (const field of Object.keys(treeFieldsOption[treeField] || {})) { // 设置自定义的属性
         treeFieldsOption[treeField][field]['readonly'] = (attributes.readonly || []).indexOf(field) !== -1;
         treeFieldsOption[treeField][field]['invisible'] = (attributes.invisible || []).indexOf(field) !== -1;
@@ -107,7 +108,7 @@ export const initTreeData = async (extras, treeData, treeFieldsOption, formData)
                     await searchFieldSelection(treeFieldsOption[treeField][field], '', [['id', 'in', lineDatas[field]]])
                 }
             }
-            setTreeAttribute(lineData, formData, treeFieldsOption, extras)
+            setTreeAttribute(treeField, lineData, formData, treeFieldsOption, extras)
         }
     }
     return {treeData, treeFieldsOption}
@@ -133,6 +134,7 @@ export const initListData = async (extras, listDatas, fieldsOption) => {
             }
             lineData[field] = value && value[1] || ''
         }
+        setFormAttribute(listDatas.length && listDatas[0], fieldsOption, extras)
     }
     let searchOptions = {}
     for (let field of Object.keys(extras.search_fields || {})) {
@@ -150,7 +152,7 @@ export const initButton = (extras, formData, viewType) => {
             }
             button.attributes[attribute] = parseDomain(button.attributes[attribute], formData)
         }
-        if (!!button.needRow && viewType==='list') {
+        if (!!button.needRow && viewType === 'list') {
             button.attributes.invisible = true;
         }
     }

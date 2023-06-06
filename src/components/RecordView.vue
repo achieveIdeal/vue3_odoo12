@@ -20,7 +20,7 @@
              label-width="120px"
              class="demo-form-inline">
 
-      <FormView :datas="datas.formData" :treeDatas="datas.treeData"
+      <FormView :datas="datas.formData" :treeData="datas.treeData"
                 :options="options.formFieldsOption"
                 :params="params"
                 ref="formView"
@@ -29,6 +29,7 @@
                 :options="options.treeFieldsOption"
                 :formOptions="options.formFieldsOption"
                 :params="params.tables"
+                :extras="extras.attributes||{}"
                 :model="params.model"
                 :disabled="disabled"
                 :activeTable="activeTable"
@@ -36,6 +37,7 @@
                 @pageChange="pageChange"
                 @addLineClick="addLineClick"
                 @deleteLineClick="deleteLineClick"
+                @lineButtonClick="lineButtonClick"
       />
     </el-form>
   </template>
@@ -95,37 +97,41 @@ let params: ModuleDataType = props.params
 let extras: ModuleDataType = props.extras  // 额外的属性
 let searchOptions = reactive({})  // 查询选项
 
+const initForm = async (result) => {
+  let formData = result.formData;
+  let treeData = result.treeData;
+  let treeFieldsOption = result.treeFieldsOption || options.treeFieldsOption;
+  let formFieldsOption = result.formFieldsOption || options.formFieldsOption;
+  let tableDataCountMap = result.tableDataCountMap;
+  buttons.buttons = initButton(extras, formData, params.type);
+  let inited = await initFormData(extras, formData, formFieldsOption, noloadField);
+  for (let lineField of Object.keys(tableDataCountMap || {})) {  // 记录表格数据总数
+    params.tables[lineField].count = tableDataCountMap[lineField];
+  }
+
+  let initedTree = {};
+  if (Object.keys(params.tables || {}).length) {
+    for (let field of Object.keys(params.tables || {})) {
+      if (!activeTable.value && !formFieldsOption[field]?.invisible) { // 默认选中第一个没有被隐藏的table页
+        activeTable.value = field;
+        break;
+      }
+    }
+    initedTree = await initTreeData(extras, treeData, treeFieldsOption, formData);
+    initEmptyTreeData(emptyDatas, treeFieldsOption)
+  }
+  datas.formData = inited.formData;
+  options.formFieldsOption = inited.formFieldsOption;
+  datas.treeData = initedTree.treeData || {};
+  options.treeFieldsOption = initedTree.treeFieldsOption || {}
+  dataCopy = JSON.parse(JSON.stringify(datas))
+}
+
 const loadData = async () => {
   if (params.type === 'form') {
     disabled.value = !!params.id;  //  创建不加载数据  且为可编辑
     let result = await loadFormDatas(params); // 加载详情
-    let formData = result.formData;
-    let treeData = result.treeDatas;
-    let treeFieldsOption = result.treeFieldsOption;
-    let formFieldsOption = result.formFieldsOption;
-    let tableDataCountMap = result.tableDataCountMap;
-    buttons.buttons = initButton(extras, formData, params.type);
-    let inited = await initFormData(extras, formData, formFieldsOption, noloadField);
-    for (let lineField of Object.keys(tableDataCountMap || {})) {  // 记录表格数据总数
-      params.tables[lineField].count = tableDataCountMap[lineField];
-    }
-
-    let initedTree = {};
-    if (Object.keys(params.tables || {}).length) {
-      for (let field of Object.keys(params.tables || {})) {
-        if (!activeTable.value && !formFieldsOption[field]?.invisible) { // 默认选中第一个没有被隐藏的table页
-          activeTable.value = field;
-          break;
-        }
-      }
-      initedTree = await initTreeData(extras, treeData, treeFieldsOption, formData);
-      initEmptyTreeData(emptyDatas, treeFieldsOption)
-    }
-    datas.formData = inited.formData;
-    options.formFieldsOption = inited.formFieldsOption;
-    datas.treeData = initedTree.treeData || {};
-    options.treeFieldsOption = initedTree.treeFieldsOption || {}
-    dataCopy = JSON.parse(JSON.stringify(datas))
+    initForm(result)
   } else if (params.type === 'list') {
     disabled.value = true;
     const result = await loadTreeData(params); // 加载列表
@@ -139,11 +145,15 @@ const loadData = async () => {
 }
 const reload = loadData
 
-watch(route, (form: RouteLocationNormalizedLoaded, to: RouteLocationNormalizedLoaded | undefined) => {
+const emits = defineEmits(['objectBtnClick', 'saveClick', 'customClick', 'lineButtonClick', 'loadedCallable'])
+
+
+watch(route, async (form: RouteLocationNormalizedLoaded, to: RouteLocationNormalizedLoaded | undefined) => {
   params.id = parseInt(id || route.query.id || '0');
   params.type = (route.query.id || params.id) ? 'form' : 'list';
   if ((form || to).name === params.name) {
-    loadData()
+    await loadData();
+    emits('loadedCallable', initForm)
   }
 }, {immediate: true})
 
@@ -200,7 +210,6 @@ const createClick = () => {
   disabled.value = false;
 }
 
-const emits = defineEmits(['objectBtnClick', 'saveClick', 'customClick'])
 const objectClick = (name: string) => {   // 处理非创建和编辑按钮点击
   const rows = (listView.value || {}).listTable?.getSelectionRows() || []
   let ids = !!params.id ? [params.id] : rows.map(r => r.id);
@@ -257,7 +266,7 @@ const importClick = (result) => {
   callButton({
     model: params.model,
     method: 'load',
-    args: [importFields, result, {'front': true, 'is_cus_code': true}]
+    args: [importFields, result, {'front': true}]
   }).then(res => {
     const result = res.result;
     const ids = result.ids;
@@ -282,6 +291,9 @@ const importClick = (result) => {
   })
 }
 
+const lineButtonClick = (treeField, data, button) => {
+  emits('lineButtonClick', treeField, data, button);
+}
 const addLineClick = (field) => {
   datas.treeData[field].push(JSON.parse(JSON.stringify(emptyDatas[field])))
   params.tables[field].count++;
@@ -418,6 +430,7 @@ const customClick = (button) => {
   const ids = rows.map(r => r.id)
   emits('customClick', button, ids, params.model, reload)
 }
+
 
 </script>
 

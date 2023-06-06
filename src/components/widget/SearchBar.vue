@@ -131,5 +131,8 @@ document.onkeydown = e => {
 .check-box {
   vertical-align: middle;
 }
+.search-bar {
+  margin: 10px;
+}
 
 </style>

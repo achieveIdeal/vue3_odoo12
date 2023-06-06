@@ -21,8 +21,8 @@ const onchangeField = async (params: OnchangeParamsType) => {
     let options = params.options;
     let datas = params.datas
     let field = params.field;
-    let treeDatas = params.treeDatas;
-    if (options[field].onchange) {
+    let treeData = params.treeData;
+    if (options[field]?.onchange) {
         let onchange: { [prop: string]: '' | '1' } = {};
         let changedData: { [prop: string]: Multiple } = {}
         for (let field of Object.keys(datas || {})) {
@@ -82,8 +82,8 @@ const onchangeField = async (params: OnchangeParamsType) => {
                 }
                 continue
             }
-            if (!!Object.keys(treeDatas || {}).length && Object.keys(treeDatas || {}).indexOf(changedField) !== -1) {
-                treeDatas[changedField] = value[changedField]
+            if (!!Object.keys(treeData || {}).length && Object.keys(treeData || {}).indexOf(changedField) !== -1) {
+                treeData[changedField] = value[changedField]
                 continue
             }
             datas[changedField] = value[changedField]
@@ -117,7 +117,7 @@ const loadFormDatas = async (params: ModuleDataType) => {
         });
         return false
     }
-    let treeDatas = {}
+    let treeData = {}
     let tableDataCountMap = {}
     for (let line of Object.keys(params.tables || {})) {
         let lineParams = params.tables[line] || {};
@@ -152,8 +152,8 @@ const loadFormDatas = async (params: ModuleDataType) => {
             }
             dataResult = result.result;
         }
-        treeDatas[line] = JSON.parse(JSON.stringify(dataResult || {}));
-        tableDataCountMap[line] = treeDatas[line].length || 0
+        treeData[line] = JSON.parse(JSON.stringify(dataResult || {}));
+        tableDataCountMap[line] = treeData[line].length || 0
     }
     let formData = dataRes?.result?.length && JSON.parse(JSON.stringify(dataRes.result[0])) || {};
     if (!Object.keys(formData || {}).length) {
@@ -165,7 +165,7 @@ const loadFormDatas = async (params: ModuleDataType) => {
         formFieldsOption,
         treeFieldsOption,
         formData,
-        treeDatas,
+        treeData,
         tableDataCountMap,
     }
 }

@@ -3,7 +3,7 @@
     <el-table-column fixed type="selection" width="55"/>
     <template v-for="field in params.fields?.length && params.fields || []"
               :key="field">
-      <template v-if="noLoadFields.indexOf(field) === -1">
+      <template v-if="noLoadFields.indexOf(field) === -1 && !options[field]?.invisible">
         <el-table-column
             show-overflow-tooltip
             :label="options[field]?.string"
@@ -22,7 +22,7 @@
         </el-table-column>
       </template>
     </template>
-    <el-table-column fixed="right" label="操作" width="120">
+    <el-table-column v-if="!params.hideDetail" fixed="right" label="操作" width="120">
       <template #default="scoped">
         <el-button link
                    size="small"

@@ -107,7 +107,7 @@ export interface OnchangeParamsType {
     options: FieldOption,
     datas: { [prop: string]: Multiple },
     field: string,
-    treeDatas: { [prop: string]: [{ [prop: string]: Multiple }] },
+    treeData: { [prop: string]: [{ [prop: string]: Multiple }] },
     model: string,
     params: ModuleDataType,
     form?: {

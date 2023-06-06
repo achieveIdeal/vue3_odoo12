@@ -157,7 +157,7 @@
                           options: formOptions
                         }
                       })"
-                         :disabled="formOptions[treeField]?.readonly || options[treeField][field]?.readonly || disabled"/>
+                                       :disabled="formOptions[treeField]?.readonly || options[treeField][field]?.readonly || disabled"/>
                     </template>
                     <template v-else-if="isFile(options[treeField][field]?.type)">
                       <div class="file-content form-input">
@@ -206,20 +206,34 @@
               </el-table-column>
             </template>
           </template>
-          <el-table-column v-if="!(formOptions[treeField]?.readonly || disabled)" fixed="right" label="操作"
+          <template v-for="(button, index) in extras[treeField]?.buttons|| []" :key="index">
+
+            <el-table-column width="130">
+              <template v-if="!(formOptions[treeField]?.readonly || disabled)" #default="scoped">
+
+                <el-button v-if="!(formOptions[treeField]?.readonly || disabled)"
+                           type="primary"
+                           @click="handleButtonClick(treeField, scoped.row, button)"
+                >{{ button.text }}
+                </el-button>
+              </template>
+            </el-table-column>
+          </template>
+
+          <el-table-column fixed="right" label="操作" v-if="!extras[treeField]?.undel"
                            width="120">
-            <template #default="scoped">
+            <template v-if="!(formOptions[treeField]?.readonly || disabled)" #default="scoped">
               <el-button link
                          size="small"
                          type="danger"
                          @click="handleDeleteLine(scoped.$index, treeField)"
               >删除
               </el-button>
+
             </template>
           </el-table-column>
-
         </el-table>
-        <el-button v-if="!(disabled || formOptions[treeField]?.readonly)" class="mt-4" style="width: 100%"
+        <el-button v-if="!(disabled || formOptions[treeField]?.readonly) && !extras[treeField]?.unadd" class="mt-4" style="width: 100%"
                    @click="onAddItem(treeField)"
         >添加一行
         </el-button>
@@ -271,6 +285,9 @@ const props = defineProps({
   datas: {
     type: Object as PropType<DataType>
   },
+  extras: {
+    type: Object
+  },
   model: {
     type: String
   },
@@ -306,7 +323,7 @@ const searchSelection = (option: FieldOptionType) => (query: string) => {
   });
 }
 
-let emits = defineEmits(['pageChange', 'editClick', 'addLineClick', 'deleteLineClick'])
+let emits = defineEmits(['pageChange', 'editClick', 'addLineClick', 'deleteLineClick', 'lineButtonClick'])
 
 const getSummaries = (treeField) => (table) => {
   const sums = [];
@@ -317,7 +334,7 @@ const getSummaries = (treeField) => (table) => {
         continue
       }
       sums[index] = !sums[index] ? 0 : sums[index];
-      if (props.options[treeField][field].sum) {
+      if (props.options[treeField][field]?.sum) {
         sums[index] += data[field];
       } else {
         sums[index] = ''
@@ -342,6 +359,10 @@ const onAddItem = (treeField) => {
 }
 const handleCurrentChange = (treeField) => {
   emits('pageChange', currentPage.value, treeField);
+}
+
+const handleButtonClick = (field, row, button) => {
+  emits('lineButtonClick', field, row, button);
 }
 
 const handleFileRemove = (index, treeField, field) => () => {

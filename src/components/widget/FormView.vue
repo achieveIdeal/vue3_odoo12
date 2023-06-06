@@ -24,7 +24,7 @@
                       datas: datas,
                       model: params.model,
                       options: options,
-                      treeDatas: treeDatas
+                      treeData: treeData
                   })"
                    :remote-method="searchSelection(options[field])"
                    :disabled="options[field]?.readonly || disabled"
@@ -50,7 +50,7 @@
                   datas: datas,
                   model: params.model,
                   options: options,
-                  treeDatas: treeDatas
+                  treeData: treeData
                 })"
                    :disabled="options[field]?.readonly || disabled"
         >
@@ -77,7 +77,7 @@
                 datas: datas,
                 model: params.model,
                 options: options,
-                treeDatas: treeDatas
+                treeData: treeData
               })" :disabled="options[field]?.readonly || disabled"
                    :remote-method="searchSelection(options[field])"
         >
@@ -109,7 +109,7 @@
               datas: datas,
               model: params.model,
               options: options,
-              treeDatas: treeDatas
+              treeData: treeData
             })"
                          :disabled="options[field]?.readonly || disabled"/>
       </template>
@@ -144,7 +144,7 @@
               datas: datas,
               model: params.model,
               options: options,
-              treeDatas: treeDatas
+              treeData: treeData
             })"
                   :disabled="options[field]?.readonly || disabled"/>
       </template>
@@ -180,7 +180,7 @@ const props = defineProps({
   params: {
     type: Object as PropType<ModuleDataType>
   },
-  treeDatas: {
+  treeData: {
     type: Object as PropType<DataType>,
     default: {}
   },
