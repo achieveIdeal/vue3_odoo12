@@ -16,6 +16,7 @@ const params = reactive({
   limit: 12,
   offset: 0,
   domain: [],
+  sort: 'id desc',
   count: 0,
   model: 'srm.coding.outer.pack',
   fields: [

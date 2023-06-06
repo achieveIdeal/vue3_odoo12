@@ -16,6 +16,7 @@ const params = reactive({
   name: 'board_pack',
   limit: 12,
   offset: 0,
+  sort: 'id desc',
   domain: [],
   count: 0,
   model: 'srm.coding.board.pack',
