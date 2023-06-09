@@ -1,9 +1,12 @@
 <template>
-  <el-table :data="datas" ref="listTable" stripe style="width: 100%" @selection-change="handleSelectionChange">
+  <el-table :data="datas" ref="listTable" stripe style="width: 100%" @selection-change="handleSelectionChange"
+            show-summary
+            table-layout="auto"
+            :summary-method="getSummaries">
     <el-table-column fixed type="selection" width="55"/>
     <template v-for="field in params.fields?.length && params.fields || []"
               :key="field">
-      <template v-if="noLoadFields.indexOf(field) === -1 && !options[field]?.invisible">
+      <template v-if="noLoadFields.indexOf(field) === -1 && !options[field]?.listInvisible">
         <el-table-column
             show-overflow-tooltip
             :label="options[field]?.string"
@@ -54,16 +57,20 @@ import router from "../../router";
 
 const props = defineProps({
   options: {
-    type: Object
+    type: Object,
+    default: {}
   },
   params: {
-    type: Object
+    type: Object,
+    default: {}
   },
   datas: {
-    type: Array
+    type: Array,
+    default: []
   },
   datasCopy: {
-    type: Array
+    type: Array,
+    default: []
   },
   model: {
     type: String
@@ -94,6 +101,26 @@ const getDetail = (data) => {
 const handleSizeChange = (size) => {
   emits('pageSizeChange', size);
 }
+const getSummaries = (table) => {
+  const sums = [];
+  for (const data of table.data) {
+    let index = 1;
+    for (const field of props.params?.fields) {
+      if (noLoadFields.indexOf(field) !== -1 || props.options[field]?.invisible) {
+        continue
+      }
+      sums[index] = !sums[index] ? 0 : sums[index];
+      if (props.options[field]?.sum) {
+        sums[index] += data[field];
+      } else {
+        sums[index] = ''
+      }
+      index++;
+    }
+  }
+  return sums
+}
+
 
 defineExpose({
   listTable

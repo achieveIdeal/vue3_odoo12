@@ -3,16 +3,20 @@ import {createRouter, createWebHashHistory, RouteRecordRaw} from "vue-router";
 // 1. 配置路由
 const routes: Array<RouteRecordRaw> = [
     {
-        path: "/", // 默认路由 home页面
-        redirect: '/code_manger'
-    }, {
-        name: 'code_manger',
-        path: "/code_manger", // 默认路由 home页面
-        query: {
-            type: 'form'
-        },
+        name: 'shortage_product',
+        path: '/shortage_product',
+        component: () => import("../views/ShortageProduct.vue"),
+    },
+    {
+        name: 'delivery_order',
+        path: '/delivery_order',
+        component: () => import("../views/DeliveryOrder.vue"),
+    },
+    {
+        name: 'code_manager',
+        path: "/code_manager",
         component: () => import("../views/CodingManager.vue"),
-        redirect: '/code_manger/min_pack',
+        redirect: '/code_manager/min_pack',
         children: [
             {path: 'min_pack', component: () => import("../views/code_manager/MinPack.vue"), name: 'min_pack'},
             {path: 'outer_pack', component: () => import("../views/code_manager/OuterPack.vue"), name: 'outer_pack'},

@@ -4,9 +4,10 @@
 
 <script lang="ts" setup>
 import RecordView from '../../components/RecordView.vue'
-import {reactive} from "vue";
+import {inject, reactive} from "vue";
 import {useRoute} from 'vue-router';
 
+const supplier_id = parseInt(inject('supplier_id') || 0);
 let route = useRoute()
 const params = reactive({
   id: parseInt(route.query.id) || 0,
@@ -15,7 +16,7 @@ const params = reactive({
   name: 'outer_pack',
   limit: 12,
   offset: 0,
-  domain: [],
+  domain: [['supplier_id', '=', supplier_id]],
   sort: 'id desc',
   count: 0,
   model: 'srm.coding.outer.pack',

@@ -10,17 +10,18 @@
       </span>
     </template>
   </el-dialog>
-  <RecordView :params="params" :extras="extras" @customClick="customClick" @objectBtnClick="objectClick"/>
+  <RecordView :params="params" :extras="extras" @customClick="customClick" @objectClick="objectClick"/>
 </template>
 
 <script lang="ts" setup>
 import RecordView from '../../components/RecordView.vue'
-import {reactive, ref} from "vue";
+import {inject, reactive, ref} from "vue";
 import {useRoute} from 'vue-router';
 import {callButton} from "../../service/module/call";
 import {ElMessage} from "element-plus";
 import router from "../../router";
 
+const supplier_id = parseInt(inject('supplier_id') || 0);
 let route = useRoute()
 let dialogVisible = ref(false);
 let date_from = ref('');
@@ -32,7 +33,7 @@ const params = reactive({
   name: 'min_pack',
   limit: 12,
   offset: 0,
-  domain: [],
+  domain: [['supplier_id', '=', supplier_id]],
   sort: 'id desc',
   count: 0,
   model: 'srm.coding',
@@ -110,18 +111,18 @@ const extras = {
       readonly: ['|', ['if_print', '=', true], ['is_generate', '=', true]]
     },
     supplier_id: {
-      readonly: ['|', ['if_print', '=', true], ['is_generate', '=', true]],
       domain: [['supplier', '=', true], ['parent_id', '=', false]]
     }
   },
   invisible: ['is_generate', 'state', 'delivery_order_line_id'],
-  readonly: ['name', 'product_name', 'print_amount', 'name',
+  readonly: ['name', 'product_name', 'print_amount', 'name', 'supplier_id',
     'if_print', 'min_pack_size', 'delivery_order_line_id',],
-  required: ['default_code', 'date_from', 'amount', 'min_pack_size', 'shelf_life', 'supplier_id', 'produce_number']
+  required: ['default_code', 'date_from', 'amount', 'min_pack_size', 'shelf_life', 'produce_number']
 }
 
 
-const customClick = (button, ids, model, loadData) => {
+const customClick = (button, rows, model, loadData) => {
+  const ids = rows.map(r => r.id);
   if (!ids.length) {
     ElMessage({
       message: '请至少选择一条记录!',
@@ -164,13 +165,9 @@ const saveDateFrom = () => {
 }
 
 const objectClick = (name, rows, res) => {
-  const result = res.result;
-  if (result.ids) {
-    params.domain = params.domain.concat([['id', 'in', result.ids]]);
-    router.replace({
-      name: 'min_pack'
-    })
-  }
+  router.push({
+    name: 'min_pack'
+  })
 }
 </script>
 

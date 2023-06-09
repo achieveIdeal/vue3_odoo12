@@ -5,6 +5,7 @@
         <el-table :data="datas[treeField]?.slice(params[treeField]?.offset,    // 分页
                 params[treeField]?.offset + params[treeField]?.limit)"
                   show-summary
+                  table-layout="auto"
                   :summary-method="getSummaries(treeField)"
                   sum-text="总计"
                   stripe>
@@ -50,7 +51,7 @@
                           :disabled="formOptions[treeField]?.readonly || options[treeField][field]?.readonly || disabled"
                       >
                         <el-option
-                            v-for="(item,index) in options[treeField][field]?.selection"
+                            v-for="item in options[treeField][field]?.selection"
                             :key="item[0]"
                             :label="item[1]"
                             :value="item[0]"/>
@@ -77,7 +78,7 @@
                           :disabled="formOptions[treeField]?.readonly || options[treeField][field]?.readonly || disabled"
                       >
                         <el-option
-                            v-for="(item,index) in options[treeField][field]?.selection"
+                            v-for="item in options[treeField][field]?.selection"
                             :key="item[0]"
                             :label="item[1]"
                             :value="item[0]"/>
@@ -206,20 +207,16 @@
               </el-table-column>
             </template>
           </template>
-          <template v-for="(button, index) in extras[treeField]?.buttons|| []" :key="index">
-
-            <el-table-column width="130">
-              <template v-if="!(formOptions[treeField]?.readonly || disabled)" #default="scoped">
-
-                <el-button v-if="!(formOptions[treeField]?.readonly || disabled)"
-                           type="primary"
+          <template v-if="!disabled" v-for="(button, index) in extras[treeField]?.buttons|| []" :key="index">
+            <el-table-column width="130" v-if="!button.invisible">
+              <template #default="scoped">
+                <el-button type="primary"
                            @click="handleButtonClick(treeField, scoped.row, button)"
                 >{{ button.text }}
                 </el-button>
               </template>
             </el-table-column>
           </template>
-
           <el-table-column fixed="right" label="操作" v-if="!extras[treeField]?.undel"
                            width="120">
             <template v-if="!(formOptions[treeField]?.readonly || disabled)" #default="scoped">
@@ -233,7 +230,8 @@
             </template>
           </el-table-column>
         </el-table>
-        <el-button v-if="!(disabled || formOptions[treeField]?.readonly) && !extras[treeField]?.unadd" class="mt-4" style="width: 100%"
+        <el-button v-if="!(disabled || formOptions[treeField]?.readonly) && !extras[treeField]?.unadd" class="mt-4"
+                   style="width: 100%"
                    @click="onAddItem(treeField)"
         >添加一行
         </el-button>
@@ -271,22 +269,28 @@ const noLoadFields = inject<string[]>('noloadFields');
 const upload = ref<UploadInstance>();
 const props = defineProps({
   options: {
-    type: Object as PropType<PropFieldOptionType>
+    type: Object as PropType<PropFieldOptionType>,
+    default: {}
   },
   formOptions: {
-    type: Object as PropType<FieldOptionType>
+    type: Object as PropType<FieldOptionType>,
+    default: {}
   },
   params: {
-    type: Object as PropType<ModuleDataType>
+    type: Object as PropType<ModuleDataType>,
+    default: {}
   },
   formDatas: {
-    type: Object as PropType<DataType>
+    type: Object as PropType<DataType>,
+    default: {}
   },
   datas: {
-    type: Object as PropType<DataType>
+    type: Object as PropType<DataType>,
+    default: {}
   },
   extras: {
-    type: Object
+    type: Object,
+    default: {}
   },
   model: {
     type: String

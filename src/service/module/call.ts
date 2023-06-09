@@ -2,6 +2,7 @@ import Request from "../index";
 import {RequestParamsType} from "../../types/index";
 
 export function callButton(data: RequestParamsType) {
+    data.args.push({'front': true})
     return Request.post({
         url: '/front/dataset/call_button',
         data: {

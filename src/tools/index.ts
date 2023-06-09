@@ -8,6 +8,7 @@ import {
 } from "../types";
 
 import {ElMessage} from "element-plus";
+import {initTreeData} from "./init";
 
 // 请求数据
 const getRequestParams = (params: ModuleDataType): RequestParamsType => {
@@ -17,18 +18,54 @@ const getRequestParams = (params: ModuleDataType): RequestParamsType => {
         args: [id, params.fields]
     }
 }
+
+
+const buildOnchangeSpecs = function (fieldsInfo, treeOption, fields) {
+    var specs = {};
+    generateSpecs(fieldsInfo, fields);
+
+    // recursively generates the onchange specs for fields in fieldsInfo,
+    // and their subviews
+    function generateSpecs(fieldsInfo, fields, prefix) {
+        prefix = prefix || '';
+        for (const name of fields) {
+            var field = fieldsInfo[name];
+            var key = prefix + name;
+            specs[key] = (field.onchange) || "";
+
+            if ((treeOption || {})[name]) {
+                generateSpecs(treeOption[name], Object.keys(treeOption[name] || {}), key + '.');
+            }
+        }
+    }
+
+    return specs;
+}
+
 const onchangeField = async (params: OnchangeParamsType) => {
     let options = params.options;
+    let treeOptions = params.treeOptions;
     let datas = params.datas
     let field = params.field;
     let treeData = params.treeData;
+    let paramsDatas = JSON.parse(JSON.stringify(datas))
+    for (const treeField of Object.keys(treeData || {})) {
+        paramsDatas[treeField] = []
+        for (const data of treeData[treeField]) {
+            if (data.id) {
+                paramsDatas[treeField].push([1, data.id, data])
+            } else {
+                paramsDatas[treeField].push([0, 0, data])
+            }
+        }
+    }
     if (options[field]?.onchange) {
         let onchange: { [prop: string]: '' | '1' } = {};
         let changedData: { [prop: string]: Multiple } = {}
-        for (let field of Object.keys(datas || {})) {
-            onchange[field] = options[field]?.onchange ? '1' : '';
-            changedData[field] = datas[field];
+        for (let field of Object.keys(paramsDatas || {})) {
+            changedData[field] = paramsDatas[field];
         }
+        onchange = buildOnchangeSpecs(options, treeOptions, Object.keys(options || {}))
         const model = params.model;
         let request: RequestParamsType = {
             model: model,
@@ -52,7 +89,7 @@ const onchangeField = async (params: OnchangeParamsType) => {
         const result = res.result;
         const domain = result.domain;
         const value = result.value
-
+        console.log(result);
         if (result.warning) {
             ElMessage({
                 message: result.warning.message,
@@ -70,7 +107,8 @@ const onchangeField = async (params: OnchangeParamsType) => {
             datas[changedField] = ''
         }
         for (let changedField of Object.keys(value || {})) {
-            if (value[changedField] instanceof Array) {
+            const isChangeLine = value[changedField][0] instanceof Array && value[changedField][0][0] === 5
+            if (value[changedField] instanceof Array && !isChangeLine) {
                 options[changedField].selection.push(value[changedField])
                 datas[changedField] = value[changedField][0]
                 continue
@@ -83,7 +121,13 @@ const onchangeField = async (params: OnchangeParamsType) => {
                 continue
             }
             if (!!Object.keys(treeData || {}).length && Object.keys(treeData || {}).indexOf(changedField) !== -1) {
-                treeData[changedField] = value[changedField]
+                const changeLines = []
+                const originLength = treeData[changedField].length
+                for (let index = 1; index < value[changedField].length; index++) {
+                    changeLines.push(value[changedField][index][2])
+                }
+                treeData[changedField] = changeLines.slice(originLength)
+                initTreeData(null, treeData, treeOptions)
                 continue
             }
             datas[changedField] = value[changedField]
@@ -109,7 +153,7 @@ const loadFormDatas = async (params: ModuleDataType) => {
         const result = await callFields(getRequestParams(params.tables[line]));
         treeFieldsOption[line] = result.result;
     }
-    const dataRes = await callRead(requestParams);
+    const dataRes = !params.id ? {id: null, result: []} : await callRead(requestParams);
     if (dataRes.error) {
         ElMessage({
             message: dataRes.error.data.message,
@@ -161,6 +205,7 @@ const loadFormDatas = async (params: ModuleDataType) => {
             formData[field] = ''
         }
     }
+    console.log(treeData);
     return {
         formFieldsOption,
         treeFieldsOption,

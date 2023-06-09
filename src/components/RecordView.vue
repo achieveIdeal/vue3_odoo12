@@ -17,12 +17,15 @@
     <el-form ref="formRef"
              :inline="true"
              :model="datas"
+             label-position="left"
              label-width="120px"
              class="demo-form-inline">
 
       <FormView :datas="datas.formData" :treeData="datas.treeData"
                 :options="options.formFieldsOption"
+                :treeOptions="options.treeFieldsOption"
                 :params="params"
+                :isDialog="isDialog"
                 ref="formView"
                 :disabled="disabled"/>
       <TreeView v-if="Object.keys(params.tables||{}).length" :datas="datas.treeData" :formDatas="datas.formData"
@@ -54,7 +57,7 @@
 </template>
 
 <script lang="ts" setup>
-import {inject, PropType, provide, reactive, ref, watch} from "vue";
+import {defineExpose, inject, PropType, provide, reactive, ref, watch} from "vue";
 import {RouteLocationNormalizedLoaded, useRoute, useRouter} from 'vue-router';
 import {FormInstance, ElMessage} from "element-plus";
 import FormView from './widget/FormView.vue'
@@ -63,7 +66,7 @@ import ListView from './widget/ListView.vue'
 import SearchBar from './widget/SearchBar.vue'
 import ButtonView from './widget/ButtonView.vue'
 import {callButton, callCreate, callFile, callWrite} from "../service/module/call";
-import {initFormData, initTreeData, initListData, initButton, initEmptyTreeData} from '../tools/init'
+import {initFormData, initTreeData, initListData, initButton, initEmptyTreeData, formatData} from '../tools/init'
 import type {FieldOptionType, DataType, Multiple, ModuleDataType} from "../types";
 import {onchangeField, loadFormDatas, loadTreeData} from "../tools";
 
@@ -78,6 +81,10 @@ let props = defineProps({
   extras: {
     type: Object,
     default: {}
+  },
+  isDialog: {
+    type: Boolean,
+    default: false
   }
 })
 let route: RouteLocationNormalizedLoaded = useRoute()
@@ -96,10 +103,12 @@ let formRef = ref({})  // 表单的vue元素
 let params: ModuleDataType = props.params
 let extras: ModuleDataType = props.extras  // 额外的属性
 let searchOptions = reactive({})  // 查询选项
+let domains = [];  // 原始的domain
 
 const initForm = async (result) => {
   let formData = result.formData;
   let treeData = result.treeData;
+  disabled.value = !!params.id;  //  创建不加载数据  且为可编辑
   let treeFieldsOption = result.treeFieldsOption || options.treeFieldsOption;
   let formFieldsOption = result.formFieldsOption || options.formFieldsOption;
   let tableDataCountMap = result.tableDataCountMap;
@@ -127,33 +136,40 @@ const initForm = async (result) => {
   dataCopy = JSON.parse(JSON.stringify(datas))
 }
 
+const initList = async (result) => {
+  options = result.treeFieldsOption || options.treeFieldsOption;
+  disabled.value = true;
+  const initedList = await initListData(extras, result.listData, options, noloadField);
+  options.treeFieldsOption = initedList.fieldsOption;
+  datas.listData = initedList.listData;
+  searchOptions = initedList.searchOptions;
+  params.count = result.count;
+  buttons.buttons = initButton(extras, {}, params.type);
+}
+const emits = defineEmits(['objectClick', 'saveClick', 'customClick', 'lineButtonClick', 'loadedCallable', 'selectClick'])
+
+
 const loadData = async () => {
   if (params.type === 'form') {
-    disabled.value = !!params.id;  //  创建不加载数据  且为可编辑
     let result = await loadFormDatas(params); // 加载详情
     initForm(result)
+    emits('loadedCallable', initForm)
   } else if (params.type === 'list') {
     disabled.value = true;
     const result = await loadTreeData(params); // 加载列表
-    const initedList = await initListData(extras, result.listData, result.treeFieldsOption);
-    options.treeFieldsOption = initedList.fieldsOption;
-    datas.listData = initedList.listDatas;
-    searchOptions = initedList.searchOptions;
-    params.count = result.count;
-    buttons.buttons = initButton(extras, {}, params.type);
+    initList(result)
+    emits('loadedCallable', initList)
   }
 }
 const reload = loadData
 
-const emits = defineEmits(['objectBtnClick', 'saveClick', 'customClick', 'lineButtonClick', 'loadedCallable'])
-
 
 watch(route, async (form: RouteLocationNormalizedLoaded, to: RouteLocationNormalizedLoaded | undefined) => {
   params.id = parseInt(id || route.query.id || '0');
-  params.type = (route.query.id || params.id) ? 'form' : 'list';
+  params.type = params.classify || ((route.query.id || params.id) ? 'form' : 'list');
   if ((form || to).name === params.name) {
+    domains = JSON.parse(JSON.stringify(params.domain))
     await loadData();
-    emits('loadedCallable', initForm)
   }
 }, {immediate: true})
 
@@ -162,9 +178,9 @@ const pageChange = async (currentPage: number, treeField: string) => {  // 列�
   if (params.type === 'list') {
     params.offset = (params.limit || 10) * page
     const result = await loadTreeData(params)  // 加载列表
-    const initedList = await initListData(extras, result.listData, result.treeFieldsOption)
+    const initedList = await initListData(extras, result.listData, result.treeFieldsOption, noloadField)
     options.treeFieldsOption = initedList.fieldsOption
-    datas.listData = initedList.listDatas
+    datas.listData = initedList.listData
     searchOptions = initedList.searchOptions
     params.count = result.count
   } else if (params.type === 'form') {
@@ -175,11 +191,14 @@ const pageChange = async (currentPage: number, treeField: string) => {  // 列�
 const pageSizeChange = async (size) => {
   if (params.type === 'list') {
     params.offset = 0;
+    if (params.count < size && params.count < params.limit) {
+      return
+    }
     params.limit = size;
     const result = await loadTreeData(params)  // 加载列表
-    const initedList = await initListData(extras, result.listData, result.treeFieldsOption)
+    const initedList = await initListData(extras, result.listData, result.treeFieldsOption, noloadField)
     options.treeFieldsOption = initedList.fieldsOption
-    datas.listData = initedList.listDatas
+    datas.listData = initedList.listData
     searchOptions = initedList.searchOptions
     params.count = result.count
   } else if (params.type === 'form') {
@@ -193,6 +212,7 @@ const selectClick = (rows) => {
       button.attributes.invisible = !rows.length;
     }
   }
+  emits('selectClick', rows)
 }
 
 const editClick = () => {
@@ -223,7 +243,7 @@ const objectClick = (name: string) => {   // 处理非创建和编辑按钮点�
   callButton({
     model: params.model,
     method: name,
-    args: [ids, {'front': true}]
+    args: [ids]
   }).then(res => {
     if (res.error) {
       ElMessage({
@@ -232,7 +252,7 @@ const objectClick = (name: string) => {   // 处理非创建和编辑按钮点�
       });
       return false;
     }
-    emits('objectBtnClick', name, rows, res);
+    emits('objectClick', name, rows, res);
     reload();
     const result = res.result || {};
     if (!!result.report_file) {  // 如果是文件，请求下载
@@ -246,11 +266,14 @@ const objectClick = (name: string) => {   // 处理非创建和编辑按钮点�
   })
 }
 const searchClick = async (domain) => {  // 搜索数据重置
-  params.domain = domain;
-  const result = await loadTreeData(params); // 加载列表
-  const initedList = await initListData(extras, result.listData, result.treeFieldsOption);
+  params.domain = domains;
+  if (domain.length) {
+    params.domain = params.domain.concat(domain);
+  }
+  const result = await loadTreeData(params, domains); // 加载列表
+  const initedList = await initListData(extras, result.listData, result.treeFieldsOption, noloadField);
   options.treeFieldsOption = initedList.fieldsOption;
-  datas.listData = initedList.listDatas;
+  datas.listData = initedList.listData;
   searchOptions = initedList.searchOptions;
   params.count = result.count;
 }
@@ -266,7 +289,7 @@ const importClick = (result) => {
   callButton({
     model: params.model,
     method: 'load',
-    args: [importFields, result, {'front': true}]
+    args: [importFields, result]
   }).then(res => {
     const result = res.result;
     const ids = result.ids;
@@ -315,60 +338,6 @@ const deleteLineClick = (field, index) => {
   }
 }
 
-const formatData = function (datas): Object {  // 数据修改和保存格式化处理 发送给后端
-  let updated = {}
-  for (let field of Object.keys(datas.formData || {})) {
-    if (datas.formData[field] !== dataCopy.formData[field]) {
-      updated[field] = datas.formData[field];
-      if (datas.formData[field] instanceof Array) {
-        updated[field] = [[6, 0, datas.formData[field]]];
-      }
-    }
-  }
-  for (const treeField of Object.keys(datas.treeData || {})) {
-    let isChanged = false;
-    let delFlag = {};
-    let addFlag = false;
-    let updatedLineCopy = JSON.parse(JSON.stringify(updated[treeField] || {}))
-    updated[treeField] = []
-    for (const treeCopyId of dataCopy.formData[treeField]) {
-      if (updatedLineCopy.indexOf(treeCopyId) === -1 && !delFlag[treeCopyId]) {  //  处理删除行
-        isChanged = true;
-        delFlag[treeCopyId] = true;
-        updated[treeField].push([2, treeCopyId, false]);
-      }
-    }
-    for (const treeData of datas.treeData[treeField]) {
-      let index = 0;
-      let changedField = {};
-      for (const field of Object.keys(treeData || {})) {  // 处理修改行， !dataCopy.treeData[treeField][index]: 为处理新增行
-        if (field === 'id') continue;
-        if (!dataCopy.treeData[treeField][index] || treeData[field] !== dataCopy.treeData[treeField][index][field]) {
-          isChanged = true;
-          changedField[field] = treeData[field];
-        }
-      }
-      index++;  // 行索引
-      if (isChanged && treeData.id && !delFlag[treeData.id]) {  // 更新
-        updated[treeField].push([1, treeData.id, changedField])
-      } else if (isChanged && !delFlag[treeData.id]) {  // 新增
-        updated[treeField].push([0, 0, changedField]);
-        addFlag = true;
-      }
-    }
-    if (!isChanged) {  // 未发生修改或新增的数据不处理
-      delete updated[treeField]
-    }
-    if (options.formFieldsOption[treeField].required && (!datas.treeData[treeField].length && !addFlag)) {  // 行数据非空约束
-      ElMessage({
-        message: params.tables[treeField].title + '不能为空！',
-        type: 'error'
-      })
-      return false
-    }
-  }
-  return updated
-}
 const saveWrite = (params, savedDatas) => {
   callWrite(params, savedDatas).then(res => {
     if (res.error) {
@@ -405,7 +374,7 @@ const saveClick = (formEl: FormInstance | undefined) => {  // 处理保存按钮
   if (!formEl) return
   formEl.validate((valid) => {
     if (valid) {
-      let savedDatas = formatData(datas);
+      let savedDatas = formatData(datas, dataCopy, options);
       for (let file of formView.value?.upload || []) {
         file.submit()
       }
@@ -427,10 +396,12 @@ const saveClick = (formEl: FormInstance | undefined) => {  // 处理保存按钮
 }
 const customClick = (button) => {
   const rows = (listView.value || {}).listTable?.getSelectionRows() || []
-  const ids = rows.map(r => r.id)
-  emits('customClick', button, ids, params.model, reload)
+  if (rows.length) {
+    emits('customClick', button, rows, params.model, reload);
+  } else {
+    emits('customClick', button, formatData(datas, {formData: {}, treeData: []}, options), reload);
+  }
 }
-
 
 </script>
 
@@ -451,6 +422,10 @@ const customClick = (button) => {
     flex: 1;
     text-align: right;
   }
+}
+
+:deep(.el-scrollbar__view) {
+  display: unset;
 }
 </style>
 

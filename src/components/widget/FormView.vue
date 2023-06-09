@@ -2,6 +2,8 @@
   <template v-for="field in params.fields" :key="field">
     <el-form-item
         class="form-item"
+        :class="{'last-odd-child':!isDialog&&oddChild[lastOddChildIndex] === field,
+         'dialog-odd-last-child':isDialog&&oddChild[lastOddChildIndex] === field}"
         :label="options[field]?.string"
         :prop="['formData', field]"
         :rules="[{
@@ -22,6 +24,7 @@
                    @change="onchangeField({
                       field: field,
                       datas: datas,
+                           treeOptions: treeOptions,
                       model: params.model,
                       options: options,
                       treeData: treeData
@@ -30,7 +33,7 @@
                    :disabled="options[field]?.readonly || disabled"
         >
           <el-option
-              v-for="(item,index) in options[field]?.selection"
+              v-for="item in options[field]?.selection"
               :key="item[0]"
               :disabled="options[field]?.readonly || disabled"
               :label="item[1]"
@@ -48,6 +51,7 @@
                    @change="onchangeField({
                   field: field,
                   datas: datas,
+                       treeOptions: treeOptions,
                   model: params.model,
                   options: options,
                   treeData: treeData
@@ -75,6 +79,7 @@
                    @change="onchangeField({
                 field: field,
                 datas: datas,
+                     treeOptions: treeOptions,
                 model: params.model,
                 options: options,
                 treeData: treeData
@@ -93,7 +98,15 @@
 
       <template v-else-if="fieldTypeMap[options[field]?.type]==='checkbox'">
         <div class="form-input alien-left">
-          <input type="checkbox" v-model="datas[field]" :disabled="options[field]?.readonly || disabled">
+          <input type="checkbox" v-model="datas[field]" :disabled="options[field]?.readonly || disabled"
+                 @change="onchangeField({
+                field: field,
+                datas: datas,
+                model: params.model,
+                     treeOptions: treeOptions,
+                options: options,
+                treeData: treeData
+              })">
         </div>
       </template>
       <template v-else-if="fieldTypeMap[options[field]?.type] === 'number'">
@@ -108,7 +121,8 @@
               field: field,
               datas: datas,
               model: params.model,
-              options: options,
+                options: options,
+              treeOptions: treeOptions,
               treeData: treeData
             })"
                          :disabled="options[field]?.readonly || disabled"/>
@@ -144,18 +158,17 @@
               datas: datas,
               model: params.model,
               options: options,
+              treeOptions: treeOptions,
               treeData: treeData
             })"
                   :disabled="options[field]?.readonly || disabled"/>
       </template>
     </el-form-item>
   </template>
-  <el-form-item
-      class="form-item"></el-form-item>
 </template>
 
 <script setup lang="ts">
-import {inject, PropType, ref} from "vue";
+import {inject, PropType, ref, computed} from "vue";
 import {genFileId} from 'element-plus'
 import type {UploadInstance, UploadProps, UploadRawFile} from 'element-plus'
 import {useTypeStore} from "../../store";
@@ -171,14 +184,20 @@ const isFile = typeStore.isFile;
 const noLoadFields = inject<string[]>('noloadFields');
 const props = defineProps({
   options: {
-    type: Object as PropType<FieldOptionType>
+    type: Object as PropType<FieldOptionType>,
+    default: {}
+  },
+  treeOptions: {
+    type: Object as PropType<FieldOptionType>,
+    default: {}
   },
   datas: {
-    type: Object as PropType<DataType>
-
+    type: Object as PropType<DataType>,
+    default: {}
   },
   params: {
-    type: Object as PropType<ModuleDataType>
+    type: Object as PropType<ModuleDataType>,
+    default: {}
   },
   treeData: {
     type: Object as PropType<DataType>,
@@ -187,11 +206,30 @@ const props = defineProps({
   disabled: {
     type: Boolean,
     default: true
+  },
+  isDialog: {
+    type: Boolean,
+    default: false
   }
 })
 const upload = ref<UploadInstance>();
 
-let zero = 0
+let zero = 0;
+let oddChild = ref({})
+
+const lastOddChildIndex = computed(() => {
+  let index = 0;
+  for (const field of props.params.fields) {
+    if (!props.options[field]) break
+    index++;
+    if (noLoadFields.indexOf(field) !== -1 || props.options[field]?.invisible) {
+      index--;
+      continue
+    }
+    index % 2 === 1 ? oddChild.value[index] = field : null;
+  }
+  return index % 2 !== 0 && Math.max.apply(null, Object.keys(oddChild.value || {}).map(r => parseInt(r)))
+})
 
 const handleFileRemove = (field) => () => {
   const curFile = upload.value.find(r => {
@@ -231,13 +269,12 @@ defineExpose({
 </script>
 
 <style lang="less">
-.form-input {
-  width: 400px;
+.form-item {
+  width: 40%;
 }
 
-.form-item {
-  width: 600px;
-  padding: 0;
+.form-input {
+  width: 100%;
 }
 
 .alien-left {
@@ -251,4 +288,15 @@ defineExpose({
 .upload-file-edit .el-upload-list {
   top: -41px;
 }
+
+.last-odd-child {
+  position: relative;
+  left: -21.3%;
+}
+
+.dialog-odd-last-child {
+  position: relative;
+  left: -22.2%;
+}
+
 </style>

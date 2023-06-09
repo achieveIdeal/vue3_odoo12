@@ -64,7 +64,7 @@
 </template>
 
 <script lang="ts" setup>
-import {reactive, ref} from "vue";
+import {reactive, ref,watch} from "vue";
 import {Search} from "@element-plus/icons-vue";
 import {searchFieldSelection} from "../../tools";
 import {useTypeStore} from "../../store";
@@ -98,6 +98,7 @@ const searchClick = () => {
   let domain = []
   for (let field of Object.keys(searchVal || {})) {
     let operate = '=';
+    let isDate = !isNaN(Date.parse(searchVal[field]))
     if (!searchVal[field] || searchVal[field] instanceof Array && !searchVal[field].length) {
       if (props.options[field]?.type !== 'boolean') {
         continue
@@ -106,7 +107,7 @@ const searchClick = () => {
     if (searchVal[field] instanceof Array && !!searchVal[field].length) {
       operate = 'in';
     }
-    if (typeof searchVal[field] === 'string') {
+    if (typeof searchVal[field] === 'string' && !isDate) {
       operate = 'ilike';
     }
     domain.push([field, operate, searchVal[field]]);

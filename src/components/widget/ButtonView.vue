@@ -33,7 +33,7 @@
             </el-button>
           </template>
         </template>
-        <template v-else-if="disabled&&button.type==='import'">
+        <template v-else-if="(disabled || button.show)&&button.type==='import'">
           <el-upload v-model:file-list="fileList" class="import-excel" :before-upload="before"
                      :limit="1" accept="xlsx,xls">
             <el-button type="success">导入</el-button>
@@ -44,13 +44,13 @@
             下载模板
           </el-button>
         </template>
-        <template v-else-if="disabled&&button.type==='object'">
+        <template v-else-if="(disabled || button.show)&&button.type==='object'">
           <el-button type="primary" :name="button.method" @click.prevent="handleObject(button.method)">
             {{ button.text }}
           </el-button>
         </template>
-        <template v-else-if="disabled&&button.type==='custom'">
-          <el-button type="primary" @click.prevent="handleCustom(button)" plain>
+        <template v-else-if="(disabled || button.show)&&button.type==='custom'">
+          <el-button :type="button.classify" @click.prevent="handleCustom(button)">
             {{ button.text }}
           </el-button>
         </template>
