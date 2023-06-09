@@ -115,6 +115,7 @@ const extras = {
     }
   },
   invisible: ['is_generate', 'state', 'delivery_order_line_id'],
+  listInvisible: ['delivery_order_line_id'],
   readonly: ['name', 'product_name', 'print_amount', 'name', 'supplier_id',
     'if_print', 'min_pack_size', 'delivery_order_line_id',],
   required: ['default_code', 'date_from', 'amount', 'min_pack_size', 'shelf_life', 'produce_number']

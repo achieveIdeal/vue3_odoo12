@@ -12,6 +12,7 @@
   <RecordView :params="params" :extras="extras"
               @loadedCallable="loadedCallable"
               @lineButtonClick="lineButtonClick"
+              @deleteLineClick="deleteLineClick"
               @customClick="customClick" ref="recordView"/>
 </template>
 
@@ -52,7 +53,7 @@ const params = reactive({
   model: 'srm.delivery.order',
   fields:
       ['name', 'partner_id', 'expect_date', 'company_id',
-        'h_state', 'submit_user_id', 'state', 'JIT_flag', 'line_ids'],
+        'h_state', 'submit_user_id', 'state', 'jit_flag', 'line_ids'],
   tables: {
     line_ids: {
       limit: 12,
@@ -140,9 +141,11 @@ const extras = {
 }
 
 const customClick = (button, datas, reload) => {
+  console.log(poDatas, codeDatas);
   if (button.method === 'action_submit') {
     for (const shortage_id of Object.keys(poDatas.value || {})) {
-      if (!poDatas.value[parseInt(shortage_id)] || !codeDatas.value[parseInt(shortage_id)]) {
+      if (!lineData.value.purchase_order || !poDatas.value[parseInt(shortage_id)]
+          || !codeDatas.value[parseInt(shortage_id)]) {
         ElMessage({
           message: '请先匹配数据在提交!',
           type: 'error'
@@ -169,7 +172,7 @@ const customClick = (button, datas, reload) => {
         });
         return false
       }
-      router.push({
+      router.replace({
         name: params.name,
         query: {
           id: res.result.id
@@ -244,7 +247,9 @@ const poLoadedCallable = async (init) => {
     poDialogVisible.value = false;
     return false
   }
-  init(res.result);
+  const result = res.result;
+  result.formData['comment'] = lineData.value.comment
+  init(result);
 }
 const codeLoadedCallable = async (init) => {
   const IsJITMatch = !!lineData.value.JIT_id
@@ -270,8 +275,10 @@ const poCustomClick = (button, datas) => {
     lineData.value.comment = '';
     lineData.value.purchase_order = ''
   } else {
-    !poDatas.value[lineData.value.shortage_id] ? poDatas.value[lineData.value.shortage_id] = [] : null;
-    poDatas.value[lineData.value.shortage_id].push(datas);
+    const IsJITMatch = !!lineData.value.JIT_id
+    const origin_id = IsJITMatch ? 'JIT_id' : 'shortage_id';
+    !poDatas.value[lineData.value[origin_id]] ? poDatas.value[lineData.value[origin_id]] = [] : null;
+    poDatas.value[lineData.value[origin_id]].push(datas);
     const lines = datas.match_line_ids;
     for (const line of lines) {
       const data = line[2];
@@ -305,14 +312,23 @@ const codeCustomClick = (button, datas) => {
       });
       return false
     }
-    !codeDatas.value[lineData.value.shortage_id] ? codeDatas.value[lineData.value.shortage_id] = [] : null;
-    codeDatas.value[lineData.value.shortage_id].push(datas);
+    const IsJITMatch = !!lineData.value.JIT_id
+    const origin_id = IsJITMatch ? 'JIT_id' : 'shortage_id';
+    !codeDatas.value[lineData.value[origin_id]] ? codeDatas.value[lineData.value[origin_id]] = [] : null;
+    codeDatas.value[lineData.value[origin_id]].push(datas);
     usedCodeIds = usedCodeIds.concat((datas || []).map(r => r.id))
     lineData.value.code_names = (datas || []).map(r => {
       return r.name
     }).join(',')
   }
   codeDialogVisible.value = false;
+}
+
+const deleteLineClick = (field, index, row) => {
+  const IsJITMatch = !!lineData.value.JIT_id;
+  const origin_id = IsJITMatch ? 'JIT_id' : 'shortage_id';
+  delete codeDatas.value[row[origin_id]];
+  delete poDatas.value[row[origin_id]];
 }
 
 const codeSelectClick = (rows) => {

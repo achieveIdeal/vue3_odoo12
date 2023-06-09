@@ -223,7 +223,7 @@
               <el-button link
                          size="small"
                          type="danger"
-                         @click="handleDeleteLine(scoped.$index, treeField)"
+                         @click="handleDeleteLine(scoped.$index, treeField,scoped.row)"
               >删除
               </el-button>
 
@@ -349,14 +349,14 @@ const getSummaries = (treeField) => (table) => {
   return sums
 }
 
-const handleDeleteLine = (index, field) => {  //  行删除
+const handleDeleteLine = (index, field, row) => {  //  行删除
   const delFiles = upload.value?.filter(r => {
     return r.$attrs['data-index'].indexOf(field + '_' + index) !== -1;
   })
   for (const file of delFiles || []) {
     file.clearFiles();
   }
-  emits('deleteLineClick', field, index);
+  emits('deleteLineClick', field, index, row);
 }
 const onAddItem = (treeField) => {
   emits('addLineClick', treeField);

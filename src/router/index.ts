@@ -2,6 +2,11 @@ import {createRouter, createWebHashHistory, RouteRecordRaw} from "vue-router";
 
 // 1. 配置路由
 const routes: Array<RouteRecordRaw> = [
+    // {
+    //     name: 'supplier_info',
+    //     path: '/supplier_info',
+    //     component: () => import("../views/SupplierInfo.vue"),
+    // },
     {
         name: 'shortage_product',
         path: '/shortage_product',

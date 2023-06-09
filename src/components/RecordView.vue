@@ -146,7 +146,8 @@ const initList = async (result) => {
   params.count = result.count;
   buttons.buttons = initButton(extras, {}, params.type);
 }
-const emits = defineEmits(['objectClick', 'saveClick', 'customClick', 'lineButtonClick', 'loadedCallable', 'selectClick'])
+const emits = defineEmits(['objectClick', 'saveClick', 'customClick',
+  'lineButtonClick', 'loadedCallable', 'selectClick', 'deleteLineClick'])
 
 
 const loadData = async () => {
@@ -168,7 +169,7 @@ watch(route, async (form: RouteLocationNormalizedLoaded, to: RouteLocationNormal
   params.id = parseInt(id || route.query.id || '0');
   params.type = params.classify || ((route.query.id || params.id) ? 'form' : 'list');
   if ((form || to).name === params.name) {
-    domains = JSON.parse(JSON.stringify(params.domain))
+    domains = JSON.parse(JSON.stringify(params.domain || []))
     await loadData();
   }
 }, {immediate: true})
@@ -321,7 +322,7 @@ const addLineClick = (field) => {
   datas.treeData[field].push(JSON.parse(JSON.stringify(emptyDatas[field])))
   params.tables[field].count++;
 }
-const deleteLineClick = (field, index) => {
+const deleteLineClick = (field, index, row) => {
   let lineData = datas.treeData[field];
   let id = lineData[index].id
   lineData.splice(index, 1)
@@ -336,6 +337,7 @@ const deleteLineClick = (field, index) => {
       options: options?.formFieldsOption
     })
   }
+  emits('deleteLineClick', field, index, row)
 }
 
 const saveWrite = (params, savedDatas) => {
