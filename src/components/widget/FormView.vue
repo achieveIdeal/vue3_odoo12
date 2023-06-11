@@ -11,7 +11,7 @@
           message: options[field]?.string + '不能为空!',
           trigger: 'blur'
           }]"
-        v-if="noLoadFields.indexOf(field) === -1 && !options[field]?.invisible"
+        v-if="noLoadFields.indexOf(field) === -1 && !parseDomain(props.options[field]?.invisible, datas)"
     >
       <template v-if="is2One(options[field]?.type)">
         <el-select class="form-input alien-left"
@@ -21,7 +21,7 @@
                    filterable
                    remote
                    :loading="loading"
-                   @change="onchangeField({
+                   @change="fieldOnchange({
                       field: field,
                       datas: datas,
                            treeOptions: treeOptions,
@@ -30,12 +30,12 @@
                       treeData: treeData
                   })"
                    :remote-method="searchSelection(options[field])"
-                   :disabled="options[field]?.readonly || disabled"
+                   :disabled="parseDomain(options[field]?.readonly, datas)  || disabled"
         >
           <el-option
               v-for="item in options[field]?.selection"
               :key="item[0]"
-              :disabled="options[field]?.readonly || disabled"
+              :disabled="parseDomain(options[field]?.readonly, datas)  || disabled"
               :label="item[1]"
               :value="item[0]"/>
         </el-select>
@@ -48,7 +48,7 @@
                    collapse-tags
                    collapse-tags-tooltip
                    filterable
-                   @change="onchangeField({
+                   @change="fieldOnchange({
                   field: field,
                   datas: datas,
                        treeOptions: treeOptions,
@@ -56,12 +56,12 @@
                   options: options,
                   treeData: treeData
                 })"
-                   :disabled="options[field]?.readonly || disabled"
+                   :disabled="parseDomain(options[field]?.readonly, datas)  || disabled"
         >
           <el-option
               v-for="item in options[field]?.selection"
               :key="item[0]"
-              :disabled="options[field]?.readonly || disabled"
+              :disabled="parseDomain(options[field]?.readonly, datas)  || disabled"
               :label="item[1]"
               :value="item[0]"/>
         </el-select>
@@ -76,14 +76,14 @@
                    clearable
                    filterable
                    remote
-                   @change="onchangeField({
+                   @change="fieldOnchange({
                 field: field,
                 datas: datas,
                      treeOptions: treeOptions,
                 model: params.model,
                 options: options,
                 treeData: treeData
-              })" :disabled="options[field]?.readonly || disabled"
+              })" :disabled="parseDomain(options[field]?.readonly, datas)  || disabled"
                    :remote-method="searchSelection(options[field])"
         >
           <el-option
@@ -98,8 +98,9 @@
 
       <template v-else-if="fieldTypeMap[options[field]?.type]==='checkbox'">
         <div class="form-input alien-left">
-          <input type="checkbox" v-model="datas[field]" :disabled="options[field]?.readonly || disabled"
-                 @change="onchangeField({
+          <input type="checkbox" v-model="datas[field]"
+                 :disabled="parseDomain(options[field]?.readonly, datas)  || disabled"
+                 @change="fieldOnchange({
                 field: field,
                 datas: datas,
                 model: params.model,
@@ -117,7 +118,7 @@
                          controls-position="right"
                          :min="options[field]?.min"
                          :max="options[field]?.max"
-                         @blur="onchangeField({
+                         @blur="fieldOnchange({
               field: field,
               datas: datas,
               model: params.model,
@@ -125,12 +126,12 @@
               treeOptions: treeOptions,
               treeData: treeData
             })"
-                         :disabled="options[field]?.readonly || disabled"/>
+                         :disabled="parseDomain(options[field]?.readonly, datas)  || disabled"/>
       </template>
       <template v-else-if="isFile(options[field]?.type)">
         <div class="file-content form-input">
           <el-upload
-              :class="{'upload-file-edit': options[field]?.readonly || disabled}"
+              :class="{'upload-file-edit':parseDomain(options[field]?.readonly, datas) || disabled}"
               ref="upload"
               :data-index="field"
               action="#"
@@ -142,10 +143,11 @@
               :on-exceed="handleExceed(field)"
               :auto-upload="false"
               :on-preview="downLoadFile(datas[field], datas[options[field]?.filename])"
-              :disabled="options[field]?.readonly || disabled"
+              :disabled="parseDomain(options[field]?.readonly, datas)  || disabled"
           >
             <template #trigger>
-              <el-button v-if="!(options[field]?.readonly || disabled)" type="primary">选择文件</el-button>
+              <el-button v-if="!(parseDomain(options[field]?.readonly, datas) || disabled)" type="primary">选择文件
+              </el-button>
             </template>
           </el-upload>
         </div>
@@ -153,7 +155,7 @@
       <template v-else-if="options[field]">
         <el-input v-model="datas[field]" :type="fieldTypeMap[options[field]?.type]" class="form-input"
                   :maxlength="options[field]?.maxlength"
-                  @blur="onchangeField({
+                  @blur="fieldOnchange({
               field: field,
               datas: datas,
               model: params.model,
@@ -161,19 +163,19 @@
               treeOptions: treeOptions,
               treeData: treeData
             })"
-                  :disabled="options[field]?.readonly || disabled"/>
+                  :disabled="parseDomain(options[field]?.readonly, datas) || disabled"/>
       </template>
     </el-form-item>
   </template>
 </template>
 
 <script setup lang="ts">
-import {inject, PropType, ref, computed} from "vue";
+import {inject, PropType, ref, computed, defineEmits} from "vue";
 import {genFileId} from 'element-plus'
 import type {UploadInstance, UploadProps, UploadRawFile} from 'element-plus'
 import {useTypeStore} from "../../store";
 import type {DataType, FieldOptionType, ModuleDataType} from "../../types";
-import {onchangeField, searchFieldSelection, downLoadFile, encodeFileToBase64} from "../../tools";
+import {onchangeField, searchFieldSelection, downLoadFile, encodeFileToBase64, parseDomain} from "../../tools";
 
 const typeStore = useTypeStore();
 const fieldTypeMap = typeStore.types;
@@ -217,12 +219,14 @@ const upload = ref<UploadInstance>();
 let zero = 0;
 let oddChild = ref({})
 
+const emits = defineEmits(['fieldOnchange'])
+
 const lastOddChildIndex = computed(() => {
   let index = 0;
   for (const field of props.params.fields) {
     if (!props.options[field]) break
     index++;
-    if (noLoadFields.indexOf(field) !== -1 || props.options[field]?.invisible) {
+    if (noLoadFields.indexOf(field) !== -1 || parseDomain(props.options[field]?.invisible, props.datas)) {
       index--;
       continue
     }
@@ -262,6 +266,10 @@ const searchSelection = (option: FieldOptionType) => (query: string) => {
   });
 }
 
+const fieldOnchange = (params) => {
+  emits('fieldOnchange', params)
+  onchangeField(params)
+}
 
 defineExpose({
   upload

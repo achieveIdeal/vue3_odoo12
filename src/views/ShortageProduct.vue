@@ -58,7 +58,7 @@ const extras = {
     'in_stock_qty',]
 }
 
-const customClick = (button, rows, models, reload) => {
+const customClick = (button, rows) => {
   const ids = rows.map(r => r.id)
   router.push({
     path: '/delivery_order',

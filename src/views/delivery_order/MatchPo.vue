@@ -72,12 +72,12 @@ const extras = {
 }
 
 const emits = defineEmits(['loadedCallback', 'customClick'])
-const loadedCallable = (init) => {
-  emits('loadedCallback', init)
+const loadedCallable = (init, loading) => {
+  emits('loadedCallback', init, loading)
 }
 
-const customClick = (button, datas) => {
-  emits('customClick', button, datas);
+const customClick = (button, datas, reload, loading)=>{
+  emits('customClick', button, datas, reload, loading);
 }
 
 </script>

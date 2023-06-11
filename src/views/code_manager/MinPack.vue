@@ -3,7 +3,9 @@
     <el-input v-model="date_from" type="date"/>
     <template #footer>
       <span class="dialog-footer">
-        <el-button @click="dialogVisible = false">取消</el-button>
+        <el-button v-loading.fullscreen.lock="loading"
+                   element-loading-text="正在加载..."
+                   @click="dialogVisible = false">取消</el-button>
         <el-button type="primary" @click="saveDateFrom">
           保存
         </el-button>
@@ -26,6 +28,7 @@ let route = useRoute()
 let dialogVisible = ref(false);
 let date_from = ref('');
 let activeRows = ref([]);
+const loading = ref(false);
 const params = reactive({
   id: parseInt(route.query.id) || 0,
   type: route.query.type || 'list',
@@ -117,12 +120,12 @@ const extras = {
   invisible: ['is_generate', 'state', 'delivery_order_line_id'],
   listInvisible: ['delivery_order_line_id'],
   readonly: ['name', 'product_name', 'print_amount', 'name', 'supplier_id',
-    'if_print', 'min_pack_size', 'delivery_order_line_id',],
-  required: ['default_code', 'date_from', 'amount', 'min_pack_size', 'shelf_life', 'produce_number']
+    'if_print', 'min_pack_size', 'delivery_order_line_id', 'shelf_life'],
+  required: ['default_code', 'date_from', 'amount', 'min_pack_size', 'produce_number']
 }
 
 
-const customClick = (button, rows, model, loadData) => {
+const customClick = (button, rows, reload) => {
   const ids = rows.map(r => r.id);
   if (!ids.length) {
     ElMessage({
@@ -133,8 +136,7 @@ const customClick = (button, rows, model, loadData) => {
   }
   activeRows.value = {
     ids: ids,
-    model: model,
-    reload: loadData
+    reload: reload
   };
   dialogVisible.value = true;
 }
@@ -147,12 +149,14 @@ const saveDateFrom = () => {
     })
     return false;
   }
+  loading.value = true;
   callButton({
-    model: activeRows.value.model,
+    model: params.model,
     method: 'update_date_from',
     args: [activeRows.value.ids, {'front': true, date_from: date_from.value}]
   }).then(res => {
     if (res.error) {
+      loading.value = false;
       ElMessage({
         message: res.error.data.message,
         type: 'error'
@@ -161,11 +165,12 @@ const saveDateFrom = () => {
     } else {
       activeRows.value.reload()
     }
+    loading.value = false;
     dialogVisible.value = false;
   })
 }
 
-const objectClick = (name, rows, res) => {
+const objectClick = () => {
   router.push({
     name: 'min_pack'
   })

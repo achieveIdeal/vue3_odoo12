@@ -38,9 +38,8 @@
                      :limit="1" accept="xlsx,xls">
             <el-button type="success">导入</el-button>
           </el-upload>
-          <el-button
-              v-if="disabled"
-              class="el-button--cancel" @click.prevent="handleDownTemplate(button.template)">
+          <el-button v-if="disabled"
+                     class="el-button--cancel" @click.prevent="handleDownTemplate(button.template)">
             下载模板
           </el-button>
         </template>
@@ -70,13 +69,16 @@ import {ElMessage, UploadUserFile} from "element-plus";
 const router = useRouter();
 const props = defineProps({
   disabled: {
-    type: Boolean
+    type: Boolean,
+    default: true
   },
   params: {
-    type: Object
+    type: Object,
+    default: {}
   },
   buttons: {
-    type: Object
+    type: Object,
+    default: {}
   }
 })
 

@@ -98,21 +98,22 @@ export function callSearchRead(data: RequestParamsType) {
     })
 }
 
-export function callFile(data: RequestParamsType) {
+export function callFile(data: RequestParamsType, loading) {
     const fileType = data.converter.split('-')[1];
     Request.get({
         url: '/front/report/' + data.converter.split('-')[1] + '/' + data.reportname + '/' + data.docids,
         responseType: 'blob'
-    }).then(res => {  // 请求成功后处理流
+    }).then(async res => {  // 请求成功后处理流
         const blob = new Blob([res])
         const downloadElement = document.createElement('a');
         const href = window.URL.createObjectURL(blob); //创建下载的链接
         downloadElement.href = href;
         downloadElement.download = data.name + '.' + fileType; //下载后文件名
         document.body.appendChild(downloadElement);
-        downloadElement.click(); //点击下载
+        await downloadElement.click(); //点击下载
         document.body.removeChild(downloadElement); //下载完成移除元素
         window.URL.revokeObjectURL(href); //释放掉blob对象
+        loading.value = false;
     })
 }
 

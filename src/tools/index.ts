@@ -9,7 +9,6 @@ import {
 
 import {ElMessage} from "element-plus";
 import {initTreeData} from "./init";
-
 // 请求数据
 const getRequestParams = (params: ModuleDataType): RequestParamsType => {
     let id = params.id instanceof Array && params.id || [params.id];
@@ -89,7 +88,6 @@ const onchangeField = async (params: OnchangeParamsType) => {
         const result = res.result;
         const domain = result.domain;
         const value = result.value
-        console.log(result);
         if (result.warning) {
             ElMessage({
                 message: result.warning.message,
@@ -205,7 +203,6 @@ const loadFormDatas = async (params: ModuleDataType) => {
             formData[field] = ''
         }
     }
-    console.log(treeData);
     return {
         formFieldsOption,
         treeFieldsOption,
@@ -407,6 +404,8 @@ const getDomainVal = (domains, data) => {
     return domainsCopy
 }
 const parseDomain = (domains, data) => {
+    if (!(domains instanceof Array && domains.length
+        && (['|', '&'].indexOf(domains[0]) !== -1 || domains[0].length === 3))) return domains
     let domainStack = getDomainVal(domains, data);
     const length = domainStack.length
     for (let index = length - 1; index >= 0; index--) {

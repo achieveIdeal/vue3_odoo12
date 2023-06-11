@@ -19,11 +19,7 @@ export const setFormAttribute = (formData, formFieldsOption, extras) => {
             let extraOptions = attributes[field];
             for (const attribute of Object.keys(extraOptions || {})) {
                 if (attribute === 'fields') continue;
-                if (['boolean', 'number', 'string'].indexOf(typeof extraOptions[attribute]) !== -1 || attribute === 'domain') {
-                    formFieldsOption[field][attribute] = extraOptions[attribute];
-                    continue
-                }
-                formFieldsOption[field][attribute] = parseDomain(extraOptions[attribute], formData);
+                formFieldsOption[field][attribute] = extraOptions[attribute];
             }
         }
     }
@@ -69,11 +65,7 @@ export const setTreeAttribute = (treeField, lineData, formData, treeFieldsOption
         treeFieldsOption[treeField][field]['required'] = (attributes.required || []).indexOf(field) !== -1;
         let extraOptions = attributes[field];
         for (const attribute of Object.keys(extraOptions || {})) {
-            if (['boolean', 'number', 'string'].indexOf(typeof extraOptions[attribute]) !== -1 || attribute === 'domain') {
-                treeFieldsOption[treeField][field][attribute] = extraOptions[attribute];
-                continue
-            }
-            treeFieldsOption[treeField][field][attribute] = parseDomain(extraOptions[attribute], {treeField: lineData, ...formData})
+            treeFieldsOption[treeField][field][attribute] = extraOptions[attribute];
         }
     }
 }

@@ -40,7 +40,7 @@ const routerPath = router.currentRoute.value.path.split('/');
 let index = ref(0)
 let active = ref(routerPath[routerPath.length-1])
 const changeMenu = (name) => {
-  router.push({
+  router.replace({
     name: name.paneName,
   })
 }

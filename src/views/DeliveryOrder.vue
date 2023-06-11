@@ -39,7 +39,6 @@ let usedPoQty = {}
 let match_po_types = []
 const codeDatas = ref({});
 const codeAmountTotal = ref(0)
-
 const params = reactive({
   id: parseInt(route.query.id) || 0,
   type: route.query.type || 'list',
@@ -62,7 +61,7 @@ const params = reactive({
       sort: 'id desc',
       count: 0,
       model: 'srm.delivery.order.line',
-      fields: ['product_id', 'material_name', 'JIT_id', 'shortage_id',
+      fields: ['product_id', 'material_name', 'jit_id', 'shortage_id',
         'amount_planned', 'delivery_quantity', 'uom_id', 'purchase_order', 'code_names', 'comment']
     }
   }
@@ -110,12 +109,14 @@ const extras = {
       unadd: true,
       fields: {
         readonly: ['product_id', 'material_name', 'uom_id', 'purchase_order', 'code_names'],
-        invisible: ['JIT_id', 'shortage_id'],
+        invisible: ['jit_id', 'shortage_id'],
         amount_planned: {
           sum: true,
         },
         delivery_quantity: {
           sum: true,
+          readonly: [['line_ids.purchase_order', '!=', '']],
+          min: 0,
         },
       },
       buttons: [{
@@ -140,7 +141,7 @@ const extras = {
   invisible: ['h_state']
 }
 
-const customClick = (button, datas, reload) => {
+const customClick = (button, datas, reload, loading) => {
   console.log(poDatas, codeDatas);
   if (button.method === 'action_submit') {
     for (const shortage_id of Object.keys(poDatas.value || {})) {
@@ -160,18 +161,21 @@ const customClick = (button, datas, reload) => {
       });
       return false;
     }
+    loading.value = true;
     callButton({
       model: params.model,
       method: 'action_submit',
       args: [datas, {po_datas: poDatas.value, code_datas: codeDatas.value}]
     }).then(res => {
       if (res.error) {
+        loading.value = false;
         ElMessage({
           message: res.error.data.message,
           type: 'error'
         });
         return false
       }
+      loading.value = false;
       router.replace({
         name: params.name,
         query: {
@@ -186,16 +190,18 @@ const customClick = (button, datas, reload) => {
   }
 }
 
-const loadedCallable = async (init) => {
+const loadedCallable = async (init, loading) => {
   let plan_ids = route.query?.plan_ids;
   if (plan_ids || plan_ids?.length) {
     plan_ids = plan_ids instanceof Array ? plan_ids : [plan_ids];
+    loading.value = true;
     const res = await callButton({
       model: params.model,
       method: 'prepare_create',
       args: [plan_ids]
     })
     if (res.error) {
+      loading.value = false;
       ElMessage({
         message: res.error.data.message,
         type: 'error'
@@ -205,12 +211,12 @@ const loadedCallable = async (init) => {
       });
       return false
     }
+    loading.value = false;
     init(res.result);
   }
-
 }
 
-const lineButtonClick = (treeField, data, button) => {
+const lineButtonClick = ( treeField, data, button) => {
   lineData.value = data;
   if (button.method === 'match_po') {
     poDialogVisible.value = true;
@@ -227,18 +233,29 @@ const lineButtonClick = (treeField, data, button) => {
   }
 }
 
-const poLoadedCallable = async (init) => {
-  const IsJITMatch = !!lineData.value.JIT_id;
-  const origin_id = IsJITMatch ? lineData.value.JIT_id : lineData.value.shortage_id;
+const poLoadedCallable = async (init, loading) => {
+  const IsJITMatch = !!lineData.value.jit_id;
+  const origin_field = IsJITMatch ? 'jit_id' : 'shortage_id';
+  const origin_id = lineData.value[origin_field];
+  const datas = poDatas.value[lineData.value[origin_field]];
+  poDatas.value[lineData.value[origin_field]] = [];
+  const lines = datas?.length ? datas[0].match_line_ids : [];
+  for (const line of lines || []) {
+    const data = line[2];
+    usedPoQty[data.purchase_order_line_id] -= data.amount;
+    data.purchase_type_id && match_po_types.slice(match_po_types.indexOf(data.purchase_type_id), 1)
+  }
   if (!lineData.value.delivery_quantity) {
     lineData.value.delivery_quantity = Math.abs(lineData.value.amount_planned)
   }
+  loading.value = true;
   const res = await callButton({
     model: params.model,
     method: 'match_po',
     args: [origin_id, lineData.value.delivery_quantity, usedPoQty, IsJITMatch, match_po_types]
   })
   if (res.error) {
+    loading.value = false;
     ElMessage({
       message: res.error.data.message,
       type: 'error'
@@ -247,19 +264,28 @@ const poLoadedCallable = async (init) => {
     poDialogVisible.value = false;
     return false
   }
+  loading.value = false;
   const result = res.result;
   result.formData['comment'] = lineData.value.comment
   init(result);
 }
-const codeLoadedCallable = async (init) => {
-  const IsJITMatch = !!lineData.value.JIT_id
-  const origin_id = IsJITMatch ? lineData.value.JIT_id : lineData.value.shortage_id;
+const codeLoadedCallable = async (init, loading) => {
+  const IsJITMatch = !!lineData.value.jit_id
+  const origin_field = IsJITMatch ? 'jit_id' : 'shortage_id';
+  const origin_id = lineData.value[origin_field];
+  const datas = codeDatas.value[lineData.value[origin_id]]
+  codeDatas.value[lineData.value[origin_field]] = [];
+  for (const code_id of (datas || []).map(r => r.id)) {
+    usedCodeIds.slice(usedCodeIds.indexOf(code_id), 1);
+  }
+  loading.value = true;
   const res = await callButton({
     model: params.model,
     method: 'match_code',
     args: [origin_id, lineData.value.delivery_quantity, usedCodeIds, IsJITMatch]
   })
   if (res.error) {
+    loading.value = false;
     ElMessage({
       message: res.error.data.message,
       type: 'error'
@@ -267,6 +293,7 @@ const codeLoadedCallable = async (init) => {
     poDialogVisible.value = false;
     return false
   }
+  loading.value = false;
   init(res.result);
 }
 const poCustomClick = (button, datas) => {
@@ -275,8 +302,8 @@ const poCustomClick = (button, datas) => {
     lineData.value.comment = '';
     lineData.value.purchase_order = ''
   } else {
-    const IsJITMatch = !!lineData.value.JIT_id
-    const origin_id = IsJITMatch ? 'JIT_id' : 'shortage_id';
+    const IsJITMatch = !!lineData.value.jit_id;
+    const origin_id = IsJITMatch ? 'jit_id' : 'shortage_id';
     !poDatas.value[lineData.value[origin_id]] ? poDatas.value[lineData.value[origin_id]] = [] : null;
     poDatas.value[lineData.value[origin_id]].push(datas);
     const lines = datas.match_line_ids;
@@ -285,6 +312,7 @@ const poCustomClick = (button, datas) => {
       !usedPoQty[data.purchase_order_line_id] ? usedPoQty[data.purchase_order_line_id] = 0 : null;
       usedPoQty[data.purchase_order_line_id] += data.amount;
       data.purchase_type_id && match_po_types.push(data.purchase_type_id)
+      console.log(usedPoQty);
     }
     lineData.value.comment = datas.comment;
     lineData.value.purchase_order = datas.match_line_ids.map(r => {
@@ -312,8 +340,8 @@ const codeCustomClick = (button, datas) => {
       });
       return false
     }
-    const IsJITMatch = !!lineData.value.JIT_id
-    const origin_id = IsJITMatch ? 'JIT_id' : 'shortage_id';
+    const IsJITMatch = !!lineData.value.jit_id
+    const origin_id = IsJITMatch ? 'jit_id' : 'shortage_id';
     !codeDatas.value[lineData.value[origin_id]] ? codeDatas.value[lineData.value[origin_id]] = [] : null;
     codeDatas.value[lineData.value[origin_id]].push(datas);
     usedCodeIds = usedCodeIds.concat((datas || []).map(r => r.id))
@@ -325,8 +353,8 @@ const codeCustomClick = (button, datas) => {
 }
 
 const deleteLineClick = (field, index, row) => {
-  const IsJITMatch = !!lineData.value.JIT_id;
-  const origin_id = IsJITMatch ? 'JIT_id' : 'shortage_id';
+  const IsJITMatch = !!lineData.value.jit_id;
+  const origin_id = IsJITMatch ? 'jit_id' : 'shortage_id';
   delete codeDatas.value[row[origin_id]];
   delete poDatas.value[row[origin_id]];
 }
@@ -337,6 +365,7 @@ const codeSelectClick = (rows) => {
     codeAmountTotal.value += row.amount
   }
 }
+
 </script>
 
 <style scoped>

@@ -66,11 +66,11 @@ const extras = {
 }
 
 const emits = defineEmits(['loadedCallback', 'selectClick'])
-const loadedCallable = (init) => {
-  emits('loadedCallback', init)
+const loadedCallable = (init, loading) => {
+  emits('loadedCallback', init, loading)
 }
-const selectClick = (rows) => {
-  emits('selectClick', rows)
+const selectClick = (rows, loading) => {
+  emits('selectClick', rows, loading)
 }
 </script>
 
