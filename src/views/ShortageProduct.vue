@@ -17,7 +17,7 @@ const params = reactive({
   type: route.query.type || 'list',
   title: '物料欠料表',
   name: 'shortage_product',
-  limit: 12,
+  limit: 20,
   offset: 0,
   domain: [['partner_id', '=', supplier_id]],
   sort: 'id desc',
@@ -51,8 +51,7 @@ const extras = {
   },
   attributes: {},
   invisible: ['urgency_date',
-    'delete_flag', 'state', 'partner_id', 'delivery_qty',
-    'in_stock_qty'],
+    'delete_flag', 'state', 'partner_id'],
   listInvisible: ['urgency_date',
     'delete_flag', 'state','partner_id',
     'in_stock_qty',]

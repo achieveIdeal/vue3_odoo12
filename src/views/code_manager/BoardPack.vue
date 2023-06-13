@@ -14,7 +14,7 @@ const params = reactive({
   type: route.query.type || 'list',
   title: '赋码(卡板包装)',
   name: 'board_pack',
-  limit: 12,
+  limit: 20,
   offset: 0,
   sort: 'id desc',
   domain: [['supplier_id', '=', supplier_id]],
@@ -66,6 +66,9 @@ const extras = {
   attributes: {
     product_id: {
       readonly: [['state', '=', 'done']]
+    },
+    outer_pack_ids: {
+      domain: [['state', '=', 'draft']]
     }
   },
   invisible: ['state'],

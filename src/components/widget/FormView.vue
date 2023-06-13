@@ -1,9 +1,9 @@
 <template>
-  <template v-for="field in params.fields" :key="field">
-    <el-form-item
+  <div class="form-input-item">
+    <template v-for="field in params.fields" :key="field">
+      <el-form-item
         class="form-item"
-        :class="{'last-odd-child':!isDialog&&oddChild[lastOddChildIndex] === field,
-         'dialog-odd-last-child':isDialog&&oddChild[lastOddChildIndex] === field}"
+        :style="{width: params.width|| (isDialog && '45%' || '47%')}"
         :label="options[field]?.string"
         :prop="['formData', field]"
         :rules="[{
@@ -12,161 +12,170 @@
           trigger: 'blur'
           }]"
         v-if="noLoadFields.indexOf(field) === -1 && !parseDomain(props.options[field]?.invisible, datas)"
-    >
-      <template v-if="is2One(options[field]?.type)">
-        <el-select class="form-input alien-left"
-                   v-model="datas[field]"
-                   placeholder="请选择"
-                   clearable
-                   filterable
-                   remote
-                   :loading="loading"
-                   @change="fieldOnchange({
-                      field: field,
-                      datas: datas,
-                           treeOptions: treeOptions,
-                      model: params.model,
-                      options: options,
-                      treeData: treeData
-                  })"
-                   :remote-method="searchSelection(options[field])"
-                   :disabled="parseDomain(options[field]?.readonly, datas)  || disabled"
-        >
-          <el-option
-              v-for="item in options[field]?.selection"
-              :key="item[0]"
-              :disabled="parseDomain(options[field]?.readonly, datas)  || disabled"
-              :label="item[1]"
-              :value="item[0]"/>
-        </el-select>
-      </template>
-      <template v-else-if="isSelection(options[field]?.type)">
-        <el-select class="form-input"
-                   v-model="datas[field]"
-                   placeholder="请选择"
-                   clearable
-                   collapse-tags
-                   collapse-tags-tooltip
-                   filterable
-                   @change="fieldOnchange({
-                  field: field,
-                  datas: datas,
-                       treeOptions: treeOptions,
-                  model: params.model,
-                  options: options,
-                  treeData: treeData
-                })"
-                   :disabled="parseDomain(options[field]?.readonly, datas)  || disabled"
-        >
-          <el-option
-              v-for="item in options[field]?.selection"
-              :key="item[0]"
-              :disabled="parseDomain(options[field]?.readonly, datas)  || disabled"
-              :label="item[1]"
-              :value="item[0]"/>
-        </el-select>
-      </template>
-      <template v-else-if="is2Many(options[field]?.type)">
-        <el-select class="form-input"
-                   v-model="datas[field]"
-                   placeholder="请选择"
-                   multiple
-                   collapse-tags
-                   collapse-tags-tooltip
-                   clearable
-                   filterable
-                   remote
-                   @change="fieldOnchange({
+      >
+          <template v-if="is2One(options[field]?.type)">
+            <el-select class="form-input alien-left"
+              v-model="datas[field]"
+              placeholder="请选择"
+              clearable
+              filterable
+              remote
+              :loading="loading"
+              @change="fieldOnchange({
                 field: field,
                 datas: datas,
-                     treeOptions: treeOptions,
+                attributes: attributes,
+                treeOptions: treeOptions,
                 model: params.model,
                 options: options,
                 treeData: treeData
-              })" :disabled="parseDomain(options[field]?.readonly, datas)  || disabled"
-                   :remote-method="searchSelection(options[field])"
-        >
-          <el-option
-              v-for="item in options[field]?.selection"
-              :key="item[0]"
-              :label="item[1]"
-              :value="item[0]"
-          ></el-option>
-        </el-select>
+              })"
+              :remote-method="searchSelection(options[field])"
+              :disabled="parseDomain(options[field]?.readonly, datas)  || disabled"
+            >
+              <el-option
+                  v-for="item in options[field]?.selection"
+                  :key="item[0]"
+                  :disabled="parseDomain(options[field]?.readonly, datas)  || disabled"
+                  :label="item[1]"
+                  :value="item[0]"/>
+            </el-select>
+          </template>
+          <template v-else-if="isSelection(options[field]?.type)">
+            <el-select class="form-input"
+              v-model="datas[field]"
+              placeholder="请选择"
+              clearable
+              collapse-tags
+              collapse-tags-tooltip
+              filterable
+              @change="fieldOnchange({
+                field: field,
+                datas: datas,
+                attributes: attributes,
+                treeOptions: treeOptions,
+                model: params.model,
+                options: options,
+                treeData: treeData
+              })"
+              :disabled="parseDomain(options[field]?.readonly, datas)  || disabled"
+            >
+              <el-option
+                  v-for="item in options[field]?.selection"
+                  :key="item[0]"
+                  :disabled="parseDomain(options[field]?.readonly, datas)  || disabled"
+                  :label="item[1]"
+                  :value="item[0]"/>
+            </el-select>
+          </template>
+          <template v-else-if="is2Many(options[field]?.type)">
+            <el-select class="form-input"
+              v-model="datas[field]"
+              placeholder="请选择"
+              multiple
+              collapse-tags
+             :loading="loading"
+              collapse-tags-tooltip
+              clearable
+              filterable
+              remote
+              @change="fieldOnchange({
+                field: field,
+                attributes: attributes,
+                datas: datas,
+                treeOptions: treeOptions,
+                model: params.model,
+                options: options,
+                treeData: treeData
+              })"
+              :disabled="parseDomain(options[field]?.readonly, datas)  || disabled"
+              :remote-method="searchSelection(options[field])"
+            >
+              <el-option
+                  v-for="item in options[field]?.selection"
+                  :key="item[0]"
+                  :label="item[1]"
+                  :value="item[0]"
+              ></el-option>
+            </el-select>
 
-      </template>
-
-      <template v-else-if="fieldTypeMap[options[field]?.type]==='checkbox'">
-        <div class="form-input alien-left">
-          <input type="checkbox" v-model="datas[field]"
+          </template>
+          <template v-else-if="fieldTypeMap[options[field]?.type]==='checkbox'">
+            <div class="form-input alien-left">
+              <input type="checkbox" v-model="datas[field]"
                  :disabled="parseDomain(options[field]?.readonly, datas)  || disabled"
                  @change="fieldOnchange({
+                  field: field,
+                  datas: datas,
+                  attributes: attributes,
+                  model: params.model,
+                  treeOptions: treeOptions,
+                  options: options,
+                  treeData: treeData
+              })">
+            </div>
+          </template>
+          <template v-else-if="fieldTypeMap[options[field]?.type] === 'number'">
+            <span style="display: none;">{{ datas[field] ? datas[field] : datas[field] = 0 }}</span>
+            <el-input-number v-model="datas[field]"
+             class="form-input"
+             :precision="options[field]?.precision || options[field]?.digits?.length&&options[field]?.digits[1]"
+             controls-position="right"
+             :min="options[field]?.min"
+             :max="options[field]?.max"
+             @blur="fieldOnchange({
                 field: field,
                 datas: datas,
+                attributes: attributes,
                 model: params.model,
-                     treeOptions: treeOptions,
                 options: options,
+                treeOptions: treeOptions,
                 treeData: treeData
-              })">
-        </div>
-      </template>
-      <template v-else-if="fieldTypeMap[options[field]?.type] === 'number'">
-        <span style="display: none;">{{ datas[field] ? datas[field] : datas[field] = 0 }}</span>
-        <el-input-number v-model="datas[field]"
-                         class="form-input"
-                         :precision="options[field]?.precision || options[field]?.digits?.length&&options[field]?.digits[1]"
-                         controls-position="right"
-                         :min="options[field]?.min"
-                         :max="options[field]?.max"
-                         @blur="fieldOnchange({
-              field: field,
-              datas: datas,
-              model: params.model,
+            })"
+             :disabled="parseDomain(options[field]?.readonly, datas)  || disabled"/>
+          </template>
+          <template v-else-if="isFile(options[field]?.type)">
+            <div class="file-content form-input">
+              <el-upload
+                  :class="{'upload-file-edit':parseDomain(options[field]?.readonly, datas) || disabled}"
+                  ref="upload"
+                  :data-index="field"
+                  action="#"
+                  :limit="1"
+                  :file-list="datas[options[field].filename]?[{name: datas[options[field].filename]}]:[]"
+                  :list-type="options[field]?.list_type?.split(',')"
+                  :on-change="handleFileChange(field)"
+                  :on-remove="handleFileRemove(field)"
+                  :on-exceed="handleExceed(field)"
+                  :auto-upload="false"
+                  :on-preview="downLoadFile(datas[field], datas[options[field]?.filename])"
+                  :disabled="parseDomain(options[field]?.readonly, datas)  || disabled"
+              >
+                <template #trigger>
+                  <el-button v-if="!(parseDomain(options[field]?.readonly, datas) || disabled)" type="primary">选择文件
+                  </el-button>
+                </template>
+              </el-upload>
+            </div>
+          </template>
+          <template v-else-if="options[field]">
+            <el-input v-model="datas[field]" :type="fieldTypeMap[options[field]?.type]" class="form-input"
+              :maxlength="options[field]?.maxlength"
+              @blur="fieldOnchange({
+                field: field,
+                attributes: attributes,
+                datas: datas,
+                model: params.model,
                 options: options,
-              treeOptions: treeOptions,
-              treeData: treeData
-            })"
-                         :disabled="parseDomain(options[field]?.readonly, datas)  || disabled"/>
-      </template>
-      <template v-else-if="isFile(options[field]?.type)">
-        <div class="file-content form-input">
-          <el-upload
-              :class="{'upload-file-edit':parseDomain(options[field]?.readonly, datas) || disabled}"
-              ref="upload"
-              :data-index="field"
-              action="#"
-              :limit="1"
-              :file-list="datas[options[field].filename]?[{name: datas[options[field].filename]}]:[]"
-              :list-type="options[field]?.list_type?.split(',')"
-              :on-change="handleFileChange(field)"
-              :on-remove="handleFileRemove(field)"
-              :on-exceed="handleExceed(field)"
-              :auto-upload="false"
-              :on-preview="downLoadFile(datas[field], datas[options[field]?.filename])"
-              :disabled="parseDomain(options[field]?.readonly, datas)  || disabled"
-          >
-            <template #trigger>
-              <el-button v-if="!(parseDomain(options[field]?.readonly, datas) || disabled)" type="primary">选择文件
-              </el-button>
-            </template>
-          </el-upload>
-        </div>
-      </template>
-      <template v-else-if="options[field]">
-        <el-input v-model="datas[field]" :type="fieldTypeMap[options[field]?.type]" class="form-input"
-                  :maxlength="options[field]?.maxlength"
-                  @blur="fieldOnchange({
-              field: field,
-              datas: datas,
-              model: params.model,
-              options: options,
-              treeOptions: treeOptions,
-              treeData: treeData
-            })"
-                  :disabled="parseDomain(options[field]?.readonly, datas) || disabled"/>
-      </template>
-    </el-form-item>
-  </template>
+                treeOptions: treeOptions,
+                treeData: treeData
+              })"
+              :disabled="parseDomain(options[field]?.readonly, datas) || disabled"/>
+          </template>
+      </el-form-item>
+    </template>
+  </div>
+
 </template>
 
 <script setup lang="ts">
@@ -212,28 +221,17 @@ const props = defineProps({
   isDialog: {
     type: Boolean,
     default: false
+  },
+  attributes: {
+    type: Object,
+    default: {}
   }
 })
 const upload = ref<UploadInstance>();
 
 let zero = 0;
-let oddChild = ref({})
 
 const emits = defineEmits(['fieldOnchange'])
-
-const lastOddChildIndex = computed(() => {
-  let index = 0;
-  for (const field of props.params.fields) {
-    if (!props.options[field]) break
-    index++;
-    if (noLoadFields.indexOf(field) !== -1 || parseDomain(props.options[field]?.invisible, props.datas)) {
-      index--;
-      continue
-    }
-    index % 2 === 1 ? oddChild.value[index] = field : null;
-  }
-  return index % 2 !== 0 && Math.max.apply(null, Object.keys(oddChild.value || {}).map(r => parseInt(r)))
-})
 
 const handleFileRemove = (field) => () => {
   const curFile = upload.value.find(r => {
@@ -267,7 +265,7 @@ const searchSelection = (option: FieldOptionType) => (query: string) => {
 }
 
 const fieldOnchange = (params) => {
-  emits('fieldOnchange', params)
+  emits('fieldOnchange', params);
   onchangeField(params)
 }
 
@@ -277,9 +275,6 @@ defineExpose({
 </script>
 
 <style lang="less">
-.form-item {
-  width: 40%;
-}
 
 .form-input {
   width: 100%;
@@ -296,15 +291,9 @@ defineExpose({
 .upload-file-edit .el-upload-list {
   top: -41px;
 }
-
-.last-odd-child {
+.form-input-item {
   position: relative;
-  left: -21.3%;
-}
-
-.dialog-odd-last-child {
-  position: relative;
-  left: -22.2%;
+  left: 2%;
 }
 
 </style>

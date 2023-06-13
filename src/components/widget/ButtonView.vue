@@ -44,7 +44,7 @@
           </el-button>
         </template>
         <template v-else-if="(disabled || button.show)&&button.type==='object'">
-          <el-button type="primary" :name="button.method" @click.prevent="handleObject(button.method)">
+          <el-button :type="button.classify||'primary'" :name="button.method" @click.prevent="handleObject(button.method)">
             {{ button.text }}
           </el-button>
         </template>

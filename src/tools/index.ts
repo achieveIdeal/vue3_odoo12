@@ -43,6 +43,7 @@ const buildOnchangeSpecs = function (fieldsInfo, treeOption, fields) {
 
 const onchangeField = async (params: OnchangeParamsType) => {
     let options = params.options;
+    let attributes = params.attributes
     let treeOptions = params.treeOptions;
     let datas = params.datas
     let field = params.field;
@@ -96,7 +97,7 @@ const onchangeField = async (params: OnchangeParamsType) => {
             return false;
         }
         for (let changedField of Object.keys(domain || {})) {
-            options[changedField].domain = domain[changedField];
+            options[changedField].domain = (attributes[changedField]?.domain || []).concat(domain[changedField]);
             options[changedField].selection = [];
             if (datas[changedField] instanceof Array) {
                 datas[changedField] = [];
@@ -249,6 +250,7 @@ const loadTreeData = async (params: ModuleDataType) => {
     }
 }
 const searchFieldSelection = async (option: FieldOptionType, query: string, domain = []) => {
+    console.log(option.domain);
     const res = await callNames({
         model: option.relation,
         args: [],
@@ -260,6 +262,7 @@ const searchFieldSelection = async (option: FieldOptionType, query: string, doma
             'context': {'lang': 'zh_CN', 'tz': false, 'uid': 2, 'front': true}
         }
     })
+    console.log(res.result);
     option.selection = res.result || [];
     return true;
 }

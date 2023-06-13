@@ -104,6 +104,7 @@ export function callFile(data: RequestParamsType, loading) {
         url: '/front/report/' + data.converter.split('-')[1] + '/' + data.reportname + '/' + data.docids,
         responseType: 'blob'
     }).then(async res => {  // 请求成功后处理流
+        console.log(res);
         const blob = new Blob([res])
         const downloadElement = document.createElement('a');
         const href = window.URL.createObjectURL(blob); //创建下载的链接

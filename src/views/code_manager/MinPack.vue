@@ -34,7 +34,7 @@ const params = reactive({
   type: route.query.type || 'list',
   title: '赋码(最小包装)',
   name: 'min_pack',
-  limit: 12,
+  limit: 20,
   offset: 0,
   domain: [['supplier_id', '=', supplier_id]],
   sort: 'id desc',

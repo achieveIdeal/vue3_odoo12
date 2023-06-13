@@ -21,12 +21,13 @@
              :model="datas"
              label-position="left"
              label-width="120px"
-             class="demo-form-inline">
+             class="form-inline">
 
       <FormView :datas="datas.formData" :treeData="datas.treeData"
                 :options="options.formFieldsOption"
                 :treeOptions="options.treeFieldsOption"
                 :params="params"
+                :attributes="extras.attributes"
                 :isDialog="isDialog"
                 @fieldOnchange="fieldOnchange"
                 ref="formView"
@@ -35,7 +36,7 @@
                 :options="options.treeFieldsOption"
                 :formOptions="options.formFieldsOption"
                 :params="params.tables"
-                :extras="extras.attributes||{}"
+                :attributes="extras.attributes||{}"
                 :model="params.model"
                 :loading="loading"
                 @fieldOnchange="fieldOnchange"
@@ -153,7 +154,7 @@ const initList = async (result) => {
   params.count = count;
   buttons.buttons = initButton(extras, {}, params.type);
 }
-const emits = defineEmits(['objectClick', 'saveClick', 'customClick',
+const emits = defineEmits(['objectClick', 'saveClick', 'customClick','pageSizeChange',
   'lineButtonClick', 'loadedCallable', 'selectClick', 'deleteLineClick', 'fieldOnchange'])
 
 
@@ -203,12 +204,13 @@ const pageChange = async (currentPage: number, treeField: string) => {  // 列�
 }
 
 const pageSizeChange = async (size) => {
+  if (params.count < size && params.count < params.limit) {
+    return
+  }
   loading.value = true;
   if (params.type === 'list') {
     params.offset = 0;
-    if (params.count < size && params.count < params.limit) {
-      return
-    }
+
     params.limit = size;
     const result = await loadTreeData(params)  // 加载列表
     const initedList = await initListData(extras, result.listData, result.treeFieldsOption, noloadField)
@@ -220,6 +222,7 @@ const pageSizeChange = async (size) => {
     params.tables[treeField].offset = params.tables[treeField].limit * page
   }
   loading.value = false;
+  emits('pageSizeChange', size, loading)
 }
 
 const selectClick = (rows) => {
@@ -460,6 +463,12 @@ const fieldOnchange = (params) => {
 
 :deep(.el-scrollbar__view) {
   display: unset;
+}
+
+.form-inline {
+  text-align: left;
+  position: relative;
+  display: block;
 }
 </style>
 

@@ -16,7 +16,7 @@ const params = reactive({
   title: '匹配赋码',
   name: 'delivery_order',
   hideDetail: true,
-  limit: 12,
+  limit: 20,
   offset: 0,
   domain: [['supplier_id', '=', supplier_id]],
   sort: 'id desc',

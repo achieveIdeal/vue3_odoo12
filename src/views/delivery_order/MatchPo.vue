@@ -14,7 +14,7 @@ const params = reactive({
   type: route.query.type || 'list',
   title: '匹配采购订单',
   name: 'delivery_order',
-  limit: 12,
+  limit: 20,
   offset: 0,
   domain: [['partner_id', '=', supplier_id]],
   sort: 'id desc',
@@ -24,7 +24,7 @@ const params = reactive({
   tables: {
     match_line_ids: {
       title: '匹配明细行',
-      limit: 12,
+      limit: 10,
       offset: 0,
       domain: [],
       sort: 'id desc',

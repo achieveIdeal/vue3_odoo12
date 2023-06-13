@@ -12,10 +12,10 @@
                  :loading="loading"
                  filterable
                  remote
-                 :remote-method="searchSelection(options[field])"
+                 :remote-method="searchSelection(field)"
       >
         <el-option
-            v-for="(item, index) in options[field]?.selection"
+            v-for="(item, index) in searchOptions[field]?.selection"
             :key="index"
             :label="item[1]"
             :value="item[0]"
@@ -64,7 +64,7 @@
 </template>
 
 <script lang="ts" setup>
-import {reactive, ref,watch} from "vue";
+import {reactive, ref, watch} from "vue";
 import {Search} from "@element-plus/icons-vue";
 import {searchFieldSelection} from "../../tools";
 import {useTypeStore} from "../../store";
@@ -81,15 +81,17 @@ let props = defineProps({
     type: Object
   }
 })
+let searchOptions = reactive({})
 
 const emits = defineEmits(['searchClick']);
 
 let loading = ref(false)
 let do_search = ref(null)
 
-const searchSelection = (option: FieldOptionType) => (query: string) => {
+const searchSelection = (field) => (query: string) => {
   loading.value = true
-  searchFieldSelection(option, query).then(r => {
+  searchOptions = JSON.parse(JSON.stringify(props?.options));
+  searchFieldSelection(searchOptions[field], query).then(r => {
     loading.value = false;
   });
 }
@@ -132,6 +134,7 @@ document.onkeydown = e => {
 .check-box {
   vertical-align: middle;
 }
+
 .search-bar {
   margin: 10px;
 }

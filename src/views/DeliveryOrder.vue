@@ -13,6 +13,7 @@
               @loadedCallable="loadedCallable"
               @lineButtonClick="lineButtonClick"
               @deleteLineClick="deleteLineClick"
+              @fieldOnchange="fieldOnchange"
               @customClick="customClick" ref="recordView"/>
 </template>
 
@@ -29,22 +30,23 @@ import {ElMessage} from "element-plus";
 const supplier_id = parseInt(inject('supplier_id') || 0);
 let route = useRoute();
 let recordView = ref();
-
+let isJITMatch = false;
 let lineData = ref({})
 let poDialogVisible = ref(false);
 let codeDialogVisible = ref(false);
-const poDatas = ref({});
-let usedCodeIds = []
-let usedPoQty = {}
+let poDatas = ref({});
+let usedCodeIds = {};
+let usedPoQty = {};
 let match_po_types = []
-const codeDatas = ref({});
-const codeAmountTotal = ref(0)
+let codeDatas = ref({});
+let codeAmountTotal = ref(0)
 const params = reactive({
   id: parseInt(route.query.id) || 0,
   type: route.query.type || 'list',
   title: '交货单',
   name: 'delivery_order',
-  limit: 12,
+  limit: 20,
+  width: '30%',
   offset: 0,
   domain: [['partner_id', '=', supplier_id]],
   sort: 'id desc',
@@ -55,14 +57,15 @@ const params = reactive({
         'h_state', 'submit_user_id', 'state', 'jit_flag', 'line_ids'],
   tables: {
     line_ids: {
-      limit: 12,
+      limit: 10,
       offset: 0,
+      title: '交货订单行',
       domain: [],
       sort: 'id desc',
       count: 0,
       model: 'srm.delivery.order.line',
       fields: ['product_id', 'material_name', 'jit_id', 'shortage_id',
-        'amount_planned', 'delivery_quantity', 'uom_id', 'purchase_order', 'code_names', 'comment']
+        'amount_planned', 'delivery_quantity', 'uom_id', 'purchase_order', 'code_names', 'comment', 'origin_data_ids']
     }
   }
 })
@@ -75,7 +78,17 @@ const extras = {
     text: '打印',
     needRow: true,
     attributes: {
-      invisible: [['state', '=', 'create']]
+      invisible: [['state', 'in', ['create', 'destroy']]]
+    },
+  }, {
+    type: 'object',
+    method: 'action_cancel',
+    classify: 'danger',
+    showType: ['list', 'form'],
+    text: '作废',
+    needRow: true,
+    attributes: {
+      invisible: [['state', 'in', ['create', 'done', 'destroy']]]
     },
   },
     {
@@ -103,13 +116,14 @@ const extras = {
   hideDetail: true,
   search_fields: {
     expect_date: {},
+    state:{}
   },
   attributes: {
     line_ids: {
       unadd: true,
       fields: {
-        readonly: ['product_id', 'material_name', 'uom_id', 'purchase_order', 'code_names'],
-        invisible: ['jit_id', 'shortage_id'],
+        readonly: ['product_id', 'material_name', 'uom_id', 'purchase_order', 'code_names', 'amount_planned'],
+        invisible: ['jit_id', 'shortage_id', 'origin_data_ids'],
         amount_planned: {
           sum: true,
         },
@@ -122,16 +136,14 @@ const extras = {
       buttons: [{
         method: 'match_po',
         text: '匹配采购单',
-        needRow: true,
         attributes: {
-          invisible: [['state', 'in', ['', 'draft']]]
+          invisible: [['state', '!=', 'create']]
         },
       }, {
         method: 'match_code',
         text: '匹配赋码',
-        needRow: true,
         attributes: {
-          invisible: [['state', 'in', ['', 'draft']]]
+          invisible: [['state', '!=', 'create']]
         },
       }]
     },
@@ -141,12 +153,33 @@ const extras = {
   invisible: ['h_state']
 }
 
+const resetMatchCodeData = (row) => {
+  const data = (row || lineData.value)
+  const origin_data_ids = data.origin_data_ids;
+  codeDatas.value[origin_data_ids] = [];
+  usedCodeIds[origin_data_ids] = [];
+  data.code_names = '';
+}
+
+const resetMatchPoData = (row) => {
+  const data = (row || lineData.value)
+  const origin_data_ids = data.origin_data_ids;
+  const datas = poDatas.value[origin_data_ids];
+  poDatas.value[origin_data_ids] = [];
+  const lines = datas?.length ? datas[0].match_line_ids : [];
+  for (const line of lines || []) {
+    const data = line[2];
+    usedPoQty[data.purchase_order_line_id] -= data.amount;
+    data.purchase_type_id && match_po_types.slice(match_po_types.indexOf(data.purchase_type_id), 1)
+  }
+}
+
 const customClick = (button, datas, reload, loading) => {
-  console.log(poDatas, codeDatas);
   if (button.method === 'action_submit') {
     for (const shortage_id of Object.keys(poDatas.value || {})) {
-      if (!lineData.value.purchase_order || !poDatas.value[parseInt(shortage_id)]
-          || !codeDatas.value[parseInt(shortage_id)]) {
+      if (!lineData.value.purchase_order || !poDatas.value[shortage_id]?.length
+          || !codeDatas.value[shortage_id]?.length) {
+        console.log(poDatas);
         ElMessage({
           message: '请先匹配数据在提交!',
           type: 'error'
@@ -216,7 +249,7 @@ const loadedCallable = async (init, loading) => {
   }
 }
 
-const lineButtonClick = ( treeField, data, button) => {
+const lineButtonClick = (treeField, data, button) => {
   lineData.value = data;
   if (button.method === 'match_po') {
     poDialogVisible.value = true;
@@ -234,17 +267,9 @@ const lineButtonClick = ( treeField, data, button) => {
 }
 
 const poLoadedCallable = async (init, loading) => {
-  const IsJITMatch = !!lineData.value.jit_id;
-  const origin_field = IsJITMatch ? 'jit_id' : 'shortage_id';
-  const origin_id = lineData.value[origin_field];
-  const datas = poDatas.value[lineData.value[origin_field]];
-  poDatas.value[lineData.value[origin_field]] = [];
-  const lines = datas?.length ? datas[0].match_line_ids : [];
-  for (const line of lines || []) {
-    const data = line[2];
-    usedPoQty[data.purchase_order_line_id] -= data.amount;
-    data.purchase_type_id && match_po_types.slice(match_po_types.indexOf(data.purchase_type_id), 1)
-  }
+  const origin_data_ids = lineData.value['origin_data_ids'];
+  resetMatchPoData();
+  resetMatchCodeData();
   if (!lineData.value.delivery_quantity) {
     lineData.value.delivery_quantity = Math.abs(lineData.value.amount_planned)
   }
@@ -252,7 +277,7 @@ const poLoadedCallable = async (init, loading) => {
   const res = await callButton({
     model: params.model,
     method: 'match_po',
-    args: [origin_id, lineData.value.delivery_quantity, usedPoQty, IsJITMatch, match_po_types]
+    args: [origin_data_ids, lineData.value.delivery_quantity, usedPoQty, isJITMatch, match_po_types]
   })
   if (res.error) {
     loading.value = false;
@@ -270,19 +295,17 @@ const poLoadedCallable = async (init, loading) => {
   init(result);
 }
 const codeLoadedCallable = async (init, loading) => {
-  const IsJITMatch = !!lineData.value.jit_id
-  const origin_field = IsJITMatch ? 'jit_id' : 'shortage_id';
-  const origin_id = lineData.value[origin_field];
-  const datas = codeDatas.value[lineData.value[origin_id]]
-  codeDatas.value[lineData.value[origin_field]] = [];
-  for (const code_id of (datas || []).map(r => r.id)) {
-    usedCodeIds.slice(usedCodeIds.indexOf(code_id), 1);
-  }
+  const origin_ids = lineData.value['origin_data_ids'];
+  resetMatchCodeData();
   loading.value = true;
+  let used = []
+  for (const usedIds of Object.values(usedCodeIds)) {
+    used = used.concat(usedIds)
+  }
   const res = await callButton({
     model: params.model,
     method: 'match_code',
-    args: [origin_id, lineData.value.delivery_quantity, usedCodeIds, IsJITMatch]
+    args: [origin_ids, lineData.value.delivery_quantity, used, isJITMatch]
   })
   if (res.error) {
     loading.value = false;
@@ -298,32 +321,30 @@ const codeLoadedCallable = async (init, loading) => {
 }
 const poCustomClick = (button, datas) => {
   if (button.method === 'cancel') {
-    poDatas.value = {}
     lineData.value.comment = '';
     lineData.value.purchase_order = ''
+    resetMatchPoData();
+    console.log(poDatas.value);
   } else {
-    const IsJITMatch = !!lineData.value.jit_id;
-    const origin_id = IsJITMatch ? 'jit_id' : 'shortage_id';
-    !poDatas.value[lineData.value[origin_id]] ? poDatas.value[lineData.value[origin_id]] = [] : null;
-    poDatas.value[lineData.value[origin_id]].push(datas);
+    !poDatas.value[lineData.value['origin_data_ids']] ? poDatas.value[lineData.value['origin_data_ids']] = [] : null;
+    poDatas.value[lineData.value['origin_data_ids']].push(datas);
     const lines = datas.match_line_ids;
     for (const line of lines) {
       const data = line[2];
       !usedPoQty[data.purchase_order_line_id] ? usedPoQty[data.purchase_order_line_id] = 0 : null;
       usedPoQty[data.purchase_order_line_id] += data.amount;
       data.purchase_type_id && match_po_types.push(data.purchase_type_id)
-      console.log(usedPoQty);
     }
     lineData.value.comment = datas.comment;
     lineData.value.purchase_order = datas.match_line_ids.map(r => {
       return r[2].purchase_order_name
-    });
+    }).join(',');
   }
   poDialogVisible.value = false;
 }
 const codeCustomClick = (button, datas) => {
   if (button.method === 'cancel') {
-    codeDatas.value = {}
+    resetMatchCodeData();
     lineData.value.code_names = ''
   } else {
     if (!Object.keys(datas || {}).length) {
@@ -340,11 +361,9 @@ const codeCustomClick = (button, datas) => {
       });
       return false
     }
-    const IsJITMatch = !!lineData.value.jit_id
-    const origin_id = IsJITMatch ? 'jit_id' : 'shortage_id';
-    !codeDatas.value[lineData.value[origin_id]] ? codeDatas.value[lineData.value[origin_id]] = [] : null;
-    codeDatas.value[lineData.value[origin_id]].push(datas);
-    usedCodeIds = usedCodeIds.concat((datas || []).map(r => r.id))
+    !codeDatas.value[lineData.value['origin_data_ids']] ? codeDatas.value[lineData.value['origin_data_ids']] = [] : null;
+    codeDatas.value[lineData.value['origin_data_ids']].push(datas);
+    usedCodeIds[lineData.value['origin_data_ids']] = (datas || []).map(r => r.id)
     lineData.value.code_names = (datas || []).map(r => {
       return r.name
     }).join(',')
@@ -353,16 +372,30 @@ const codeCustomClick = (button, datas) => {
 }
 
 const deleteLineClick = (field, index, row) => {
-  const IsJITMatch = !!lineData.value.jit_id;
-  const origin_id = IsJITMatch ? 'jit_id' : 'shortage_id';
-  delete codeDatas.value[row[origin_id]];
-  delete poDatas.value[row[origin_id]];
+  resetMatchCodeData(row);
+  resetMatchPoData(row);
+  delete codeDatas.value[row['origin_data_ids']];
+  delete poDatas.value[row['origin_data_ids']];
 }
 
 const codeSelectClick = (rows) => {
   codeAmountTotal.value = 0
   for (const row of rows) {
     codeAmountTotal.value += row.amount
+  }
+}
+
+const fieldOnchange = (params, reload) => {
+  const field = params.field;
+  const data = params.datas
+  if (field === 'jit_flag') {
+    isJITMatch = data.jit_flag
+    poDatas = ref({});
+    usedCodeIds = {};
+    usedPoQty = {};
+    match_po_types = []
+    codeDatas = ref({});
+    codeAmountTotal = ref(0)
   }
 }
 
