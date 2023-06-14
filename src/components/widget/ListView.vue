@@ -1,9 +1,17 @@
 <template>
   <el-table :data="datas" ref="listTable" stripe style="width: 100%" @selection-change="handleSelectionChange"
             show-summary
+            lazy
+            border
+            :row-key="groupbyKey"
+            :load="loadGroupDetail"
+            :tree-props="{ children: 'children', hasChildren: 'hasChildren' }"
             table-layout="auto"
             :summary-method="getSummaries">
-    <el-table-column fixed type="selection" width="55"/>
+    <el-table-column fixed type="selection" width="55" v-if="!params.groupby"/>
+    <el-table-column v-if="groupbyKey" width="180"><template #default="scoped">
+     {{scoped.row[groupbyKey]}}
+    </template></el-table-column>
     <template v-for="field in params.fields?.length && params.fields || []"
               :key="field">
       <template v-if="noLoadFields.indexOf(field) === -1 && !options[field]?.listInvisible">
@@ -25,7 +33,7 @@
         </el-table-column>
       </template>
     </template>
-    <el-table-column v-if="!params.hideDetail" fixed="right" label="操作" width="120">
+    <el-table-column v-if="!params.hideDetail && !params.groupby" fixed="right" label="操作" width="120">
       <template #default="scoped">
         <el-button link
                    size="small"
@@ -36,6 +44,7 @@
       </template>
     </el-table-column>
   </el-table>
+
   <el-pagination
       v-model:current-page="currentPage"
       :page-sizes="[10, 20, 50, 100, 200, 500]"
@@ -74,8 +83,13 @@ const props = defineProps({
   },
   model: {
     type: String
+  },
+  groupbyKey: {
+    type: String,
+    default: ''
   }
 })
+
 const noLoadFields = inject('noloadFields');
 
 let pageSize = ref(20);
@@ -83,7 +97,11 @@ let listTable = ref({})
 let currentPage = ref(1)
 let height = document.documentElement.clientHeight - 250
 
-let emits = defineEmits(['pageChange', 'editClick', 'selectClick', 'pageSizeChange'])
+let emits = defineEmits(['pageChange', 'editClick', 'selectClick', 'pageSizeChange', 'loadGroupDetail'])
+
+const loadGroupDetail = (row, treeNode, resolve) => {
+  emits('loadGroupDetail', row, treeNode, resolve)
+}
 const handleCurrentChange = () => {
   emits('pageChange', currentPage.value)
 }
@@ -132,4 +150,5 @@ defineExpose({
   margin-top: 20px;
   float: right;
 }
+
 </style>

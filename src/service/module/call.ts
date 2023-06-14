@@ -98,6 +98,23 @@ export function callSearchRead(data: RequestParamsType) {
     })
 }
 
+export function callReadGroup(data) {
+    return callKw({
+        model: data.model,
+        method: 'read_group',
+        args: [],
+        kwargs: {
+            'context':
+                {'lang': 'zh_CN', 'tz': false, 'uid': 2, 'front': true},
+            domain: data.domain,
+            fields: data.fields,
+            groupby: data.groupby,
+            lazy: true,
+            orderby: data.order_by || 'id desc'
+        }
+    })
+}
+
 export function callFile(data: RequestParamsType, loading) {
     const fileType = data.converter.split('-')[1];
     Request.get({

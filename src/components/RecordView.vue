@@ -2,6 +2,7 @@
   <el-button style="display: none" v-loading.fullscreen.lock="loading" element-loading-text="正在加载..."/>
   <div class="controller-panel">
     <ButtonView :disabled="disabled" @editClick="editClick" @saveClick="saveClick(formRef)"
+                 v-if="!params.groupby"
                 :params="{type: params.type, id: params.id, name:props.name}"
                 :buttons="buttons"
                 :listView="listView"
@@ -13,6 +14,10 @@
                 @cancelClick="cancelClick"/>
     <SearchBar v-if="params.type==='list'"
                :options="searchOptions"
+               :groupby="extras.groupby"
+               :groupbyDefault="params.groupby"
+               :searchFields="Object.keys(extras.search_fields)"
+               @groupbyClick="groupbyClick"
                @searchClick="searchClick"/>
   </div>
   <template v-if="params.type==='form'">
@@ -57,7 +62,9 @@
               :params="params"
               @pageChange="pageChange"
               @selectClick="selectClick"
+              :groupbyKey="groupbyKey"
               @pageSizeChange="pageSizeChange"
+              @loadGroupDetail="loadGroupDetail"
               ref="listView"/>
   </template>
 </template>
@@ -71,7 +78,7 @@ import TreeView from './widget/TreeView.vue'
 import ListView from './widget/ListView.vue'
 import SearchBar from './widget/SearchBar.vue'
 import ButtonView from './widget/ButtonView.vue'
-import {callButton, callCreate, callFile, callWrite} from "../service/module/call";
+import {callButton, callCreate, callFile, callReadGroup, callWrite, callSearchRead} from "../service/module/call";
 import {initFormData, initTreeData, initListData, initButton, initEmptyTreeData, formatData} from '../tools/init'
 import type {FieldOptionType, DataType, Multiple, ModuleDataType} from "../types";
 import {onchangeField, loadFormDatas, loadTreeData} from "../tools";
@@ -110,6 +117,8 @@ let params: ModuleDataType = props.params
 let extras: ModuleDataType = props.extras  // 额外的属性
 let searchOptions = reactive({})  // 查询选项
 let domains = [];  // 原始的domain
+let groupbyData = [];  // 分组查询返回的domain
+let groupbyKey = ref('')
 
 const initForm = async (result) => {
   let formData = result?.formData || datas.formData;
@@ -154,7 +163,7 @@ const initList = async (result) => {
   params.count = count;
   buttons.buttons = initButton(extras, {}, params.type);
 }
-const emits = defineEmits(['objectClick', 'saveClick', 'customClick','pageSizeChange',
+const emits = defineEmits(['objectClick', 'saveClick', 'customClick', 'pageSizeChange', 'loadGroupDetail',
   'lineButtonClick', 'loadedCallable', 'selectClick', 'deleteLineClick', 'fieldOnchange'])
 
 
@@ -185,6 +194,45 @@ watch(route, async (form: RouteLocationNormalizedLoaded, to: RouteLocationNormal
   }
 }, {immediate: true})
 
+const groupbyClick = (groupby, domain) => {
+  groupbyKey.value = groupby
+  params.groupby = groupby
+  callReadGroup({
+    model: params.model,
+    domain: domain.concat(params.domain),
+    fields: params.groupby || params.fields,
+    groupby: groupby,
+    order_by: params.sort,
+  }).then(res => {
+    groupbyData = res.result;
+    for (const groupbyDetail of groupbyData) {
+      groupbyDetail['hasChildren'] = true;
+      if (options[groupby].type === 'selection') {
+        groupbyDetail[groupby] = options[groupby].selection.find(r => r[0] === groupbyDetail[groupby])[1]
+      }
+      if(['many2one', 'many2many'].indexOf(options[groupby].type) !== -1){
+        groupbyDetail[groupby] = groupbyDetail[groupby][1]
+      }
+      groupbyDetail[groupby] = groupbyDetail[groupby] + ' - (' + groupbyDetail[groupby + '_count'] + ')'
+    }
+    datas.listData = groupbyData;
+  })
+}
+
+const loadGroupDetail = async (row, treeNode, resolve) => {
+  const count = row[Object.keys(row)[0]]
+  const result = await callSearchRead({
+    model: params.model,
+    fields: params.fields,
+    offset: params.offset,
+    limit: count,
+    domain: row.__domain.concat(params.domain),
+    sort: params.sort,
+  })
+  emits('loadGroupDetail', row, result)
+  const records = await initListData(extras, result.result.records, options, noloadField);
+  return resolve(records.listData)
+}
 
 const pageChange = async (currentPage: number, treeField: string) => {  // 列表页分页和表单页表格数据分页
   loading.value = true;
@@ -290,7 +338,9 @@ const objectClick = async (name: string) => {   // 处理非创建和编辑按�
 }
 const searchClick = async (domain) => {  // 搜索数据重置
   loading.value = true;
+  groupbyKey.value = ''
   params.domain = domains;
+  params.groupby = ''
   if (domain.length) {
     params.domain = params.domain.concat(domain);
   }
@@ -449,7 +499,6 @@ const fieldOnchange = (params) => {
   border-bottom: 1px solid #ced4da;
   text-align: left;
   width: 100%;
-  margin-bottom: 20px;
   margin-top: -13px;
   vertical-align: middle;
   align-items: center;

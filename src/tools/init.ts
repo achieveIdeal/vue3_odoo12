@@ -139,8 +139,8 @@ export const initListData = async (extras, listData, fieldsOption, noloadField) 
         }
     }
     let searchOptions = {}
-    for (let field of Object.keys(extras.search_fields || {})) {
-        searchOptions[field] = {...fieldsOption[field], domain: extras.search_fields[field].domain}
+    for (let field of Object.keys(extras.search_fields || {}).concat(extras.groupby)) {
+        searchOptions[field] = {...fieldsOption[field], domain: extras.search_fields[field]?.domain}
     }
     return {listData, fieldsOption, searchOptions}
 }

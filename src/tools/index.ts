@@ -232,8 +232,10 @@ const loadTreeData = async (params: ModuleDataType) => {
         domain: params.domain,
         sort: params.sort
     }
-    const dataRes = await callSearchRead(requestData);
-
+    let dataRes = {}
+    if (!params.groupby) {
+        dataRes = await callSearchRead(requestData);
+    }
     if (dataRes.error) {
         ElMessage({
             message: dataRes.error.data.message,

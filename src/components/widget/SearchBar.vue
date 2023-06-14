@@ -1,6 +1,23 @@
 <template>
-  <div class="search-bar" v-if="!!Object.keys(options||{}).length">
-    <template v-for="field in Object.keys(options||{})" :key="field">
+  <div class="search-bar">
+    <el-select v-if="!!groupby.length"
+               class="group-by"
+               v-model="groupbyVal"
+               placeholder="分组查询"
+               collapse-tags
+               clearable
+               filterable
+    >
+      <el-option
+          @click="groupbyClick"
+          ref="groupbyItemRef"
+          v-for="(field, index) in groupby"
+          :key="index"
+          :label="'分组:' + options[field]?.string"
+          :value="field"
+      ></el-option>
+    </el-select>
+    <template v-if="!!searchFields.length" v-for="field in searchFields" :key="field">
       <el-select v-if="is2Many(options[field]?.type) || is2One(options[field]?.type)"
                  class="form-input"
                  v-model="searchVal[field]"
@@ -64,10 +81,30 @@
 </template>
 
 <script lang="ts" setup>
-import {reactive, ref, watch} from "vue";
+import {onMounted, reactive, ref} from "vue";
 import {Search} from "@element-plus/icons-vue";
 import {searchFieldSelection} from "../../tools";
 import {useTypeStore} from "../../store";
+
+let props = defineProps({
+  options: {
+    type: Object,
+    default: {}
+  },
+  groupby: {
+    type: Object,
+    default: []
+  },
+  searchFields: {
+    type: Array,
+    default: []
+  },
+  groupbyDefault: {
+    type: String,
+    default: ''
+  }
+})
+
 
 const typeStore = useTypeStore();
 const fieldTypeMap = typeStore.types;
@@ -75,15 +112,19 @@ const isSelection = typeStore.isSelection;
 const is2Many = typeStore.is2Many;
 const is2One = typeStore.is2One;
 const searchVal = reactive({});
-
-let props = defineProps({
-  options: {
-    type: Object
-  }
-})
+const groupbyVal = ref(props.groupbyDefault);
+const groupbyItemRef = ref({})
 let searchOptions = reactive({})
 
-const emits = defineEmits(['searchClick']);
+onMounted(() => {
+  if (groupbyItemRef?.value?.length) {
+    const groupbyDefault = groupbyItemRef.value.find((r) => {
+      return r.value === groupbyVal.value
+    })
+    groupbyDefault?.$emit('click')
+  }
+})
+const emits = defineEmits(['searchClick', 'groupbyClick']);
 
 let loading = ref(false)
 let do_search = ref(null)
@@ -96,7 +137,7 @@ const searchSelection = (field) => (query: string) => {
   });
 }
 
-const searchClick = () => {
+const getDomain = () => {
   let domain = []
   for (let field of Object.keys(searchVal || {})) {
     let operate = '=';
@@ -114,6 +155,17 @@ const searchClick = () => {
     }
     domain.push([field, operate, searchVal[field]]);
   }
+  return domain
+}
+
+const groupbyClick = () => {
+  const domain = getDomain();
+  emits('groupbyClick', groupbyVal.value, domain)
+}
+
+const searchClick = () => {
+  groupbyVal.value = ''
+  const domain = getDomain();
   emits('searchClick', domain);
 }
 document.onkeydown = e => {
@@ -139,4 +191,8 @@ document.onkeydown = e => {
   margin: 10px;
 }
 
+.group-by {
+  width: 210px;
+  margin-right: 10px;
+}
 </style>
