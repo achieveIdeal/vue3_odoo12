@@ -499,6 +499,7 @@ const fieldOnchange = (params) => {
   border-bottom: 1px solid #ced4da;
   text-align: left;
   width: 100%;
+  margin-bottom: 20px;
   margin-top: -13px;
   vertical-align: middle;
   align-items: center;

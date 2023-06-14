@@ -2,7 +2,6 @@
   <el-table :data="datas" ref="listTable" stripe style="width: 100%" @selection-change="handleSelectionChange"
             show-summary
             lazy
-            border
             :row-key="groupbyKey"
             :load="loadGroupDetail"
             :tree-props="{ children: 'children', hasChildren: 'hasChildren' }"
@@ -122,7 +121,7 @@ const handleSizeChange = (size) => {
 const getSummaries = (table) => {
   const sums = [];
   for (const data of table.data) {
-    let index = 1;
+    let index = 0;
     for (const field of props.params?.fields) {
       if (noLoadFields.indexOf(field) !== -1 || props.options[field]?.invisible) {
         continue
@@ -136,6 +135,7 @@ const getSummaries = (table) => {
       index++;
     }
   }
+  console.log(sums);
   return sums
 }
 

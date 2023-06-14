@@ -142,6 +142,7 @@ export const initListData = async (extras, listData, fieldsOption, noloadField) 
     for (let field of Object.keys(extras.search_fields || {}).concat(extras.groupby)) {
         searchOptions[field] = {...fieldsOption[field], domain: extras.search_fields[field]?.domain}
     }
+    setFormAttribute({}, fieldsOption, extras);
     return {listData, fieldsOption, searchOptions}
 }
 export const initButton = (extras, formData, viewType) => {
