@@ -281,7 +281,7 @@ const objectClick = async (name: string) => {   // 处理非创建和编辑按�
       loading.value = true;
       await callFile({
         reportname: result.report_file,
-        docids: ids,
+        docids: result?.context?.active_ids || ids,
         converter: result.report_type,
         name: result.name
       }, loading)

@@ -45,7 +45,6 @@ const params = reactive({
     'supplier_id',
     'default_code',
     'product_name',
-    'produce_number',
     'amount',
     'min_pack_size',
     'print_amount',
@@ -118,7 +117,8 @@ const extras = {
     }
   },
   invisible: ['is_generate', 'state', 'delivery_order_line_id'],
-  listInvisible: ['delivery_order_line_id'],
+  listInvisible: ['supplier_id', 'shelf_life', 'manufacturer_id',
+    'produce_number', 'comment',],
   readonly: ['name', 'product_name', 'print_amount', 'name', 'supplier_id',
     'if_print', 'min_pack_size', 'delivery_order_line_id', 'shelf_life'],
   required: ['default_code', 'date_from', 'amount', 'min_pack_size', 'produce_number']

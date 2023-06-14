@@ -258,8 +258,8 @@ const searchFieldSelection = async (option: FieldOptionType, query: string, doma
             'name': query.trim(),
             'args': option.domain.concat(domain) || [],
             'operator': 'ilike',
-            'limit': 8,
-            'context': {'lang': 'zh_CN', 'tz': false, 'uid': 2, 'front': true}
+            'limit': 12,
+            'context': {'lang': 'zh_CN', 'tz': false, 'uid': 2, 'front': true, 'is_cus_code': true}
         }
     })
     console.log(res.result);

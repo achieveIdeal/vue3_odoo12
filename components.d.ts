@@ -37,6 +37,7 @@ declare module '@vue/runtime-core' {
     TreeView: typeof import('./src/components/widget/TreeView.vue')['default']
   }
   export interface ComponentCustomProperties {
+    vInfiniteScroll: typeof import('element-plus/es')['ElInfiniteScroll']
     vLoading: typeof import('element-plus/es')['ElLoadingDirective']
   }
 }

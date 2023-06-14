@@ -116,7 +116,7 @@ const extras = {
   hideDetail: true,
   search_fields: {
     expect_date: {},
-    state:{}
+    state: {}
   },
   attributes: {
     line_ids: {
@@ -150,7 +150,8 @@ const extras = {
   },
   readonly: ['name', 'partner_id', 'expect_date', 'company_id',
     'h_state', 'submit_user_id', 'state'],
-  invisible: ['h_state']
+  invisible: ['h_state'],
+  listInvisible: ['h_state']
 }
 
 const resetMatchCodeData = (row) => {
@@ -239,9 +240,7 @@ const loadedCallable = async (init, loading) => {
         message: res.error.data.message,
         type: 'error'
       });
-      router.push({
-        name: 'shortage_product'
-      });
+      router.back();
       return false
     }
     loading.value = false;
@@ -324,7 +323,6 @@ const poCustomClick = (button, datas) => {
     lineData.value.comment = '';
     lineData.value.purchase_order = ''
     resetMatchPoData();
-    console.log(poDatas.value);
   } else {
     !poDatas.value[lineData.value['origin_data_ids']] ? poDatas.value[lineData.value['origin_data_ids']] = [] : null;
     poDatas.value[lineData.value['origin_data_ids']].push(datas);
