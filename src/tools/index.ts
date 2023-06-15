@@ -41,7 +41,7 @@ const buildOnchangeSpecs = function (fieldsInfo, treeOption, fields) {
     return specs;
 }
 
-const onchangeField = async (params: OnchangeParamsType) => {
+const onchangeField = async (params: OnchangeParamsType, checkAll) => {
     let options = params.options;
     let attributes = params.attributes
     let treeOptions = params.treeOptions;
@@ -101,6 +101,7 @@ const onchangeField = async (params: OnchangeParamsType) => {
             options[changedField].selection = [];
             if (datas[changedField] instanceof Array) {
                 datas[changedField] = [];
+                checkAll.value = false;
                 continue
             }
             datas[changedField] = ''
@@ -212,7 +213,7 @@ const loadFormDatas = async (params: ModuleDataType) => {
         tableDataCountMap,
     }
 }
-const loadTreeData = async (params: ModuleDataType) => {
+const loadListData = async (params: ModuleDataType) => {
     let requestParams = getRequestParams(params)
     const res = await callFields(requestParams);
     if (res.error) {
@@ -251,8 +252,7 @@ const loadTreeData = async (params: ModuleDataType) => {
         count
     }
 }
-const searchFieldSelection = async (option: FieldOptionType, query: string, domain = []) => {
-    console.log(option.domain);
+const searchFieldSelection = async (option: FieldOptionType, query: string, domain = [], limit) => {
     const res = await callNames({
         model: option.relation,
         args: [],
@@ -260,11 +260,10 @@ const searchFieldSelection = async (option: FieldOptionType, query: string, doma
             'name': query.trim(),
             'args': option.domain.concat(domain) || [],
             'operator': 'ilike',
-            'limit': 12,
+            'limit': limit || 10,
             'context': {'lang': 'zh_CN', 'tz': false, 'uid': 2, 'front': true, 'is_cus_code': true}
         }
     })
-    console.log(res.result);
     option.selection = res.result || [];
     return true;
 }
@@ -443,7 +442,7 @@ const parseDomain = (domains, data) => {
 export {
     searchFieldSelection, onchangeField,
     getFileType, loadFormDatas,
-    base64ToBlobUrl, loadTreeData,
+    base64ToBlobUrl, loadListData,
     downLoadFile,
     encodeFileToBase64,
     parseDomain

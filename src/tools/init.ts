@@ -12,10 +12,11 @@ export const setFormAttribute = (formData, formFieldsOption, extras) => {
     if (!!Object.keys(formFieldsOption || {}).length) {
         let attributes = extras?.attributes || {};
         for (const field of Object.keys(formFieldsOption || {})) {  // 自定义属性 readonly 和invisible等
-            formFieldsOption[field]['readonly'] = (extras.readonly || []).indexOf(field) !== -1;
-            formFieldsOption[field]['invisible'] = (extras.invisible || []).indexOf(field) !== -1;
-            formFieldsOption[field]['listInvisible'] = (extras.listInvisible || []).indexOf(field) !== -1;
-            formFieldsOption[field]['required'] = (extras.required || []).indexOf(field) !== -1;
+            if (['readonly', 'invisible', 'listInvisible', 'required'].indexOf(field) !== -1) continue
+            formFieldsOption[field]['readonly'] = (extras?.readonly || []).indexOf(field) !== -1;
+            formFieldsOption[field]['invisible'] = (extras?.invisible || []).indexOf(field) !== -1;
+            formFieldsOption[field]['listInvisible'] = (extras?.listInvisible || []).indexOf(field) !== -1;
+            formFieldsOption[field]['required'] = (extras?.required || []).indexOf(field) !== -1;
             let extraOptions = attributes[field];
             for (const attribute of Object.keys(extraOptions || {})) {
                 if (attribute === 'fields') continue;
@@ -42,7 +43,7 @@ export const initFormData = async (extras, formData, formFieldsOption, noloadFie
         !formFieldsOption[field].selection ? formFieldsOption[field].selection = [] : null;
         let sameFlag = false
         if (formFieldsOption[field].type === 'many2one') {  // 保证选项唯一
-            for (let i of formFieldsOption[field].selection) {
+            for (let i of formFieldsOption[field]?.selection) {
                 if (i[0] === value[0] && i[1] === value[1]) {
                     sameFlag = true;
                 }
@@ -138,13 +139,23 @@ export const initListData = async (extras, listData, fieldsOption, noloadField) 
             lineData[field] = value && value[1] || ''
         }
     }
+    setFormAttribute({}, fieldsOption, extras);
+    return {listData, fieldsOption}
+}
+export const initSearchBar = (extras, fieldsOption) => {
     let searchOptions = {}
     for (let field of Object.keys(extras.search_fields || {}).concat(extras.groupby)) {
-        searchOptions[field] = {...fieldsOption[field], domain: extras.search_fields[field]?.domain}
+        searchOptions[field] = {
+            ...fieldsOption[field],
+            domain: extras.search_fields[field]?.domain,
+            default: extras.search_fields[field]?.default,
+            limit: extras.search_fields[field]?.limit,
+            multiple: extras.search_fields[field]?.multiple || false,
+        }
     }
-    setFormAttribute({}, fieldsOption, extras);
-    return {listData, fieldsOption, searchOptions}
+    return searchOptions
 }
+
 export const initButton = (extras, formData, viewType) => {
     let buttons = JSON.parse(JSON.stringify(extras.buttons || []));
     for (const button of buttons) {
@@ -159,6 +170,7 @@ export const initButton = (extras, formData, viewType) => {
             button.attributes.invisible = true;
         }
     }
+    console.log(buttons);
     return buttons;
 }
 export const initEmptyTreeData = (emptyDatas, treeFieldsOption) => {

@@ -349,7 +349,7 @@ let loading = ref(false)
 
 const searchSelection = (option: FieldOptionType) => (query: string) => {
   loading.value = true;
-  searchFieldSelection(option, query).then(r => {
+  searchFieldSelection(option, query, [], option.limit).then(r => {
     loading.value = false;
   });
 }

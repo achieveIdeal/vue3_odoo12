@@ -29,6 +29,7 @@ const params = reactive({
     'state',
     'outer_pack_size',
     'outer_pack_ids',
+    'if_print'
   ],
   tables: {}
 })
@@ -38,7 +39,9 @@ const extras = {
     type: 'edit',
     text: '编辑',
     showType: ['form'],
-    attributes: {}
+    attributes: {
+      invisible: [['if_print', '=', true]]
+    }
   }, {
     type: 'create',
     text: '创建',
@@ -68,12 +71,14 @@ const extras = {
       readonly: [['state', '=', 'done']]
     },
     outer_pack_ids: {
-      domain: [['state', '=', 'draft']]
+      domain: [['state', '=', 'draft'], ['supplier_id', '=', supplier_id]],
+      limit: 50
     }
   },
-  invisible: ['state'],
+  invisible: ['state', 'if_print'],
   readonly: ['name', 'product_name', 'name'],
-  required: ['product_id', 'amount']
+  required: ['product_id', 'amount'],
+  listInvisible: ['if_print']
 }
 
 </script>

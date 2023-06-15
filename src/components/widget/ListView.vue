@@ -135,7 +135,6 @@ const getSummaries = (table) => {
       index++;
     }
   }
-  console.log(sums);
   return sums
 }
 

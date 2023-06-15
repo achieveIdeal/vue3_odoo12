@@ -13,66 +13,66 @@
           ref="groupbyItemRef"
           v-for="(field, index) in groupby"
           :key="index"
-          :label="'分组:' + options[field]?.string"
+          :label="'分组:' + searchOptions[field]?.string"
           :value="field"
       ></el-option>
     </el-select>
-    <template v-if="!!searchFields.length" v-for="field in searchFields" :key="field">
-      <el-select v-if="is2Many(options[field]?.type) || is2One(options[field]?.type)"
-                 class="form-input"
-                 v-model="searchVal[field]"
-                 :placeholder="'搜索:' + options[field]?.string"
-                 collapse-tags
-                 collapse-tags-tooltip
-                 clearable
-                 multiple
-                 :loading="loading"
-                 filterable
-                 remote
-                 :remote-method="searchSelection(field)"
+    <template v-if="!!Object.keys(options).length" v-for="field in Object.keys(options)" :key="field">
+      <el-select v-if="is2Many(searchOptions[field]?.type) || is2One(searchOptions[field]?.type)"
+       class="form-input"
+       v-model="searchVal[field]"
+       :placeholder="'搜索:' + searchOptions[field]?.string"
+       collapse-tags
+       collapse-tags-tooltip
+       clearable
+       :multiple="searchOptions[field]?.multiple"
+       :loading="loading"
+       filterable
+       remote
+       :remote-method="searchSelection(field)"
       >
         <el-option
-            v-for="(item, index) in searchOptions[field]?.selection"
-            :key="index"
-            :label="item[1]"
-            :value="item[0]"
+          v-for="(item, index) in searchOptionCopy[field]?.selection"
+          :key="index"
+          :label="item[1]"
+          :value="item[0]"
         ></el-option>
       </el-select>
-      <el-select v-else-if="isSelection(options[field]?.type)"
-                 class="form-input"
-                 v-model="searchVal[field]"
-                 :placeholder="'搜索:' + options[field]?.string"
-                 multiple
-                 collapse-tags
-                 clearable
-                 filterable
+      <el-select v-else-if="isSelection(searchOptions[field]?.type)"
+       class="form-input"
+       v-model="searchVal[field]"
+       :placeholder="'搜索:' + searchOptions[field]?.string"
+       multiple
+       collapse-tags
+       clearable
+       filterable
       >
         <el-option
-            v-for="(item, index) in options[field]?.selection"
-            :key="index"
-            :label="item[1]"
-            :value="item[0]"
+          v-for="(item, index) in searchOptions[field]?.selection"
+          :key="index"
+          :label="item[1]"
+          :value="item[0]"
         ></el-option>
       </el-select>
-      <template v-else-if="fieldTypeMap[options[field]?.type]==='checkbox'">
+      <template v-else-if="fieldTypeMap[searchOptions[field]?.type]==='checkbox'">
         <span>
-            {{ options[field]?.string }}: <input class="check-box" type="checkbox" v-model="searchVal[field]">
+            {{ searchOptions[field]?.string }}: <input class="check-box" type="checkbox" v-model="searchVal[field]">
         </span>
       </template>
-      <template v-else-if="fieldTypeMap[options[field]?.type] === 'number'">
+      <template v-else-if="fieldTypeMap[searchOptions[field]?.type] === 'number'">
         <el-input-number v-model="searchVal[field]"
                          class="form-input"
-                         :precision="options[field]?.precision || options[field]?.digits?.length&&options[field]?.digits[1]"
+                         :precision="searchOptions[field]?.precision || searchOptions[field]?.digits?.length&&searchOptions[field]?.digits[1]"
                          controls-position="right"
-                         :min="options[field]?.min"
-                         :max="options[field]?.max"/>
+                         :min="searchOptions[field]?.min"
+                         :max="searchOptions[field]?.max"/>
       </template>
       <template v-else>
         <el-input
             class="form-input"
             v-model="searchVal[field]"
-            :type="options[field]?.type"
-            :placeholder="'搜索:' + options[field]?.string"
+            :type="searchOptions[field]?.type"
+            :placeholder="'搜索:' + searchOptions[field]?.string"
         />
       </template>
     </template>
@@ -84,19 +84,21 @@
 import {onMounted, reactive, ref} from "vue";
 import {Search} from "@element-plus/icons-vue";
 import {searchFieldSelection} from "../../tools";
+import {callFields} from "../../service/module/call";
 import {useTypeStore} from "../../store";
+import {initSearchBar} from "../../tools/init";
 
 let props = defineProps({
   options: {
     type: Object,
     default: {}
   },
+  model: {
+    type: String,
+    default: ''
+  },
   groupby: {
     type: Object,
-    default: []
-  },
-  searchFields: {
-    type: Array,
     default: []
   },
   groupbyDefault: {
@@ -105,24 +107,38 @@ let props = defineProps({
   }
 })
 
-
 const typeStore = useTypeStore();
 const fieldTypeMap = typeStore.types;
 const isSelection = typeStore.isSelection;
 const is2Many = typeStore.is2Many;
 const is2One = typeStore.is2One;
 const searchVal = reactive({});
-const groupbyVal = ref(props.groupbyDefault);
-const groupbyItemRef = ref({})
-let searchOptions = reactive({})
+const groupbyVal = ref('');
+const groupbyItemRef = ref({});
+const searchOptions = ref({});
+const searchOptionCopy = ref({})
 
-onMounted(() => {
+onMounted(async () => {
   if (groupbyItemRef?.value?.length) {
+    groupbyVal.value = props.groupbyDefault
     const groupbyDefault = groupbyItemRef.value.find((r) => {
       return r.value === groupbyVal.value
     })
     groupbyDefault?.$emit('click')
   }
+  const fields = Object.keys(props.options)
+  const result = await callFields({
+    model: props.model,
+    args: [0, fields]
+  })
+  searchOptions.value = initSearchBar({search_fields: props.options, groupby: props.groupby}, result.result);
+  for (const field of fields) {
+    searchVal[field] = searchOptions.value[field]?.default
+    if (searchOptions.value[field]?.default) {
+      searchVal[field] = searchOptions.value[field]?.default
+    }
+  }
+  Object.keys(searchVal) ? do_search.value?.$.vnode.el?.click() : null;
 })
 const emits = defineEmits(['searchClick', 'groupbyClick']);
 
@@ -131,8 +147,9 @@ let do_search = ref(null)
 
 const searchSelection = (field) => (query: string) => {
   loading.value = true
-  searchOptions = JSON.parse(JSON.stringify(props?.options));
-  searchFieldSelection(searchOptions[field], query).then(r => {
+  searchOptionCopy.value = JSON.parse(JSON.stringify(searchOptions.value))
+  const limit = searchOptionCopy.value[field].limit
+  searchFieldSelection(searchOptionCopy.value[field], query, [], limit).then(r => {
     loading.value = false;
   });
 }
@@ -164,9 +181,12 @@ const groupbyClick = () => {
 }
 
 const searchClick = () => {
-  groupbyVal.value = ''
   const domain = getDomain();
-  emits('searchClick', domain);
+  if(groupbyVal.value.length){
+    emits('groupbyClick', groupbyVal.value, domain)
+  }else{
+    emits('searchClick',  domain);
+  }
 }
 document.onkeydown = e => {
   if (e.keyCode === 13) {

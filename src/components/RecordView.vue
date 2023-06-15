@@ -2,7 +2,7 @@
   <el-button style="display: none" v-loading.fullscreen.lock="loading" element-loading-text="正在加载..."/>
   <div class="controller-panel">
     <ButtonView :disabled="disabled" @editClick="editClick" @saveClick="saveClick(formRef)"
-                 v-if="!params.groupby"
+                v-if="!params.groupby"
                 :params="{type: params.type, id: params.id, name:props.name}"
                 :buttons="buttons"
                 :listView="listView"
@@ -13,10 +13,10 @@
                 @importClick="importClick"
                 @cancelClick="cancelClick"/>
     <SearchBar v-if="params.type==='list'"
-               :options="searchOptions"
+               :options="extras.search_fields"
                :groupby="extras.groupby"
+               :model="params.model"
                :groupbyDefault="params.groupby"
-               :searchFields="Object.keys(extras.search_fields)"
                @groupbyClick="groupbyClick"
                @searchClick="searchClick"/>
   </div>
@@ -70,7 +70,7 @@
 </template>
 
 <script lang="ts" setup>
-import {defineExpose, inject, PropType, provide, reactive, ref, watch} from "vue";
+import {inject, PropType, provide, reactive, ref, watch} from "vue";
 import {RouteLocationNormalizedLoaded, useRoute, useRouter} from 'vue-router';
 import {FormInstance, ElMessage} from "element-plus";
 import FormView from './widget/FormView.vue'
@@ -79,11 +79,18 @@ import ListView from './widget/ListView.vue'
 import SearchBar from './widget/SearchBar.vue'
 import ButtonView from './widget/ButtonView.vue'
 import {callButton, callCreate, callFile, callReadGroup, callWrite, callSearchRead} from "../service/module/call";
-import {initFormData, initTreeData, initListData, initButton, initEmptyTreeData, formatData} from '../tools/init'
+import {
+  initFormData,
+  initTreeData,
+  initListData,
+  initButton,
+  initEmptyTreeData,
+  formatData
+} from '../tools/init'
 import type {FieldOptionType, DataType, Multiple, ModuleDataType} from "../types";
-import {onchangeField, loadFormDatas, loadTreeData} from "../tools";
+import {onchangeField, loadFormDatas, loadListData} from "../tools";
 
-const noloadField = Object.keys(props.params.tables || {}).concat(['id'])
+const noloadField = Object.keys(props.params?.tables || {}).concat(['id'])
 provide('noloadFields', noloadField)
 const id = inject('id', 0);
 
@@ -117,8 +124,11 @@ let params: ModuleDataType = props.params
 let extras: ModuleDataType = props.extras  // 额外的属性
 let searchOptions = reactive({})  // 查询选项
 let domains = [];  // 原始的domain
-let groupbyData = [];  // 分组查询返回的domain
-let groupbyKey = ref('')
+let groupbyData = [];  // 分组查询返回的数据
+let groupbyKey = ref('')  // 默认分组查询值
+
+const emits = defineEmits(['objectClick', 'saveClick', 'customClick', 'pageSizeChange', 'loadGroupDetail',
+  'lineButtonClick', 'loadedCallable', 'selectClick', 'deleteLineClick', 'fieldOnchange'])
 
 const initForm = async (result) => {
   let formData = result?.formData || datas.formData;
@@ -150,7 +160,6 @@ const initForm = async (result) => {
   options.treeFieldsOption = initedTree.treeFieldsOption || {}
   dataCopy = JSON.parse(JSON.stringify(datas))
 }
-
 const initList = async (result) => {
   options = result.treeFieldsOption || options.treeFieldsOption;
   disabled.value = true;
@@ -159,13 +168,9 @@ const initList = async (result) => {
   const initedList = await initListData(extras, listData, options, noloadField);
   options.treeFieldsOption = initedList.fieldsOption;
   datas.listData = initedList.listData;
-  searchOptions = initedList.searchOptions;
   params.count = count;
   buttons.buttons = initButton(extras, {}, params.type);
 }
-const emits = defineEmits(['objectClick', 'saveClick', 'customClick', 'pageSizeChange', 'loadGroupDetail',
-  'lineButtonClick', 'loadedCallable', 'selectClick', 'deleteLineClick', 'fieldOnchange'])
-
 
 const loadData = async () => {
   if (params.type === 'form') {
@@ -176,14 +181,13 @@ const loadData = async () => {
     emits('loadedCallable', initForm, loading)
   } else if (params.type === 'list') {
     disabled.value = true;
-    const result = await loadTreeData(params); // 加载列表
+    const result = await loadListData(params); // 加载列表
     initList(result)
     loading.value = false;
     emits('loadedCallable', initList, loading)
   }
 }
 const reload = loadData
-
 
 watch(route, async (form: RouteLocationNormalizedLoaded, to: RouteLocationNormalizedLoaded | undefined) => {
   params.id = parseInt(id || route.query.id || '0');
@@ -210,7 +214,7 @@ const groupbyClick = (groupby, domain) => {
       if (options[groupby].type === 'selection') {
         groupbyDetail[groupby] = options[groupby].selection.find(r => r[0] === groupbyDetail[groupby])[1]
       }
-      if(['many2one', 'many2many'].indexOf(options[groupby].type) !== -1){
+      if (['many2one', 'many2many'].indexOf(options[groupby].type) !== -1) {
         groupbyDetail[groupby] = groupbyDetail[groupby][1]
       }
       groupbyDetail[groupby] = groupbyDetail[groupby] + ' - (' + groupbyDetail[groupby + '_count'] + ')'
@@ -218,7 +222,6 @@ const groupbyClick = (groupby, domain) => {
     datas.listData = groupbyData;
   })
 }
-
 const loadGroupDetail = async (row, treeNode, resolve) => {
   const count = row[Object.keys(row)[0]]
   const result = await callSearchRead({
@@ -233,24 +236,37 @@ const loadGroupDetail = async (row, treeNode, resolve) => {
   const records = await initListData(extras, result.result.records, options, noloadField);
   return resolve(records.listData)
 }
+const searchClick = async (domain) => {  // 搜索数据重置
+  loading.value = true;
+  groupbyKey.value = ''
+  params.domain = domains;
+  params.groupby = ''
+  if (domain.length) {
+    params.domain = params.domain.concat(domain);
+  }
+  const result = await loadListData(params, domains); // 加载列表
+  const initedList = await initListData(extras, result.listData, result.treeFieldsOption, noloadField);
+  options.treeFieldsOption = initedList.fieldsOption;
+  datas.listData = initedList.listData;
+  params.count = result.count;
+  loading.value = false;
+}
 
 const pageChange = async (currentPage: number, treeField: string) => {  // 列表页分页和表单页表格数据分页
   loading.value = true;
   let page = (currentPage - 1)
   if (params.type === 'list') {
     params.offset = (params.limit || 10) * page
-    const result = await loadTreeData(params)  // 加载列表
+    const result = await loadListData(params)  // 加载列表
     const initedList = await initListData(extras, result.listData, result.treeFieldsOption, noloadField)
     options.treeFieldsOption = initedList.fieldsOption
     datas.listData = initedList.listData
-    searchOptions = initedList.searchOptions
     params.count = result.count
   } else if (params.type === 'form') {
     params.tables[treeField].offset = params.tables[treeField].limit * page
   }
   loading.value = false;
 }
-
 const pageSizeChange = async (size) => {
   if (params.count < size && params.count < params.limit) {
     return
@@ -260,26 +276,16 @@ const pageSizeChange = async (size) => {
     params.offset = 0;
 
     params.limit = size;
-    const result = await loadTreeData(params)  // 加载列表
+    const result = await loadListData(params)  // 加载列表
     const initedList = await initListData(extras, result.listData, result.treeFieldsOption, noloadField)
     options.treeFieldsOption = initedList.fieldsOption
     datas.listData = initedList.listData
-    searchOptions = initedList.searchOptions
     params.count = result.count
   } else if (params.type === 'form') {
     params.tables[treeField].offset = params.tables[treeField].limit * page
   }
   loading.value = false;
   emits('pageSizeChange', size, loading)
-}
-
-const selectClick = (rows) => {
-  for (const button of buttons.buttons) {
-    if (button.needRow) {
-      button.attributes.invisible = !rows.length;
-    }
-  }
-  emits('selectClick', rows, reload, loading)
 }
 
 const editClick = () => {
@@ -295,125 +301,6 @@ const cancelClick = () => {
 }
 const createClick = () => {
   disabled.value = false;
-}
-
-const objectClick = async (name: string) => {   // 处理非创建和编辑按钮点击
-  const rows = (listView.value || {}).listTable?.getSelectionRows() || []
-  let ids = !!params.id ? [params.id] : rows.map(r => r.id);
-  if (!ids.length) {
-    ElMessage({
-      message: '请至少选择一条记录!',
-      type: 'error'
-    })
-    return false
-  }
-  loading.value = true;
-  await callButton({
-    model: params.model,
-    method: name,
-    args: [ids]
-  }).then(async res => {
-    if (res.error) {
-      loading.value = false;
-      ElMessage({
-        message: res.error.data.message,
-        type: 'error'
-      });
-      return false;
-    }
-    emits('objectClick', name, rows, res, reload, loading);
-    await reload();
-    loading.value = false;
-    const result = res.result || {};
-    if (!!result.report_file) {  // 如果是文件，请求下载
-      loading.value = true;
-      await callFile({
-        reportname: result.report_file,
-        docids: result?.context?.active_ids || ids,
-        converter: result.report_type,
-        name: result.name
-      }, loading)
-    }
-  })
-}
-const searchClick = async (domain) => {  // 搜索数据重置
-  loading.value = true;
-  groupbyKey.value = ''
-  params.domain = domains;
-  params.groupby = ''
-  if (domain.length) {
-    params.domain = params.domain.concat(domain);
-  }
-  const result = await loadTreeData(params, domains); // 加载列表
-  const initedList = await initListData(extras, result.listData, result.treeFieldsOption, noloadField);
-  options.treeFieldsOption = initedList.fieldsOption;
-  datas.listData = initedList.listData;
-  searchOptions = initedList.searchOptions;
-  params.count = result.count;
-  loading.value = false;
-}
-const importClick = (result) => {
-  const importFields = params.import_fields;
-  if (!importFields?.length) {
-    ElMessage({
-      message: '没有指定导入字段！',
-      type: 'error'
-    })
-    return false;
-  }
-  loading.value = true;
-  callButton({
-    model: params.model,
-    method: 'load',
-    args: [importFields, result]
-  }).then(res => {
-    const result = res.result;
-    const ids = result.ids;
-    const messages = result.messages
-    loading.value = false;
-    if (ids) {
-      ElMessage({
-        message: '导入成功',
-        type: 'success'
-      })
-      reload();
-    } else {
-      let errors = [];
-      for (const message of messages) {
-        errors.push('第' + (message.record + 1) + '行:' + message.message)
-      }
-      ElMessage({
-        dangerouslyUseHTMLString: true,
-        message: errors.join('</br>'),
-        type: 'info'
-      })
-    }
-  })
-}
-
-const lineButtonClick = (treeField, data, button) => {
-  emits('lineButtonClick', treeField, data, button, reload, loading);
-}
-const addLineClick = (field) => {
-  datas.treeData[field].push(JSON.parse(JSON.stringify(emptyDatas[field])))
-  params.tables[field].count++;
-}
-const deleteLineClick = (field, index, row) => {
-  let lineData = datas.treeData[field];
-  let id = lineData[index].id
-  lineData.splice(index, 1)
-  params.tables[field].count -= 1
-  if (id) {
-    let idInd = datas?.formData[field].indexOf(id)
-    datas?.formData[field].splice(idInd, 1)
-    onchangeField({  // 删除请求行字段的onchange事件
-      field: field,
-      datas: datas?.formData,
-      model: params?.model,
-      options: options?.formFieldsOption
-    })
-  }
-  emits('deleteLineClick', field, index, row, reload, loading)
 }
 
 const saveWrite = (params, savedDatas) => {
@@ -485,6 +372,116 @@ const customClick = (button) => {
   } else {
     emits('customClick', button, formatData(datas, {formData: {}, treeData: []}, options), reload, loading);
   }
+}
+const objectClick = async (name: string) => {   // 处理非创建和编辑按钮点击
+  const rows = (listView.value || {}).listTable?.getSelectionRows() || []
+  let ids = !!params.id ? [params.id] : rows.map(r => r.id);
+  if (!ids.length) {
+    ElMessage({
+      message: '请至少选择一条记录!',
+      type: 'error'
+    })
+    return false
+  }
+  loading.value = true;
+  await callButton({
+    model: params.model,
+    method: name,
+    args: [ids]
+  }).then(async res => {
+    if (res.error) {
+      loading.value = false;
+      ElMessage({
+        message: res.error.data.message,
+        type: 'error'
+      });
+      return false;
+    }
+    emits('objectClick', name, rows, res, reload, loading);
+    await reload();
+    loading.value = false;
+    const result = res.result || {};
+    if (!!result.report_file) {  // 如果是文件，请求下载
+      loading.value = true;
+      await callFile({
+        reportname: result.report_file,
+        docids: result?.context?.active_ids || ids,
+        converter: result.report_type,
+        name: result.name
+      }, loading)
+    }
+  })
+}
+const importClick = (result) => {
+  const importFields = params.import_fields;
+  if (!importFields?.length) {
+    ElMessage({
+      message: '没有指定导入字段！',
+      type: 'error'
+    })
+    return false;
+  }
+  loading.value = true;
+  callButton({
+    model: params.model,
+    method: 'load',
+    args: [importFields, result]
+  }).then(res => {
+    const result = res.result;
+    const ids = result.ids;
+    const messages = result.messages
+    loading.value = false;
+    if (ids) {
+      ElMessage({
+        message: '导入成功',
+        type: 'success'
+      })
+      reload();
+    } else {
+      let errors = [];
+      for (const message of messages) {
+        errors.push('第' + (message.record + 1) + '行:' + message.message)
+      }
+      ElMessage({
+        dangerouslyUseHTMLString: true,
+        message: errors.join('</br>'),
+        type: 'info'
+      })
+    }
+  })
+}
+const selectClick = (rows) => {
+  for (const button of buttons.buttons) {
+    if (button.needRow) {
+      button.attributes.invisible = !rows.length;
+    }
+  }
+  emits('selectClick', rows, reload, loading)
+}
+
+const lineButtonClick = (treeField, data, button) => {
+  emits('lineButtonClick', treeField, data, button, reload, loading);
+}
+const addLineClick = (field) => {
+  datas.treeData[field].push(JSON.parse(JSON.stringify(emptyDatas[field])))
+  params.tables[field].count++;
+}
+const deleteLineClick = (field, index, row) => {
+  let lineData = datas.treeData[field];
+  let id = lineData[index].id
+  lineData.splice(index, 1)
+  params.tables[field].count -= 1
+  if (id) {
+    let idInd = datas?.formData[field].indexOf(id)
+    datas?.formData[field].splice(idInd, 1)
+    onchangeField({  // 删除请求行字段的onchange事件
+      field: field,
+      datas: datas?.formData,
+      model: params?.model,
+      options: options?.formFieldsOption
+    })
+  }
+  emits('deleteLineClick', field, index, row, reload, loading)
 }
 
 const fieldOnchange = (params) => {

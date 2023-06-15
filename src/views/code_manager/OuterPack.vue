@@ -28,6 +28,7 @@ const params = reactive({
     'state',
     'min_pack_size',
     'min_pack_ids',
+    'if_print'
   ],
   import_fields: ['product_id', 'product_name', 'min_pack_size', 'amount', 'min_pack_ids'],
   tables: {}
@@ -38,7 +39,9 @@ const extras = {
     type: 'edit',
     text: '编辑',
     showType: ['form'],
-    attributes: {}
+    attributes: {
+      invisible: [['if_print', '=', true]]
+    }
   }, {
     type: 'create',
     text: '创建',
@@ -65,15 +68,18 @@ const extras = {
   },
   attributes: {
     min_pack_ids: {
-      domain: [['is_generate', '=', true], ['state', '=', 'draft']]
+      domain: [['is_generate', '=', true], ['if_print', '=', true],
+        ['state', '=', 'draft'], ['supplier_id', '=', supplier_id]],
+      limit: 50
     },
     product_id: {
       readonly: [['state', '=', 'done']]
     }
   },
-  invisible: ['state'],
+  invisible: ['state', 'if_print'],
   readonly: ['name', 'product_name', 'name', 'product_id',],
-  required: ['product_id', 'amount']
+  required: ['product_id', 'amount'],
+  listInvisible: ['if_print']
 }
 
 </script>

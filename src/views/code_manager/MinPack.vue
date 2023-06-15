@@ -12,7 +12,7 @@
       </span>
     </template>
   </el-dialog>
-  <RecordView :params="params" :extras="extras" @customClick="customClick" @objectClick="objectClick"/>
+  <RecordView :params="params" :extras="extras" @customClick="customClick"/>
 </template>
 
 <script lang="ts" setup>
@@ -43,18 +43,19 @@ const params = reactive({
   fields: [
     'name',
     'supplier_id',
+    'produce_number',
     'default_code',
     'product_name',
     'amount',
     'min_pack_size',
     'print_amount',
-    'if_print',
     'date_from',
     'shelf_life',
     'manufacturer_id',
     'comment',
     'delivery_order_line_id',
     'is_generate',
+    'if_print',
     'state'
   ],
   import_fields: ['default_code', 'product_name', 'manufacturer_id', 'produce_number', 'shelf_life', 'date_from',
@@ -67,7 +68,9 @@ const extras = {
     type: 'edit',
     text: '编辑',
     showType: ['form'],
-    attributes: {}
+    attributes: {
+      invisible: [['if_print', '=', true]]
+    }
   }, {
     type: 'create',
     showType: ['list', 'form'],
@@ -110,7 +113,7 @@ const extras = {
   },
   attributes: {
     default_code: {
-      readonly: ['|', ['if_print', '=', true], ['is_generate', '=', true]]
+      readonly: ['|', ['if_print', '=', true], ['is_generate', '=', true]],
     },
     supplier_id: {
       domain: [['supplier', '=', true], ['parent_id', '=', false]]
@@ -167,12 +170,6 @@ const saveDateFrom = () => {
     }
     loading.value = false;
     dialogVisible.value = false;
-  })
-}
-
-const objectClick = () => {
-  router.push({
-    name: 'min_pack'
   })
 }
 </script>

@@ -180,7 +180,6 @@ const customClick = (button, datas, reload, loading) => {
     for (const shortage_id of Object.keys(poDatas.value || {})) {
       if (!lineData.value.purchase_order || !poDatas.value[shortage_id]?.length
           || !codeDatas.value[shortage_id]?.length) {
-        console.log(poDatas);
         ElMessage({
           message: '请先匹配数据在提交!',
           type: 'error'
