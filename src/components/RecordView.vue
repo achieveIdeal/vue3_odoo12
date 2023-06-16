@@ -1,71 +1,79 @@
 <template>
   <el-button style="display: none" v-loading.fullscreen.lock="loading" element-loading-text="正在加载..."/>
   <div class="controller-panel">
-    <ButtonView :disabled="disabled" @editClick="editClick" @saveClick="saveClick(formRef)"
-                v-if="!params.groupby"
-                :params="{type: params.type, id: params.id, name:props.name}"
-                :buttons="buttons"
-                :listView="listView"
-                :loading="loading"
-                @objectClick="objectClick"
-                @createClick="createClick"
-                @customClick="customClick"
-                @importClick="importClick"
-                @cancelClick="cancelClick"/>
-    <SearchBar v-if="params.type==='list'"
-               :options="extras.search_fields"
-               :groupby="extras.groupby"
-               :model="params.model"
-               :groupbyDefault="params.groupby"
-               @groupbyClick="groupbyClick"
-               @searchClick="searchClick"/>
+    <ButtonView
+        v-if="!params.groupby"
+        :disabled="disabled"
+        :params="{type: params.type, id: params.id, name:props.name}"
+        :buttons="buttons"
+        @editClick="editClick"
+        @saveClick="saveClick(formRef)"
+        @objectClick="objectClick"
+        @createClick="createClick"
+        @customClick="customClick"
+        @importClick="importClick"
+        @cancelClick="cancelClick"/>
+    <SearchBar
+        v-if="params.type==='list'"
+        :options="extras.search_fields"
+        :groupby="extras.groupby"
+        :model="params.model"
+        :groupbyDefault="params.groupby"
+        @groupbyClick="groupbyClick"
+        @searchClick="searchClick"/>
   </div>
   <template v-if="params.type==='form'">
-    <el-form ref="formRef"
-             :inline="true"
-             :model="datas"
-             label-position="left"
-             label-width="120px"
-             class="form-inline">
-
-      <FormView :datas="datas.formData" :treeData="datas.treeData"
-                :options="options.formFieldsOption"
-                :treeOptions="options.treeFieldsOption"
-                :params="params"
-                :attributes="extras.attributes"
-                :isDialog="isDialog"
-                @fieldOnchange="fieldOnchange"
-                ref="formView"
-                :disabled="disabled"/>
-      <TreeView v-if="Object.keys(params.tables||{}).length" :datas="datas.treeData" :formDatas="datas.formData"
-                :options="options.treeFieldsOption"
-                :formOptions="options.formFieldsOption"
-                :params="params.tables"
-                :attributes="extras.attributes||{}"
-                :model="params.model"
-                :loading="loading"
-                @fieldOnchange="fieldOnchange"
-                :disabled="disabled"
-                :activeTable="activeTable"
-                :emptyDatas="emptyDatas"
-                @pageChange="pageChange"
-                @addLineClick="addLineClick"
-                @deleteLineClick="deleteLineClick"
-                @lineButtonClick="lineButtonClick"
+    <el-form
+        ref="formRef"
+        :inline="true"
+        :model="datas"
+        label-position="left"
+        label-width="120px"
+        class="form-inline">
+      <FormView
+          :datas="datas.formData"
+          :treeData="datas.treeData"
+          :options="options.formFieldsOption"
+          :treeOptions="options.treeFieldsOption"
+          :params="params"
+          :attributes="extras.attributes"
+          :isDialog="isDialog"
+          @fieldOnchange="fieldOnchange"
+          ref="formViewRef"
+          :disabled="disabled"/>
+      <TreeView
+          v-if="Object.keys(params.tables||{}).length"
+          :datas="datas.treeData"
+          :formDatas="datas.formData"
+          :options="options.treeFieldsOption"
+          :formOptions="options.formFieldsOption"
+          :params="params.tables"
+          :attributes="extras.attributes||{}"
+          :model="params.model"
+          :loading="loading"
+          @fieldOnchange="fieldOnchange"
+          :disabled="disabled"
+          :activeTable="activeTable"
+          :emptyDatas="emptyDatas"
+          @pageChange="pageChange"
+          @addLineClick="addLineClick"
+          @deleteLineClick="deleteLineClick"
+          @lineButtonClick="lineButtonClick"
       />
     </el-form>
   </template>
   <template v-if="params.type==='list'">
-    <ListView :datas="datas.listData"
-              :datasCopy="dataCopy.listData"
-              :options="options.treeFieldsOption"
-              :params="params"
-              @pageChange="pageChange"
-              @selectClick="selectClick"
-              :groupbyKey="groupbyKey"
-              @pageSizeChange="pageSizeChange"
-              @loadGroupDetail="loadGroupDetail"
-              ref="listView"/>
+    <ListView
+        :datas="datas.listData"
+        :datasCopy="dataCopy.listData"
+        :options="options.treeFieldsOption"
+        :params="params"
+        @pageChange="pageChange"
+        @selectClick="selectClick"
+        :groupbyKey="groupbyKey"
+        @pageSizeChange="pageSizeChange"
+        @loadGroupDetail="loadGroupDetail"
+        ref="listViewRef"/>
   </template>
 </template>
 
@@ -117,8 +125,8 @@ let emptyDatas = reactive<{ [prop: string]: { [prop: string]: Multiple } }>({}) 
 let activeTable = ref<string>('');  // 控制tree视图激活的table
 let dataCopy: DataType = {formData: {}, treeData: {}};  // 保留原始数据
 let buttons = reactive({buttons: {}})  // 按钮控制
-let listView = ref({})  // 列表页的vue元素
-let formView = ref({})  // 表单页的vue元素
+let listViewRef = ref({})  // 列表页的vue元素
+let formViewRef = ref({})  // 表单页的vue元素
 let formRef = ref({})  // 表单的vue元素
 let params: ModuleDataType = props.params
 let extras: ModuleDataType = props.extras  // 额外的属性
@@ -161,7 +169,7 @@ const initForm = async (result) => {
   dataCopy = JSON.parse(JSON.stringify(datas))
 }
 const initList = async (result) => {
-  options = result.treeFieldsOption || options.treeFieldsOption;
+  options = result?.treeFieldsOption || options.treeFieldsOption;
   disabled.value = true;
   const listData = typeof result === 'undefined' ? datas.listData : result.listData;
   const count = typeof result === 'undefined' ? datas.count : result.count;
@@ -220,6 +228,7 @@ const groupbyClick = (groupby, domain) => {
       groupbyDetail[groupby] = groupbyDetail[groupby] + ' - (' + groupbyDetail[groupby + '_count'] + ')'
     }
     datas.listData = groupbyData;
+    params.count = groupbyData.length;
   })
 }
 const loadGroupDetail = async (row, treeNode, resolve) => {
@@ -289,7 +298,7 @@ const editClick = () => {
   disabled.value = false;
 }
 const cancelClick = () => {
-  for (let file of formView.value?.upload || []) {
+  for (let file of formViewRef.value?.upload || []) {
     file.clearFiles();
   }
   disabled.value = true;
@@ -343,7 +352,7 @@ const saveClick = (formEl: FormInstance | undefined) => {  // 处理保存按钮
   formEl.validate((valid) => {
     if (valid) {
       let savedDatas = formatData(datas, dataCopy, options);
-      for (let file of formView.value?.upload || []) {
+      for (let file of formViewRef.value?.upload || []) {
         file.submit()
       }
       if (savedDatas && params.id) {
@@ -363,7 +372,7 @@ const saveClick = (formEl: FormInstance | undefined) => {  // 处理保存按钮
   })
 }
 const customClick = (button) => {
-  const rows = (listView.value || {}).listTable?.getSelectionRows() || []
+  const rows = (listViewRef.value || {}).listTable?.getSelectionRows() || []
   if (rows.length) {
     emits('customClick', button, rows, reload, loading);
   } else {
@@ -371,7 +380,7 @@ const customClick = (button) => {
   }
 }
 const objectClick = async (name: string) => {   // 处理非创建和编辑按钮点击
-  const rows = (listView.value || {}).listTable?.getSelectionRows() || []
+  const rows = (listViewRef.value || {}).listTable?.getSelectionRows() || []
   let ids = !!params.id ? [params.id] : rows.map(r => r.id);
   if (!ids.length) {
     ElMessage({

@@ -64,8 +64,8 @@ const params = reactive({
       sort: 'id desc',
       count: 0,
       model: 'srm.delivery.order.line',
-      fields: ['product_id', 'material_name', 'jit_id', 'shortage_id',
-        'amount_planned', 'delivery_quantity', 'uom_id', 'purchase_order', 'code_names', 'comment', 'origin_data_ids']
+      fields: ['product_id', 'material_name', 'jit_id', 'shortage_id', 'amount_planned',
+        'delivery_quantity', 'uom_id', 'purchase_order', 'code_names', 'comment', 'origin_data_ids']
     }
   }
 })

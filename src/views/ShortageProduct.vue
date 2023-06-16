@@ -24,11 +24,9 @@ const params = reactive({
   count: 0,
   model: 'shortage.product',
   fields:
-      ['name', 'partner_id', 'product_id', 'production_merge_order', 'production_order', 'need_qty', 'shortage_qty',
-        'delivery_qty', 'order_product',
-        'product_name', 'date', 'urgency_date',
-        'delete_flag', 'state', 'delivery_state',
-        'in_stock_qty', 'reply_date', 'reply_qry',
+      ['name', 'partner_id', 'product_id', 'production_merge_order', 'production_order', 'need_qty',
+        'shortage_qty', 'delivery_qty', 'order_product', 'product_name', 'date', 'urgency_date',
+        'delete_flag', 'state', 'delivery_state', 'in_stock_qty', 'reply_date', 'reply_qry',
       ],
   tables: {}
 })
@@ -44,21 +42,16 @@ const extras = {
   }
   ],
   search_fields: {
-    production_order: {
-      domain: []
-    },
+    production_order: {},
     delivery_state: {
       default: ['undone']
     },
-    product_id: {domain: []},
-    date: {domain: []},
+    product_id: {},
+    date: {},
   },
   attributes: {},
-  invisible: ['urgency_date', 'delivery_state',
-    'delete_flag', 'state', 'partner_id'],
-  listInvisible: ['urgency_date',
-    'delete_flag', 'state', 'partner_id',
-    'in_stock_qty',]
+  invisible: ['urgency_date', 'delivery_state', 'delete_flag', 'state', 'partner_id'],
+  listInvisible: ['urgency_date', 'delete_flag', 'state', 'partner_id', 'in_stock_qty']
 }
 
 const customClick = (button, rows) => {
