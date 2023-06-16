@@ -160,7 +160,7 @@
                     <template v-else-if="fieldTypeMap[options[treeField][field]?.type] === 'number'">
                       <el-input-number v-model="scoped.row[field]"
                         controls-position="right"
-                                       :style="{width: options[treeField][field]?.width || 130+ 'px'}"
+                        :style="{width: options[treeField][field]?.width || 130+ 'px'}"
                         :min="options[treeField][field]?.min"
                         :max="options[treeField][field]?.max"
                         :precision="options[treeField][field]?.precision ||
@@ -236,8 +236,8 @@
               </el-table-column>
             </template>
           </template>
-          <template v-if="!disabled" v-for="(button, index) in attributes[treeField]?.buttons|| []" :key="index">
-            <el-table-column width="130" v-if="!button.invisible">
+          <template v-if="!(parseDomain(formOptions[treeField]?.readonly, {...formDatas}) || disabled)" v-for="(button, index) in attributes[treeField]?.buttons|| []" :key="index">
+            <el-table-column :width="button.width || 130" fixed="right" :label="button.text" v-if="!button.invisible">
               <template #default="scoped">
                 <el-button type="primary"
                            @click="handleButtonClick(treeField, scoped.row, button)"
@@ -255,7 +255,6 @@
                          @click="handleDeleteLine(scoped.$index, treeField,scoped.row)"
               >删除
               </el-button>
-
             </template>
           </el-table-column>
         </el-table>

@@ -332,13 +332,16 @@ const poCustomClick = (button, datas) => {
     !poDatas.value[lineData.value['origin_data_ids']] ? poDatas.value[lineData.value['origin_data_ids']] = [] : null;
     poDatas.value[lineData.value['origin_data_ids']].push(datas);
     const lines = datas.match_line_ids;
+    let amount_total = 0;
     for (const line of lines) {
       const data = line[2];
       !usedPoQty[data.purchase_order_line_id] ? usedPoQty[data.purchase_order_line_id] = 0 : null;
       usedPoQty[data.purchase_order_line_id] += data.amount;
+      amount_total += data.amount;
       data.purchase_type_id && match_po_types.push(data.purchase_type_id)
     }
     lineData.value.comment = datas.comment;
+    lineData.value.delivery_quantity = amount_total;
     lineData.value.purchase_order = datas.match_line_ids.map(r => {
       return r[2].purchase_order_name
     }).join(',');
