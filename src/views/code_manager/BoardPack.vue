@@ -28,6 +28,7 @@ const params = reactive({
     'amount',
     'state',
     'outer_pack_size',
+    'delivery_order_line_id',
     'outer_pack_ids',
     'if_print'
   ],
@@ -73,9 +74,12 @@ const extras = {
     outer_pack_ids: {
       domain: [['state', '=', 'draft'], ['supplier_id', '=', supplier_id]],
       limit: 50
+    },
+    name: {
+      width: '160'
     }
   },
-  invisible: ['state', 'if_print'],
+  invisible: ['state', 'if_print', 'delivery_order_line_id'],
   readonly: ['name', 'product_name', 'name'],
   required: ['product_id', 'amount'],
   listInvisible: ['if_print']

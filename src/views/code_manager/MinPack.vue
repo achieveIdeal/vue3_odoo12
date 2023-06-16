@@ -117,6 +117,9 @@ const extras = {
     },
     supplier_id: {
       domain: [['supplier', '=', true], ['parent_id', '=', false]]
+    },
+    name: {
+      width: '160'
     }
   },
   invisible: ['is_generate', 'state', 'delivery_order_line_id'],

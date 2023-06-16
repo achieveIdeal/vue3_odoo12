@@ -17,7 +17,7 @@
         <el-table-column
             show-overflow-tooltip
             :label="options[field]?.string"
-            width="180">
+            :width="options[field]?.width||120">
           <template #default="scoped">
             <span v-if="options[field]?.type==='boolean'">
               <input type="checkbox" :checked="scoped.row[field]" disabled style="height: 17px;">

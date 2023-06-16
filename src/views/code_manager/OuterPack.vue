@@ -27,6 +27,7 @@ const params = reactive({
     'amount',
     'state',
     'min_pack_size',
+    'delivery_order_line_id',
     'min_pack_ids',
     'if_print'
   ],
@@ -72,12 +73,15 @@ const extras = {
         ['state', '=', 'draft'], ['supplier_id', '=', supplier_id]],
       limit: 50
     },
+    name: {
+      width: '160'
+    },
     product_id: {
       readonly: [['state', '=', 'done']]
     }
   },
-  invisible: ['state', 'if_print'],
-  readonly: ['name', 'product_name', 'name', 'product_id',],
+  invisible: ['state', 'if_print', 'delivery_order_line_id'],
+  readonly: ['name', 'product_name', 'product_id'],
   required: ['product_id', 'amount'],
   listInvisible: ['if_print']
 }

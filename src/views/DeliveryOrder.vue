@@ -147,6 +147,13 @@ const extras = {
         },
       }]
     },
+    name: {
+      width: 170
+    }, partner_id: {
+      width: 200
+    }, company_id: {
+      width: 220
+    }
   },
   readonly: ['name', 'partner_id', 'expect_date', 'company_id',
     'h_state', 'submit_user_id', 'state'],
@@ -169,9 +176,9 @@ const resetMatchPoData = (row) => {
   poDatas.value[origin_data_ids] = [];
   const lines = datas?.length ? datas[0].match_line_ids : [];
   for (const line of lines || []) {
-    const data = line[2];
-    usedPoQty[data.purchase_order_line_id] -= data.amount;
-    data.purchase_type_id && match_po_types.slice(match_po_types.indexOf(data.purchase_type_id), 1)
+    const matchData = line[2];
+    usedPoQty[matchData.purchase_order_line_id] -= matchData.amount;
+    matchData.purchase_type_id && match_po_types.splice(match_po_types.indexOf(matchData.purchase_type_id), 1)
   }
 }
 

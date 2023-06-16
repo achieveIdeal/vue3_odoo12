@@ -274,15 +274,12 @@ const pageSizeChange = async (size) => {
   loading.value = true;
   if (params.type === 'list') {
     params.offset = 0;
-
     params.limit = size;
     const result = await loadListData(params)  // 加载列表
     const initedList = await initListData(extras, result.listData, result.treeFieldsOption, noloadField)
     options.treeFieldsOption = initedList.fieldsOption
     datas.listData = initedList.listData
     params.count = result.count
-  } else if (params.type === 'form') {
-    params.tables[treeField].offset = params.tables[treeField].limit * page
   }
   loading.value = false;
   emits('pageSizeChange', size, loading)

@@ -13,7 +13,7 @@
                     :key="field">
             <template v-if="noLoadFields.indexOf(field) === -1 && !options[treeField][field]?.invisible">
               <el-table-column
-                  width="180">
+                  :width="options[treeField][field]?.width || 160">
                 <template #header>
                   <span v-if="options[treeField][field]?.required" style="color: red;">*</span>
                   {{ options[treeField][field]?.string }}
