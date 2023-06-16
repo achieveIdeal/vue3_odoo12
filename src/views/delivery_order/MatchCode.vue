@@ -5,10 +5,8 @@
 <script lang="ts" setup>
 import RecordView from '../../components/RecordView.vue'
 import {defineEmits, inject, reactive, ref} from "vue";
-import {useRoute} from 'vue-router';
 
 const supplier_id = parseInt(inject('supplier_id') || 0);
-let route = useRoute()
 let date_from = ref('');
 const params = reactive({
   id: 0,

@@ -41,8 +41,8 @@ let match_po_types = []
 let codeDatas = ref({});
 let codeAmountTotal = ref(0)
 const params = reactive({
-  id: parseInt(route.query.id) || 0,
-  type: route.query.type || 'list',
+  id: 0,
+  type: 'list',
   title: '交货单',
   name: 'delivery_order',
   limit: 20,

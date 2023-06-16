@@ -18,20 +18,17 @@
 <script lang="ts" setup>
 import RecordView from '../../components/RecordView.vue'
 import {inject, reactive, ref} from "vue";
-import {useRoute} from 'vue-router';
 import {callButton} from "../../service/module/call";
 import {ElMessage} from "element-plus";
-import router from "../../router";
 
 const supplier_id = parseInt(inject('supplier_id') || 0);
-let route = useRoute()
 let dialogVisible = ref(false);
 let date_from = ref('');
 let activeRows = ref([]);
 const loading = ref(false);
 const params = reactive({
-  id: parseInt(route.query.id) || 0,
-  type: route.query.type || 'list',
+  id: 0,
+  type: 'list',
   title: '赋码(最小包装)',
   name: 'min_pack',
   limit: 20,
@@ -53,7 +50,7 @@ const params = reactive({
     'shelf_life',
     'manufacturer_id',
     'comment',
-    'delivery_order_line_id',
+    'delivery_order_id',
     'is_generate',
     'if_print',
     'state'
@@ -122,11 +119,11 @@ const extras = {
       width: '160'
     }
   },
-  invisible: ['is_generate', 'state', 'delivery_order_line_id'],
+  invisible: ['is_generate', 'state', 'delivery_order_id'],
   listInvisible: ['supplier_id', 'shelf_life', 'manufacturer_id',
     'produce_number', 'comment',],
   readonly: ['name', 'product_name', 'print_amount', 'name', 'supplier_id',
-    'if_print', 'min_pack_size', 'delivery_order_line_id', 'shelf_life'],
+    'if_print', 'min_pack_size', 'delivery_order_id', 'shelf_life'],
   required: ['default_code', 'date_from', 'amount', 'min_pack_size', 'produce_number']
 }
 

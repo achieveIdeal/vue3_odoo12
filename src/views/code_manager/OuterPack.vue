@@ -5,13 +5,11 @@
 <script lang="ts" setup>
 import RecordView from '../../components/RecordView.vue'
 import {inject, reactive} from "vue";
-import {useRoute} from 'vue-router';
 
 const supplier_id = parseInt(inject('supplier_id') || 0);
-let route = useRoute()
 const params = reactive({
-  id: parseInt(route.query.id) || 0,
-  type: route.query.type || 'list',
+  id: 0,
+  type: 'list',
   title: '赋码(外箱包装)',
   name: 'outer_pack',
   limit: 20,
@@ -27,7 +25,7 @@ const params = reactive({
     'amount',
     'state',
     'min_pack_size',
-    'delivery_order_line_id',
+    'delivery_order_id',
     'min_pack_ids',
     'if_print'
   ],
@@ -80,7 +78,7 @@ const extras = {
       readonly: [['state', '=', 'done']]
     }
   },
-  invisible: ['state', 'if_print', 'delivery_order_line_id'],
+  invisible: ['state', 'if_print', 'delivery_order_id'],
   readonly: ['name', 'product_name', 'product_id'],
   required: ['product_id', 'amount'],
   listInvisible: ['if_print']

@@ -7,14 +7,12 @@
 import RecordView from '../components/RecordView.vue'
 
 import {inject, reactive} from "vue";
-import {useRoute} from 'vue-router';
 import router from "../router";
 
-let route = useRoute()
 const supplier_id = parseInt(inject('supplier_id') || 0);
 const params = reactive({
-  id: parseInt(route.query.id) || 0,
-  type: route.query.type || 'list',
+  id:0,
+  type:  'list',
   title: '物料欠料表',
   name: 'shortage_product',
   limit: 20,

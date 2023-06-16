@@ -5,13 +5,11 @@
 <script lang="ts" setup>
 import RecordView from '../../components/RecordView.vue'
 import {inject, reactive} from "vue";
-import {useRoute} from 'vue-router';
 
 const supplier_id = parseInt(inject('supplier_id') || 0);
-let route = useRoute()
 const params = reactive({
-  id: parseInt(route.query.id) || 0,
-  type: route.query.type || 'list',
+  id:  0,
+  type: 'list',
   title: '匹配采购订单',
   name: 'delivery_order',
   limit: 20,
