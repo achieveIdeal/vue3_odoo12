@@ -8,7 +8,7 @@
 ### 使用范式
 
 ```vue
-
+<PageHeader title="title"/>
 <RecordView
     :params="params"
     :extras="extras"
