@@ -1,4 +1,4 @@
-# odoo + vue3 + element-plus
+# odoo12 + vue3 + element-plus
 
 ## 说明：
 
