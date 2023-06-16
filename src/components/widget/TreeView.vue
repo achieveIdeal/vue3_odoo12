@@ -13,10 +13,11 @@
                     :key="field">
             <template v-if="noLoadFields.indexOf(field) === -1 && !options[treeField][field]?.invisible">
               <el-table-column
-                  :width="options[treeField][field]?.width || 160">
+                  :width="options[treeField][field]?.width || 150">
                 <template #header>
                   <span v-if="options[treeField][field]?.required" style="color: red;">*</span>
-                  {{ options[treeField][field]?.string }}
+                  {{ options[treeField][field]?.string }}              {{options[treeField][field]?.width }}
+
                 </template>
                 <template #default="scoped">
                   <el-form-item :prop="['treeData', treeField,scoped.$index, field]" class="table-form-item"
@@ -159,6 +160,7 @@
                     <template v-else-if="fieldTypeMap[options[treeField][field]?.type] === 'number'">
                       <el-input-number v-model="scoped.row[field]"
                         controls-position="right"
+                                       :style="{width: options[treeField][field]?.width || 130+ 'px'}"
                         :min="options[treeField][field]?.min"
                         :max="options[treeField][field]?.max"
                         :precision="options[treeField][field]?.precision ||

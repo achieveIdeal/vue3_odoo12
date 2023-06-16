@@ -14,7 +14,7 @@
               @lineButtonClick="lineButtonClick"
               @deleteLineClick="deleteLineClick"
               @fieldOnchange="fieldOnchange"
-              @customClick="customClick" ref="recordView"/>
+              @customClick="customClick"/>
 </template>
 
 <script lang="ts" setup>
@@ -29,7 +29,6 @@ import {ElMessage} from "element-plus";
 
 const supplier_id = parseInt(inject('supplier_id') || 0);
 let route = useRoute();
-let recordView = ref();
 let isJITMatch = false;
 let lineData = ref({})
 let poDialogVisible = ref(false);
@@ -260,7 +259,7 @@ const lineButtonClick = (treeField, data, button) => {
     poDialogVisible.value = true;
   } else if (button.method === 'match_code') {
     codeAmountTotal.value = 0;
-    if (!Object.keys(poDatas.value).length) {
+    if (!poDatas?.value[lineData.value['origin_data_ids']]?.length) {
       ElMessage({
         message: '请先匹配采购订单!',
         type: 'error'

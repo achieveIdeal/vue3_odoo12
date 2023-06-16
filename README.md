@@ -22,7 +22,6 @@
     @selectClick="selectClick"
     @deleteLineClick="deleteLineClick"
     @fieldOnchange="fieldOnchange"
-    ref="recordView"
 />
 ```
 ## 一，参数说明
