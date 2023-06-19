@@ -19,39 +19,39 @@
     </el-select>
     <template v-if="!!Object.keys(options).length" v-for="field in Object.keys(options)" :key="field">
       <el-select v-if="is2Many(searchOptions[field]?.type) || is2One(searchOptions[field]?.type)"
-       class="form-input"
-       v-model="searchVal[field]"
-       :placeholder="'搜索:' + searchOptions[field]?.string"
-       collapse-tags
-       collapse-tags-tooltip
-       clearable
-       :multiple="searchOptions[field]?.multiple"
-       :loading="loading"
-       filterable
-       remote
-       :remote-method="searchSelection(field)"
+                 class="form-input"
+                 v-model="searchVal[field]"
+                 :placeholder="'搜索:' + searchOptions[field]?.string"
+                 collapse-tags
+                 collapse-tags-tooltip
+                 clearable
+                 :multiple="searchOptions[field]?.multiple"
+                 :loading="loading"
+                 filterable
+                 remote
+                 :remote-method="searchSelection(field)"
       >
         <el-option
-          v-for="(item, index) in searchOptionCopy[field]?.selection"
-          :key="index"
-          :label="item[1]"
-          :value="item[0]"
+            v-for="(item, index) in searchOptionCopy[field]?.selection"
+            :key="index"
+            :label="item[1]"
+            :value="item[0]"
         ></el-option>
       </el-select>
       <el-select v-else-if="isSelection(searchOptions[field]?.type)"
-       class="form-input"
-       v-model="searchVal[field]"
-       :placeholder="'搜索:' + searchOptions[field]?.string"
-       multiple
-       collapse-tags
-       clearable
-       filterable
+                 class="form-input"
+                 v-model="searchVal[field]"
+                 :placeholder="'搜索:' + searchOptions[field]?.string"
+                 multiple
+                 collapse-tags
+                 clearable
+                 filterable
       >
         <el-option
-          v-for="(item, index) in searchOptions[field]?.selection"
-          :key="index"
-          :label="item[1]"
-          :value="item[0]"
+            v-for="(item, index) in searchOptions[field]?.selection"
+            :key="index"
+            :label="item[1]"
+            :value="item[0]"
         ></el-option>
       </el-select>
       <template v-else-if="fieldTypeMap[searchOptions[field]?.type]==='checkbox'">
@@ -116,7 +116,7 @@ const searchVal = reactive({});
 const groupbyVal = ref('');
 const groupbyItemRef = ref({});
 const searchOptions = ref({});
-const searchOptionCopy = ref({})
+const searchOptionCopy = ref({});
 
 onMounted(async () => {
   if (groupbyItemRef?.value?.length) {
@@ -132,13 +132,15 @@ onMounted(async () => {
     args: [0, fields]
   })
   searchOptions.value = initSearchBar({search_fields: props.options, groupby: props.groupby}, result.result);
+  let hasDefault = false;
   for (const field of fields) {
     searchVal[field] = searchOptions.value[field]?.default
     if (searchOptions.value[field]?.default) {
+      hasDefault = True
       searchVal[field] = searchOptions.value[field]?.default
     }
   }
-  Object.keys(searchVal) ? do_search.value?.$.vnode.el?.click() : null;
+  hasDefault ? do_search.value?.$.vnode.el?.click() : null;
 })
 const emits = defineEmits(['searchClick', 'groupbyClick']);
 
@@ -182,10 +184,10 @@ const groupbyClick = () => {
 
 const searchClick = () => {
   const domain = getDomain();
-  if(groupbyVal.value.length){
+  if (groupbyVal.value.length) {
     emits('groupbyClick', groupbyVal.value, domain)
-  }else{
-    emits('searchClick',  domain);
+  } else {
+    emits('searchClick', domain);
   }
 }
 document.onkeydown = e => {

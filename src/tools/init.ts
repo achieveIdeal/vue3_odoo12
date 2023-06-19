@@ -170,7 +170,6 @@ export const initButton = (extras, formData, viewType) => {
             button.attributes.invisible = true;
         }
     }
-    console.log(buttons);
     return buttons;
 }
 export const initEmptyTreeData = (emptyDatas, treeFieldsOption) => {

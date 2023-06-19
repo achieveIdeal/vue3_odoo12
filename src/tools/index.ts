@@ -137,7 +137,8 @@ const onchangeField = async (params: OnchangeParamsType, checkAll) => {
         onchangeField(params.form);
     }
 }
-const loadFormDatas = async (params: ModuleDataType) => {
+
+const getFieldOption =async (params) => {
     let requestParams = getRequestParams(params)
     const res = await callFields(requestParams);
     if (res.error) {
@@ -153,7 +154,26 @@ const loadFormDatas = async (params: ModuleDataType) => {
         const result = await callFields(getRequestParams(params.tables[line]));
         treeFieldsOption[line] = result.result;
     }
-    const dataRes = !params.id ? {id: null, result: []} : await callRead(requestParams);
+
+    return {
+        formFieldsOption,
+        treeFieldsOption
+    }
+}
+
+const loadFormDatas = async (params: ModuleDataType) => {
+    let requestParams = getRequestParams(params)
+    let treeData = {};
+    let tableDataCountMap = {};
+    let formData = {};
+    if (!params.id) {
+        return {
+            formData,
+            treeData,
+            tableDataCountMap,
+        }
+    }
+    const dataRes = await callRead(requestParams);
     if (dataRes.error) {
         ElMessage({
             message: dataRes.error.data.message,
@@ -161,8 +181,8 @@ const loadFormDatas = async (params: ModuleDataType) => {
         });
         return false
     }
-    let treeData = {}
-    let tableDataCountMap = {}
+
+    formData = dataRes.result[0];
     for (let line of Object.keys(params.tables || {})) {
         let lineParams = params.tables[line] || {};
         lineParams.id = dataRes.result?.length && dataRes.result[0][line];
@@ -199,32 +219,18 @@ const loadFormDatas = async (params: ModuleDataType) => {
         treeData[line] = JSON.parse(JSON.stringify(dataResult || {}));
         tableDataCountMap[line] = treeData[line].length || 0
     }
-    let formData = dataRes?.result?.length && JSON.parse(JSON.stringify(dataRes.result[0])) || {};
     if (!Object.keys(formData || {}).length) {
         for (let field of Object.keys(formFieldsOption || {})) {   // 设置空数据
             formData[field] = ''
         }
     }
     return {
-        formFieldsOption,
-        treeFieldsOption,
         formData,
         treeData,
         tableDataCountMap,
     }
 }
 const loadListData = async (params: ModuleDataType) => {
-    let requestParams = getRequestParams(params)
-    const res = await callFields(requestParams);
-    if (res.error) {
-        ElMessage({
-            message: res.error.data.message,
-            type: 'error'
-        });
-        return false
-    }
-    let treeFieldsOption = res.result;
-
     let requestData: RequestParamsType = {
         model: params.model,
         fields: params.fields,
@@ -247,7 +253,6 @@ const loadListData = async (params: ModuleDataType) => {
     let listData = JSON.parse(JSON.stringify(dataRes?.result?.records || []));
     const count = dataRes?.result?.length || 0;
     return {
-        treeFieldsOption,
         listData,
         count
     }
@@ -443,7 +448,7 @@ export {
     searchFieldSelection, onchangeField,
     getFileType, loadFormDatas,
     base64ToBlobUrl, loadListData,
-    downLoadFile,
+    downLoadFile,getFieldOption,
     encodeFileToBase64,
     parseDomain
 }

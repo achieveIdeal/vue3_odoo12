@@ -50,7 +50,7 @@
       v-model:page-size="pageSize"
       @size-change="handleSizeChange"
       class="list-pagination"
-      :page-size="params.limit || 15"
+      :page-size="params.limit || 20"
       small
       layout="total, sizes, prev, pager, next, jumper"
       background

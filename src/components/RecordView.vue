@@ -66,7 +66,7 @@
     <ListView
         :datas="datas.listData"
         :datasCopy="dataCopy.listData"
-        :options="options.treeFieldsOption"
+        :options="options.formFieldsOption"
         :params="params"
         @pageChange="pageChange"
         @selectClick="selectClick"
@@ -81,11 +81,11 @@
 import {inject, PropType, provide, reactive, ref, watch} from "vue";
 import {RouteLocationNormalizedLoaded, useRoute, useRouter} from 'vue-router';
 import {FormInstance, ElMessage} from "element-plus";
-import FormView from './widget/FormView.vue'
-import TreeView from './widget/TreeView.vue'
-import ListView from './widget/ListView.vue'
-import SearchBar from './widget/SearchBar.vue'
-import ButtonView from './widget/ButtonView.vue'
+import FormView from './widget/FormView.vue';
+import TreeView from './widget/TreeView.vue';
+import ListView from './widget/ListView.vue';
+import SearchBar from './widget/SearchBar.vue';
+import ButtonView from './widget/ButtonView.vue';
 import {callButton, callCreate, callFile, callReadGroup, callWrite, callSearchRead} from "../service/module/call";
 import {
   initFormData,
@@ -94,11 +94,11 @@ import {
   initButton,
   initEmptyTreeData,
   formatData
-} from '../tools/init'
+} from '../tools/init';
 import type {FieldOptionType, DataType, Multiple, ModuleDataType} from "../types";
-import {onchangeField, loadFormDatas, loadListData} from "../tools";
+import {onchangeField, loadFormDatas, loadListData, getFieldOption} from "../tools";
 
-const noloadField = Object.keys(props.params?.tables || {}).concat(['id'])
+const noloadField = Object.keys(props.params?.tables || {}).concat(['id']);
 provide('noloadFields', noloadField)
 const id = inject('id', 0);
 
@@ -114,39 +114,37 @@ let props = defineProps({
     type: Boolean,
     default: false
   }
-})
-let route: RouteLocationNormalizedLoaded = useRoute()
-let router = useRouter()
+});
+let route: RouteLocationNormalizedLoaded = useRoute();
+let router = useRouter();
 const loading = ref(false); // 数据加载动画
 let disabled = ref<boolean>(true); // 编辑控制
-let datas = reactive<DataType>({formData: {}, treeData: {}, listData: []})
-let options: FieldOptionType = {formFieldsOption: {}, treeFieldsOption: {},}
-let emptyDatas = reactive<{ [prop: string]: { [prop: string]: Multiple } }>({})  // 空数据
+let datas = reactive<DataType>({formData: {}, treeData: {}, listData: []});
+let options: FieldOptionType = {formFieldsOption: {}, treeFieldsOption: {},};
+let emptyDatas = reactive<{ [prop: string]: { [prop: string]: Multiple } }>({});  // 空数据
 let activeTable = ref<string>('');  // 控制tree视图激活的table
 let dataCopy: DataType = {formData: {}, treeData: {}};  // 保留原始数据
-let buttons = reactive({buttons: {}})  // 按钮控制
-let listViewRef = ref({})  // 列表页的vue元素
-let formViewRef = ref({})  // 表单页的vue元素
-let formRef = ref({})  // 表单的vue元素
-let params: ModuleDataType = props.params
-let extras: ModuleDataType = props.extras  // 额外的属性
-let searchOptions = reactive({})  // 查询选项
+let buttons = reactive({buttons: {}});  // 按钮控制
+let listViewRef = ref({});  // 列表页的vue元素
+let formViewRef = ref({});  // 表单页的vue元素
+let formRef = ref({});  // 表单的vue元素
+let params: ModuleDataType = props.params;
+let extras: ModuleDataType = props.extras ; // 额外的属性
+let searchOptions = reactive({});  // 查询选项
 let domains = [];  // 原始的domain
 let groupbyData = [];  // 分组查询返回的数据
-let groupbyKey = ref('')  // 默认分组查询值
+let groupbyKey = ref('');  // 默认分组查询值
 
 const emits = defineEmits(['objectClick', 'saveClick', 'customClick', 'pageSizeChange', 'loadGroupDetail',
-  'lineButtonClick', 'loadedCallable', 'selectClick', 'deleteLineClick', 'fieldOnchange'])
+  'lineButtonClick', 'loadedCallable', 'selectClick', 'deleteLineClick', 'fieldOnchange']);
 
 const initForm = async (result) => {
   let formData = result?.formData || datas.formData;
   let treeData = result?.treeData || datas.treeData;
   disabled.value = !!params.id;  //  创建不加载数据  且为可编辑
-  let treeFieldsOption = result?.treeFieldsOption || options.treeFieldsOption;
-  let formFieldsOption = result?.formFieldsOption || options.formFieldsOption;
   let tableDataCountMap = result?.tableDataCountMap;
   buttons.buttons = initButton(extras, formData, params.type);
-  let inited = await initFormData(extras, formData, formFieldsOption, noloadField);
+  let inited = await initFormData(extras, formData, options.formFieldsOption, noloadField);
   for (let lineField of Object.keys(tableDataCountMap || {})) {  // 记录表格数据总数
     params.tables[lineField].count = tableDataCountMap[lineField];
   }
@@ -154,33 +152,41 @@ const initForm = async (result) => {
   let initedTree = {};
   if (Object.keys(params.tables || {}).length) {
     for (let field of Object.keys(params.tables || {})) {
-      if (!activeTable.value && !formFieldsOption[field]?.invisible) { // 默认选中第一个没有被隐藏的table页
+      if (!activeTable.value && !options.formFieldsOption[field]?.invisible) { // 默认选中第一个没有被隐藏的table页
         activeTable.value = field;
         break;
       }
     }
-    initedTree = await initTreeData(extras, treeData, treeFieldsOption, formData);
-    initEmptyTreeData(emptyDatas, treeFieldsOption)
+    initedTree = await initTreeData(extras, treeData, options.treeFieldsOption, formData);
+    initEmptyTreeData(emptyDatas, options.treeFieldsOption)
   }
   datas.formData = inited.formData;
-  options.formFieldsOption = inited.formFieldsOption;
   datas.treeData = initedTree.treeData || {};
-  options.treeFieldsOption = initedTree.treeFieldsOption || {}
-  dataCopy = JSON.parse(JSON.stringify(datas))
+  dataCopy = JSON.parse(JSON.stringify(datas));
 }
 const initList = async (result) => {
-  options = result?.treeFieldsOption || options.treeFieldsOption;
   disabled.value = true;
-  const listData = typeof result === 'undefined' ? datas.listData : result.listData;
-  const count = typeof result === 'undefined' ? datas.count : result.count;
-  const initedList = await initListData(extras, listData, options, noloadField);
-  options.treeFieldsOption = initedList.fieldsOption;
+  const listData = !result ? datas.listData : result.listData;
+  const count = !result ? datas.count : result.count;
+  const initedList = await initListData(extras, listData, options.formFieldsOption, noloadField);
   datas.listData = initedList.listData;
   params.count = count;
   buttons.buttons = initButton(extras, {}, params.type);
 }
 
 const loadData = async () => {
+  let fieldsOption;
+  if (!Object.keys(options.formFieldsOption).length) {
+    fieldsOption = await getFieldOption(params);
+  }
+  datas.formData = {};
+  datas.treeData = {};
+  datas.listData = [];
+  params.limit = 20;
+  params.offset = 0;
+  options.formFieldsOption = (fieldsOption || options).formFieldsOption;
+  options.treeFieldsOption = (fieldsOption || options).treeFieldsOption;
+  domains = JSON.parse(JSON.stringify(params.domain || []));
   if (params.type === 'form') {
     loading.value = true;
     let result = await loadFormDatas(params); // 加载详情
@@ -201,7 +207,6 @@ watch(route, async (form: RouteLocationNormalizedLoaded, to: RouteLocationNormal
   params.id = parseInt(id || route.query.id || '0');
   params.type = params.classify || ((route.query.id || params.id) ? 'form' : 'list');
   if ((form || to).name === params.name) {
-    domains = JSON.parse(JSON.stringify(params.domain || []))
     await loadData();
   }
 }, {immediate: true})
@@ -242,7 +247,7 @@ const loadGroupDetail = async (row, treeNode, resolve) => {
     sort: params.sort,
   })
   emits('loadGroupDetail', row, result)
-  const records = await initListData(extras, result.result.records, options, noloadField);
+  const records = await initListData(extras, result.result.records, options.formFieldsOption, noloadField);
   return resolve(records.listData)
 }
 const searchClick = async (domain) => {  // 搜索数据重置
@@ -254,8 +259,7 @@ const searchClick = async (domain) => {  // 搜索数据重置
     params.domain = params.domain.concat(domain);
   }
   const result = await loadListData(params, domains); // 加载列表
-  const initedList = await initListData(extras, result.listData, result.treeFieldsOption, noloadField);
-  options.treeFieldsOption = initedList.fieldsOption;
+  const initedList = await initListData(extras, result.listData, options.formFieldsOption, noloadField);
   datas.listData = initedList.listData;
   params.count = result.count;
   loading.value = false;
@@ -267,8 +271,7 @@ const pageChange = async (currentPage: number, treeField: string) => {  // 列�
   if (params.type === 'list') {
     params.offset = (params.limit || 10) * page
     const result = await loadListData(params)  // 加载列表
-    const initedList = await initListData(extras, result.listData, result.treeFieldsOption, noloadField)
-    options.treeFieldsOption = initedList.fieldsOption
+    const initedList = await initListData(extras, result.listData, options.formFieldsOption, noloadField)
     datas.listData = initedList.listData
     params.count = result.count
   } else if (params.type === 'form') {
@@ -282,11 +285,8 @@ const pageSizeChange = async (size) => {
   }
   loading.value = true;
   if (params.type === 'list') {
-    params.offset = 0;
-    params.limit = size;
-    const result = await loadListData(params)  // 加载列表
-    const initedList = await initListData(extras, result.listData, result.treeFieldsOption, noloadField)
-    options.treeFieldsOption = initedList.fieldsOption
+    const result = await loadListData({...params, offset: 0, limit: size})  // 加载列表
+    const initedList = await initListData(extras, result.listData, options.formFieldsOption, noloadField)
     datas.listData = initedList.listData
     params.count = result.count
   }

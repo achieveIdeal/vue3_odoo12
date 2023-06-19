@@ -126,6 +126,12 @@ const extras = {
         amount_planned: {
           sum: true,
         },
+        product_id: {
+          string: '物料编码'
+        },
+        material_name: {
+          string: '物料描述'
+        },
         delivery_quantity: {
           sum: true,
           readonly: [['line_ids.purchase_order', '!=', '']],
