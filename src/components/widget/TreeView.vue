@@ -239,7 +239,7 @@
           <template v-if="!(parseDomain(formOptions[treeField]?.readonly, {...formDatas}) || disabled)" v-for="(button, index) in attributes[treeField]?.buttons|| []" :key="index">
             <el-table-column :width="button.width || 130" fixed="right" :label="button.text" v-if="!button.invisible">
               <template #default="scoped">
-                <el-button type="primary"
+                <el-button :type="button.classify || 'primary'"
                            @click="handleButtonClick(treeField, scoped.row, button)"
                 >{{ button.text }}
                 </el-button>
