@@ -60,7 +60,7 @@ const onchangeField = async (params: OnchangeParamsType, checkAll) => {
         }
     }
     if (options[field]?.onchange) {
-        let onchange: { [prop: string]: '' | '1' } = {};
+        let onchange: { [prop: string]: '' | '1' };
         let changedData: { [prop: string]: Multiple } = {}
         for (let field of Object.keys(paramsDatas || {})) {
             changedData[field] = paramsDatas[field];
@@ -88,7 +88,7 @@ const onchangeField = async (params: OnchangeParamsType, checkAll) => {
         }
         const result = res.result;
         const domain = result.domain;
-        const value = result.value
+        const value = result.value;
         if (result.warning) {
             ElMessage({
                 message: result.warning.message,
@@ -104,33 +104,33 @@ const onchangeField = async (params: OnchangeParamsType, checkAll) => {
                 checkAll.value = false;
                 continue
             }
-            datas[changedField] = ''
+            datas[changedField] = '';
         }
         for (let changedField of Object.keys(value || {})) {
             const isChangeLine = value[changedField][0] instanceof Array && value[changedField][0][0] === 5
             if (value[changedField] instanceof Array && !isChangeLine) {
-                options[changedField].selection.push(value[changedField])
-                datas[changedField] = value[changedField][0]
+                options[changedField].selection.push(value[changedField]);
+                datas[changedField] = value[changedField][0];
                 continue
             }
             if (value[changedField] === false && options[changedField].type !== 'boolean') {
-                datas[changedField] = ''
+                datas[changedField] = '';
                 if (['float', 'integer'].indexOf(options[changedField].type) !== -1) {
-                    datas[changedField] = 0
+                    datas[changedField] = 0;
                 }
                 continue
             }
             if (!!Object.keys(treeData || {}).length && Object.keys(treeData || {}).indexOf(changedField) !== -1) {
                 const changeLines = []
-                const originLength = treeData[changedField].length
+                const originLength = treeData[changedField].length;
                 for (let index = 1; index < value[changedField].length; index++) {
-                    changeLines.push(value[changedField][index][2])
+                    changeLines.push(value[changedField][index][2]);
                 }
-                treeData[changedField] = changeLines.slice(originLength)
-                initTreeData(null, treeData, treeOptions)
+                treeData[changedField] = changeLines.slice(originLength);
+                initTreeData(null, treeData, treeOptions);
                 continue
             }
-            datas[changedField] = value[changedField]
+            datas[changedField] = value[changedField];
         }
     }
     if (params.form?.datas) {
@@ -162,7 +162,7 @@ const getFieldOption =async (params) => {
 }
 
 const loadFormDatas = async (params: ModuleDataType) => {
-    let requestParams = getRequestParams(params)
+    let requestParams = getRequestParams(params);
     let treeData = {};
     let tableDataCountMap = {};
     let formData = {};
