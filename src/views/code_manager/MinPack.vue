@@ -31,11 +31,8 @@ const params = reactive({
   type: 'list',
   title: '赋码(最小包装)',
   name: 'min_pack',
-  limit: 20,
-  offset: 0,
   domain: [['supplier_id', '=', supplier_id]],
   sort: 'id desc',
-  count: 0,
   model: 'srm.coding',
   fields: [
     'name',
@@ -116,7 +113,7 @@ const extras = {
       domain: [['supplier', '=', true], ['parent_id', '=', false]]
     },
     name: {
-      width: '160'
+      width: '200'
     }
   },
   invisible: ['is_generate', 'state', 'delivery_order_id'],

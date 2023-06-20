@@ -138,7 +138,7 @@ const onchangeField = async (params: OnchangeParamsType, checkAll) => {
     }
 }
 
-const getFieldOption =async (params) => {
+const getFieldOption = async (params) => {
     let requestParams = getRequestParams(params)
     const res = await callFields(requestParams);
     if (res.error) {
@@ -231,11 +231,12 @@ const loadformData = async (params: ModuleDataType) => {
     }
 }
 const loadListData = async (params: ModuleDataType) => {
+    console.log(params.domain);
     let requestData: RequestParamsType = {
         model: params.model,
         fields: params.fields,
         offset: params.offset || 0,
-        limit: params.limit,
+        limit: params.limit || 20,
         domain: params.domain,
         sort: params.sort
     }
@@ -263,7 +264,7 @@ const searchFieldSelection = async (option: FieldOptionType, query: string, doma
         args: [],
         kwargs: {
             'name': query.trim(),
-            'args': option.domain.concat(domain) || [],
+            'args': option?.domain?.length ? option.domain.concat(domain) : [],
             'operator': 'ilike',
             'limit': limit || 10,
             'context': {'lang': 'zh_CN', 'tz': false, 'uid': 2, 'front': true, 'is_cus_code': true}
@@ -448,7 +449,7 @@ export {
     searchFieldSelection, onchangeField,
     getFileType, loadformData,
     base64ToBlobUrl, loadListData,
-    downLoadFile,getFieldOption,
+    downLoadFile, getFieldOption,
     encodeFileToBase64,
     parseDomain
 }

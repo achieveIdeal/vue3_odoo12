@@ -15,11 +15,8 @@ const params = reactive({
   type:  'list',
   title: '物料欠料表',
   name: 'shortage_product',
-  limit: 20,
-  offset: 0,
   domain: [['partner_id', '=', supplier_id]],
   sort: 'id desc',
-  count: 0,
   model: 'shortage.product',
   fields:
       ['name', 'partner_id', 'product_id', 'production_merge_order', 'production_order', 'need_qty',

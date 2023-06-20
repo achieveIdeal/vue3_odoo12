@@ -1,5 +1,5 @@
 <template>
-  <el-table :data="datas" ref="listTable" stripe style="width: 100%" @selection-change="handleSelectionChange"
+  <el-table :data="datas" ref="listTable" stripe @selection-change="handleSelectionChange"
             show-summary
             lazy
             :row-key="groupbyKey"
@@ -8,9 +8,11 @@
             table-layout="auto"
             :summary-method="getSummaries">
     <el-table-column fixed type="selection" width="55" v-if="!params.groupby"/>
-    <el-table-column v-if="groupbyKey" width="180"><template #default="scoped">
-     {{scoped.row[groupbyKey]}}
-    </template></el-table-column>
+    <el-table-column v-if="groupbyKey" width="180">
+      <template #default="scoped">
+        {{ scoped.row[groupbyKey] }}
+      </template>
+    </el-table-column>
     <template v-for="field in params.fields?.length && params.fields || []"
               :key="field">
       <template v-if="noLoadFields.indexOf(field) === -1 && !options[field]?.listInvisible">
@@ -45,6 +47,7 @@
   </el-table>
 
   <el-pagination
+      v-if="!params.groupby"
       v-model:current-page="currentPage"
       :page-sizes="[10, 20, 50, 100, 200, 500]"
       v-model:page-size="pageSize"
@@ -98,6 +101,10 @@ let height = document.documentElement.clientHeight - 250
 
 let emits = defineEmits(['pageChange', 'editClick', 'selectClick', 'pageSizeChange', 'loadGroupDetail'])
 
+const recoverPageTo1=()=>{
+  currentPage.value = 1
+}
+
 const loadGroupDetail = (row, treeNode, resolve) => {
   emits('loadGroupDetail', row, treeNode, resolve)
 }
@@ -116,6 +123,8 @@ const getDetail = (data) => {
   })
 }
 const handleSizeChange = (size) => {
+  pageSize.value = size;
+  currentPage.value = 1;
   emits('pageSizeChange', size);
 }
 const getSummaries = (table) => {
@@ -140,7 +149,7 @@ const getSummaries = (table) => {
 
 
 defineExpose({
-  listTable
+  listTable, pageSize,recoverPageTo1
 })
 </script>
 

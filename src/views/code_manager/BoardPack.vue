@@ -12,11 +12,8 @@ const params = reactive({
   type: 'list',
   title: '赋码(卡板包装)',
   name: 'board_pack',
-  limit: 20,
-  offset: 0,
   sort: 'id desc',
   domain: [['supplier_id', '=', supplier_id]],
-  count: 0,
   model: 'srm.coding.board.pack',
   import_fields: ['product_id', 'product_name', 'outer_pack_size', 'amount', 'outer_pack_ids'],
   fields: [

@@ -44,24 +44,18 @@ const params = reactive({
   type: 'list',
   title: '交货单',
   name: 'delivery_order',
-  limit: 20,
   width: '30%',
-  offset: 0,
   domain: [['partner_id', '=', supplier_id]],
   sort: 'id desc',
-  count: 0,
   model: 'srm.delivery.order',
   fields:
       ['name', 'partner_id', 'expect_date', 'company_id',
         'h_state', 'submit_user_id', 'state', 'jit_flag', 'line_ids'],
   tables: {
     line_ids: {
-      limit: 10,
-      offset: 0,
       title: '交货订单行',
       domain: [],
       sort: 'id desc',
-      count: 0,
       model: 'srm.delivery.order.line',
       fields: ['product_id', 'material_name', 'jit_id', 'shortage_id', 'amount_planned',
         'delivery_quantity', 'uom_id', 'purchase_order', 'code_names', 'comment', 'origin_data_ids']

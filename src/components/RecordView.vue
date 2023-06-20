@@ -14,6 +14,7 @@
         @importClick="importClick"
         @cancelClick="cancelClick"/>
     <SearchBar
+        ref="searchViewRef"
         v-if="params.type==='list'"
         :options="extras.search_fields"
         :groupby="extras.groupby"
@@ -127,12 +128,23 @@ let dataCopy: DataType = {formData: {}, treeData: {}};  // 保留原始数据
 let buttons = reactive({buttons: {}});  // 按钮控制
 let listViewRef = ref({});  // 列表页的vue元素
 let formViewRef = ref({});  // 表单页的vue元素
+let searchViewRef = ref({});
 let formRef = ref({});  // 表单的vue元素
 let params: ModuleDataType = props.params;
 let extras: ModuleDataType = props.extras; // 额外的属性
-let domains = [];  // 原始的domain
 let groupbyData = [];  // 分组查询返回的数据
 let groupbyKey = ref('');  // 默认分组查询值
+const getListViewExpose = () => {
+  const listTable = listViewRef.value?.listTable || {};
+  const pageSize = listViewRef.value?.pageSize || 20;
+  const recoverPageTo1 = listViewRef.value?.recoverPageTo1 || function () {
+  };
+  return {
+    listTable,
+    pageSize,
+    recoverPageTo1
+  }
+};
 
 const emits = defineEmits(['objectClick', 'saveClick', 'customClick', 'pageSizeChange', 'loadGroupDetail',
   'lineButtonClick', 'loadedCallable', 'selectClick', 'deleteLineClick', 'fieldOnchange']);
@@ -195,7 +207,6 @@ const loadData = async () => {
   params.offset = 0;
   options.formFieldsOption = (fieldsOption || options).formFieldsOption;
   options.treeFieldsOption = (fieldsOption || options).treeFieldsOption;
-  domains = JSON.parse(JSON.stringify(params.domain || []));
   let needInit = true;
   const noInit = () => {
     needInit = false;
@@ -269,15 +280,21 @@ const loadGroupDetail = async (row, treeNode, resolve) => {
   const records = await initListData(extras, result.result.records, options.formFieldsOption, noloadField);
   return resolve(records.listData)
 }
+
 const searchClick = async (domain) => {  // 搜索数据重置
+  const listViewExpose = getListViewExpose();
+  listViewExpose?.recoverPageTo1();
+  const size = listViewExpose.pageSize;
   loading.value = true;
-  groupbyKey.value = ''
-  params.domain = domains;
-  params.groupby = ''
-  if (domain.length) {
-    params.domain = params.domain.concat(domain);
-  }
-  const result = await loadListData(params, domains); // 加载列表
+  groupbyKey.value = '';
+  params.groupby = '';
+  const result = await loadListData({
+    model: params.model,
+    fields: params.fields,
+    limit: size,
+    sort: params.sort,
+    domain: params.domain.concat(domain)
+  }); // 加载列表
   const initedList = await initListData(extras, result.listData, options.formFieldsOption, noloadField);
   datas.listData = initedList.listData;
   params.count = result.count;
@@ -285,11 +302,20 @@ const searchClick = async (domain) => {  // 搜索数据重置
 }
 
 const pageChange = async (currentPage: number, treeField: string) => {  // 列表页分页和表单页表格数据分页
+  const domain = searchViewRef.value?.getDomain() || [];
+  const listViewExpose = getListViewExpose();
+  const size = listViewExpose.pageSize;
   loading.value = true;
   let page = (currentPage - 1)
   if (params.type === 'list') {
-    params.offset = (params.limit || 10) * page
-    const result = await loadListData(params)  // 加载列表
+    const result = await loadListData({
+      model: params.model,
+      fields: params.fields,
+      sort: params.sort,
+      limit: size,
+      offset: (size || 10) * page,
+      domain: params.domain.concat(domain)
+    })  // 加载列表
     const initedList = await initListData(extras, result.listData, options.formFieldsOption, noloadField)
     datas.listData = initedList.listData
     params.count = result.count
@@ -302,9 +328,16 @@ const pageSizeChange = async (size) => {
   if (params.count < size && params.count < params.limit) {
     return
   }
+  const domain = searchViewRef.value?.getDomain() || [];
   loading.value = true;
   if (params.type === 'list') {
-    const result = await loadListData({...params, offset: 0, limit: size})  // 加载列表
+    const result = await loadListData({
+      model: params.model,
+      fields: params.fields,
+      sort: params.sort,
+      limit: size,
+      domain: params.domain.concat(domain)
+    })  // 加载列表
     const initedList = await initListData(extras, result.listData, options.formFieldsOption, noloadField)
     datas.listData = initedList.listData
     params.count = result.count
@@ -391,7 +424,8 @@ const saveClick = (formEl: FormInstance | undefined) => {  // 处理保存按钮
   })
 }
 const customClick = (button) => {
-  const rows = (listViewRef.value || {}).listTable?.getSelectionRows() || []
+  const listViewExpose = getListViewExpose();
+  const rows = (listViewExpose || {}).listTable?.getSelectionRows() || []
   if (rows.length) {
     emits('customClick', button, rows, reload, loading);
   } else {
@@ -399,7 +433,8 @@ const customClick = (button) => {
   }
 }
 const objectClick = async (name: string) => {   // 处理非创建和编辑按钮点击
-  const rows = (listViewRef.value || {}).listTable?.getSelectionRows() || []
+  const listViewExpose = getListViewExpose();
+  const rows = listViewExpose.listTable?.getSelectionRows() || []
   let ids = !!params.id ? [params.id] : rows.map(r => r.id);
   if (!ids.length) {
     ElMessage({
@@ -488,11 +523,13 @@ const lineButtonClick = (treeField, data, button) => {
   emits('lineButtonClick', treeField, data, button, reload, loading);
 }
 const addLineClick = (field) => {
+  !params.tables[field].count ? params.tables[field].count = 0 : null;
   datas.treeData[field].push(JSON.parse(JSON.stringify(emptyData[field])))
   params.tables[field].count++;
 }
 const deleteLineClick = (field, index, row) => {
   let lineData = datas.treeData[field];
+  !params.tables[field].count ? params.tables[field].count = 0 : null;
   let id = lineData[index].id
   lineData.splice(index, 1)
   params.tables[field].count -= 1
@@ -538,8 +575,6 @@ const fieldOnchange = (params) => {
 }
 
 .form-inline {
-  text-align: left;
-  position: relative;
   display: block;
 }
 </style>

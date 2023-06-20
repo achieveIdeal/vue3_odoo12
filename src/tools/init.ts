@@ -26,7 +26,7 @@ export const setFormAttribute = (formData, formFieldsOption, extras) => {
     }
 }
 export const initFormData = async (extras, formData, formFieldsOption, noloadField) => {
-    for (let field of formData ? Object.keys(formData || {}) : []) {   // 初始化下拉选项值
+    for (let field of formData ? Object.keys(formFieldsOption || {}) : []) {   // 初始化下拉选项值
         let value = formData[field]
         if (formFieldsOption[field]?.type !== 'boolean' && !value) {
             formData[field] = ''
@@ -71,7 +71,7 @@ export const setTreeAttribute = (treeField, lineData, formData, treeFieldsOption
     }
 }
 export const initTreeData = async (extras, treeData, treeFieldsOption, formData) => {
-    for (let treeField of Object.keys(treeData || {})) {
+    for (let treeField of Object.keys(treeFieldsOption || {})) {
         let lineDatas = treeData[treeField]
         for (let lineData of !!lineDatas.length ? lineDatas : []) {
             for (let field of Object.keys(lineData || {})) {
@@ -115,7 +115,7 @@ export const initTreeData = async (extras, treeData, treeFieldsOption, formData)
 }
 export const initListData = async (extras, listData, fieldsOption, noloadField) => {
     for (let lineData of listData && listData.length ? listData : []) {
-        for (let field of Object.keys(lineData || {})) {
+        for (let field of Object.keys(fieldsOption || {})) {
             let value = lineData[field]
             if (noloadField.indexOf(field) !== -1) {
                 continue;

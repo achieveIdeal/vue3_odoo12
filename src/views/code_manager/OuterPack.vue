@@ -12,11 +12,8 @@ const params = reactive({
   type: 'list',
   title: '赋码(外箱包装)',
   name: 'outer_pack',
-  limit: 20,
-  offset: 0,
   domain: [['supplier_id', '=', supplier_id]],
   sort: 'id desc',
-  count: 0,
   model: 'srm.coding.outer.pack',
   fields: [
     'name',

@@ -81,7 +81,7 @@
 </template>
 
 <script lang="ts" setup>
-import {onMounted, reactive, ref} from "vue";
+import {defineExpose, onMounted, reactive, ref} from "vue";
 import {Search} from "@element-plus/icons-vue";
 import {searchFieldSelection} from "../../tools";
 import {callFields} from "../../service/module/call";
@@ -197,6 +197,10 @@ document.onkeydown = e => {
     do_search.value?.$.vnode.el?.click()
   }
 }
+
+defineExpose({
+  getDomain
+})
 
 </script>
 
