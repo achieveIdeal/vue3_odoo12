@@ -44,17 +44,16 @@
       <TreeView
           v-if="Object.keys(params.tables||{}).length"
           :datas="datas.treeData"
-          :formDatas="datas.formData"
+          :formData="datas.formData"
           :options="options.treeFieldsOption"
           :formOptions="options.formFieldsOption"
           :params="params.tables"
           :attributes="extras.attributes||{}"
           :model="params.model"
-          :loading="loading"
           @fieldOnchange="fieldOnchange"
           :disabled="disabled"
           :activeTable="activeTable"
-          :emptyDatas="emptyDatas"
+          :emptyData="emptyData"
           @pageChange="pageChange"
           @addLineClick="addLineClick"
           @deleteLineClick="deleteLineClick"
@@ -68,9 +67,9 @@
         :datasCopy="dataCopy.listData"
         :options="options.formFieldsOption"
         :params="params"
+        :groupbyKey="groupbyKey"
         @pageChange="pageChange"
         @selectClick="selectClick"
-        :groupbyKey="groupbyKey"
         @pageSizeChange="pageSizeChange"
         @loadGroupDetail="loadGroupDetail"
         ref="listViewRef"/>
@@ -96,11 +95,7 @@ import {
   formatData
 } from '../tools/init';
 import type {FieldOptionType, DataType, Multiple, ModuleDataType} from "../types";
-import {onchangeField, loadFormDatas, loadListData, getFieldOption} from "../tools";
-
-const noloadField = Object.keys(props.params?.tables || {}).concat(['id']);
-provide('noloadFields', noloadField)
-const id = inject('id', 0);
+import {onchangeField, loadformData, loadListData, getFieldOption} from "../tools";
 
 let props = defineProps({
   params: {
@@ -115,13 +110,18 @@ let props = defineProps({
     default: false
   }
 });
+
+const noloadField = Object.keys(props.params?.tables || {}).concat(['id']);
+provide('noloadFields', noloadField)
+const id = inject('id', 0);
+
 let route: RouteLocationNormalizedLoaded = useRoute();
 let router = useRouter();
 const loading = ref(false); // 数据加载动画
 let disabled = ref<boolean>(true); // 编辑控制
 let datas = reactive<DataType>({formData: {}, treeData: {}, listData: []});
 let options: FieldOptionType = {formFieldsOption: {}, treeFieldsOption: {},};
-let emptyDatas = reactive<{ [prop: string]: { [prop: string]: Multiple } }>({});  // 空数据
+let emptyData = reactive<{ [prop: string]: { [prop: string]: Multiple } }>({});  // 空数据
 let activeTable = ref<string>('');  // 控制tree视图激活的table
 let dataCopy: DataType = {formData: {}, treeData: {}};  // 保留原始数据
 let buttons = reactive({buttons: {}});  // 按钮控制
@@ -129,8 +129,7 @@ let listViewRef = ref({});  // 列表页的vue元素
 let formViewRef = ref({});  // 表单页的vue元素
 let formRef = ref({});  // 表单的vue元素
 let params: ModuleDataType = props.params;
-let extras: ModuleDataType = props.extras ; // 额外的属性
-let searchOptions = reactive({});  // 查询选项
+let extras: ModuleDataType = props.extras; // 额外的属性
 let domains = [];  // 原始的domain
 let groupbyData = [];  // 分组查询返回的数据
 let groupbyKey = ref('');  // 默认分组查询值
@@ -158,7 +157,7 @@ const initForm = async (result) => {
       }
     }
     initedTree = await initTreeData(extras, treeData, options.treeFieldsOption, formData);
-    initEmptyTreeData(emptyDatas, options.treeFieldsOption)
+    initEmptyTreeData(emptyData, options.treeFieldsOption)
   }
   datas.formData = inited.formData;
   datas.treeData = initedTree.treeData || {};
@@ -189,7 +188,7 @@ const loadData = async () => {
   domains = JSON.parse(JSON.stringify(params.domain || []));
   if (params.type === 'form') {
     loading.value = true;
-    let result = await loadFormDatas(params); // 加载详情
+    let result = await loadformData(params); // 加载详情
     initForm(result)
     loading.value = false;
     emits('loadedCallable', initForm, loading)
@@ -469,7 +468,7 @@ const lineButtonClick = (treeField, data, button) => {
   emits('lineButtonClick', treeField, data, button, reload, loading);
 }
 const addLineClick = (field) => {
-  datas.treeData[field].push(JSON.parse(JSON.stringify(emptyDatas[field])))
+  datas.treeData[field].push(JSON.parse(JSON.stringify(emptyData[field])))
   params.tables[field].count++;
 }
 const deleteLineClick = (field, index, row) => {

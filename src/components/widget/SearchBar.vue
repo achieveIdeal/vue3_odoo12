@@ -136,7 +136,7 @@ onMounted(async () => {
   for (const field of fields) {
     searchVal[field] = searchOptions.value[field]?.default
     if (searchOptions.value[field]?.default) {
-      hasDefault = True
+      hasDefault = true
       searchVal[field] = searchOptions.value[field]?.default
     }
   }

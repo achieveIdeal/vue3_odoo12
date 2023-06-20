@@ -172,15 +172,15 @@ export const initButton = (extras, formData, viewType) => {
     }
     return buttons;
 }
-export const initEmptyTreeData = (emptyDatas, treeFieldsOption) => {
+export const initEmptyTreeData = (emptyData, treeFieldsOption) => {
     for (let treeField of Object.keys(treeFieldsOption || {})) {  // 设置空数据
-        emptyDatas[treeField] = {};
+        emptyData[treeField] = {};
         for (let field of Object.keys(treeFieldsOption[treeField] || {})) {
             if (fieldTypeMap[treeFieldsOption[treeField][field]?.type] === 'number') {
-                emptyDatas[treeField][field] = 0;
+                emptyData[treeField][field] = 0;
                 continue
             }
-            emptyDatas[treeField][field] = '';
+            emptyData[treeField][field] = '';
         }
     }
 }

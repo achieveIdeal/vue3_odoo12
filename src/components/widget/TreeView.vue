@@ -42,7 +42,7 @@
                           form:{
                             field: treeField,
                             attributes: attributes,
-                            datas: formDatas,
+                            datas: formData,
                             model: model,
                             options: formOptions
                           }
@@ -51,9 +51,9 @@
                         reserve-keyword
                         :remote-method="searchSelection(options[treeField][field])"
                         :disabled="parseDomain(formOptions[treeField]?.readonly,
-                          {...formDatas, [treeField]: scoped.row}) ||
+                          {...formData, [treeField]: scoped.row}) ||
                           parseDomain(options[treeField][field]?.readonly,
-                          {...formDatas, [treeField]: scoped.row})  || disabled"
+                          {...formData, [treeField]: scoped.row})  || disabled"
                     >
                         <el-option
                           v-for="item in options[treeField][field]?.selection"
@@ -76,16 +76,16 @@
                           form:{
                             attributes: attributes,
                             field: treeField,
-                            datas: formDatas,
+                            datas: formData,
                             model: model,
                             options: formOptions
                           }
                         })"
                         filterable
                         :disabled="parseDomain(formOptions[treeField]?.readonly,
-                          {...formDatas, [treeField]: scoped.row}) ||
+                          {...formData, [treeField]: scoped.row}) ||
                           parseDomain(options[treeField][field]?.readonly ,
-                          {...formDatas, [treeField]: scoped.row})  || disabled"
+                          {...formData, [treeField]: scoped.row})  || disabled"
                         >
                         <el-option
                           v-for="item in options[treeField][field]?.selection"
@@ -104,9 +104,9 @@
                         remote
                         reserve-keyword
                         :disabled="parseDomain(formOptions[treeField]?.readonly,
-                          {...formDatas, [treeField]: scoped.row}) ||
+                          {...formData, [treeField]: scoped.row}) ||
                           parseDomain(options[treeField][field]?.readonly,
-                          {...formDatas, [treeField]: scoped.row}) || disabled"
+                          {...formData, [treeField]: scoped.row}) || disabled"
                         @change="fieldOnchange({
                         field: field,
                         attributes: attributes[treeField]?.fields,
@@ -116,7 +116,7 @@
                         form:{
                           attributes: attributes,
                           field: treeField,
-                          datas: formDatas,
+                          datas: formData,
                           model: model,
                           options: formOptions
                           }
@@ -127,7 +127,7 @@
                         collapse-tags-tooltip
                       >
                         <el-option
-                            v-for="(item, index) in options[treeField][field]?.selection"
+                            v-for="item in options[treeField][field]?.selection"
                             :key="item[0]"
                             :label="item[1]"
                             :value="item[0]"
@@ -146,15 +146,15 @@
                             form:{
                               field: treeField,
                               attributes: attributes,
-                              datas: formDatas,
+                              datas: formData,
                               model: model,
                               options: formOptions
                             }
                           })"
                           :disabled="parseDomain(formOptions[treeField]?.readonly,
-                            {...formDatas, [treeField]: scoped.row}) ||
+                            {...formData, [treeField]: scoped.row}) ||
                             parseDomain(options[treeField][field]?.readonly ,
-                            {...formDatas, [treeField]: scoped.row}) || disabled">
+                            {...formData, [treeField]: scoped.row}) || disabled">
                       </div>
                     </template>
                     <template v-else-if="fieldTypeMap[options[treeField][field]?.type] === 'number'">
@@ -174,15 +174,15 @@
                           options: options[treeField],
                           form:{
                             field: treeField,
-                            datas: formDatas,
+                            datas: formData,
                             attributes: attributes,
                             model: model,
                             options: formOptions
                           }
                       })"
                        :disabled="parseDomain(formOptions[treeField]?.readonly,
-                       {...formDatas, [treeField]: scoped.row}) ||
-                        parseDomain(options[treeField][field]?.readonly , {...formDatas, [treeField]: scoped.row}) || disabled"/>
+                       {...formData, [treeField]: scoped.row}) ||
+                        parseDomain(options[treeField][field]?.readonly , {...formData, [treeField]: scoped.row}) || disabled"/>
                     </template>
                     <template v-else-if="isFile(options[treeField][field]?.type)">
                       <div class="file-content form-input">
@@ -199,10 +199,10 @@
                           :on-exceed="handleExceed(treeField, scoped.$index, field)"
                           :auto-upload="false"
                           :on-preview="downLoadFile(scoped.row[field], scoped.row[options[treeField][field]?.filename])"
-                          :disabled="parseDomain(options[treeField][field]?.readonly , {...formDatas, [treeField]: scoped.row}) || disabled"
+                          :disabled="parseDomain(options[treeField][field]?.readonly , {...formData, [treeField]: scoped.row}) || disabled"
                         >
                           <template #trigger>
-                            <el-icon class="edit-upload-file" v-if="!(parseDomain(options[treeField][field]?.readonly , {...formDatas, [treeField]: scoped.row}) || disabled)">
+                            <el-icon class="edit-upload-file" v-if="!(parseDomain(options[treeField][field]?.readonly , {...formData, [treeField]: scoped.row}) || disabled)">
                               <Edit/>
                             </el-icon>
                           </template>
@@ -221,22 +221,22 @@
                           form:{
                             attributes: attributes,
                             field: treeField,
-                            datas: formDatas,
+                            datas: formData,
                             model: model,
                             options: formOptions
                           }
                         })"
                         :disabled="parseDomain(formOptions[treeField]?.readonly,
-                          {...formDatas, [treeField]: scoped.row}) ||
+                          {...formData, [treeField]: scoped.row}) ||
                           parseDomain(options[treeField][field]?.readonly ,
-                          {...formDatas, [treeField]: scoped.row})|| disabled"/>
+                          {...formData, [treeField]: scoped.row})|| disabled"/>
                     </template>
                   </el-form-item>
                 </template>
               </el-table-column>
             </template>
           </template>
-          <template v-if="!(parseDomain(formOptions[treeField]?.readonly, {...formDatas}) || disabled)" v-for="(button, index) in attributes[treeField]?.buttons|| []" :key="index">
+          <template v-if="!(parseDomain(formOptions[treeField]?.readonly, {...formData}) || disabled)" v-for="(button, index) in attributes[treeField]?.buttons|| []" :key="index">
             <el-table-column :width="button.width || 130" fixed="right" :label="button.text" v-if="!button.invisible">
               <template #default="scoped">
                 <el-button :type="button.classify || 'primary'"
@@ -248,7 +248,7 @@
           </template>
           <el-table-column fixed="right" label="操作" v-if="!attributes[treeField]?.undel"
                            width="120">
-            <template v-if="!(parseDomain(formOptions[treeField]?.readonly, {...formDatas}) || disabled)" #default="scoped">
+            <template v-if="!(parseDomain(formOptions[treeField]?.readonly, {...formData}) || disabled)" #default="scoped">
               <el-button link
                          size="small"
                          type="danger"
@@ -258,7 +258,7 @@
             </template>
           </el-table-column>
         </el-table>
-        <el-button v-if="!(disabled || parseDomain(formOptions[treeField]?.readonly, {...formDatas})) && !attributes[treeField]?.unadd" class="mt-4"
+        <el-button v-if="!(disabled || parseDomain(formOptions[treeField]?.readonly, {...formData})) && !attributes[treeField]?.unadd" class="mt-4"
                    style="width: 100%"
                    @click="onAddItem(treeField)"
         >添加一行
@@ -308,7 +308,7 @@ const props = defineProps({
     type: Object as PropType<ModuleDataType>,
     default: {}
   },
-  formDatas: {
+  formData: {
     type: Object as PropType<DataType>,
     default: {}
   },
@@ -350,7 +350,7 @@ let loading = ref(false)
 
 const searchSelection = (option: FieldOptionType) => (query: string) => {
   loading.value = true;
-  searchFieldSelection(option, query, [], option.limit).then(r => {
+  searchFieldSelection(option, query, [], option.limit).then(()=> {
     loading.value = false;
   });
 }

@@ -161,7 +161,7 @@ const getFieldOption =async (params) => {
     }
 }
 
-const loadFormDatas = async (params: ModuleDataType) => {
+const loadformData = async (params: ModuleDataType) => {
     let requestParams = getRequestParams(params);
     let treeData = {};
     let tableDataCountMap = {};
@@ -446,7 +446,7 @@ const parseDomain = (domains, data) => {
 
 export {
     searchFieldSelection, onchangeField,
-    getFileType, loadFormDatas,
+    getFileType, loadformData,
     base64ToBlobUrl, loadListData,
     downLoadFile,getFieldOption,
     encodeFileToBase64,
