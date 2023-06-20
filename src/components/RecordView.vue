@@ -170,14 +170,13 @@ const initList = async (result) => {
   const initedList = await initListData(extras, listData, options.formFieldsOption, noloadField);
   datas.listData = initedList.listData;
   params.count = count;
-  buttons.buttons = initButton(extras, {}, params.type);
 }
 
-const hasDefaultSearch = ()=>{
+const hasDefaultSearch = () => {
   let hasDefault = params.groupby && extras.groupby.length;
   const search_fields = extras.search_fields || {};
-  for(const field of Object.keys(search_fields)){
-    if(search_fields[field].default){
+  for (const field of Object.keys(search_fields)) {
+    if (search_fields[field].default) {
       hasDefault = true
     }
   }
@@ -218,6 +217,7 @@ const loadData = async () => {
       initList(result)
       loading.value = false;
     }
+    buttons.buttons = initButton(extras, {}, params.type);
   }
 }
 const reload = loadData

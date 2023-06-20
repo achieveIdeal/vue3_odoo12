@@ -123,7 +123,7 @@ const extras = {
   listInvisible: ['supplier_id', 'shelf_life', 'manufacturer_id',
     'produce_number', 'comment',],
   readonly: ['name', 'product_name', 'print_amount', 'name', 'supplier_id',
-    'if_print', 'min_pack_size', 'delivery_order_id', 'shelf_life'],
+    'if_print', 'delivery_order_id', 'shelf_life'],
   required: ['default_code', 'date_from', 'amount', 'min_pack_size', 'produce_number']
 }
 
