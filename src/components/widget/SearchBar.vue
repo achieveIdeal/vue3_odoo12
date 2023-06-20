@@ -76,7 +76,7 @@
         />
       </template>
     </template>
-    <el-button ref="do_search" :icon="Search" @click="searchClick"/>
+    <el-button v-if="!!Object.keys(options).length" ref="do_search" :icon="Search" @click="searchClick"/>
   </div>
 </template>
 
@@ -119,28 +119,30 @@ const searchOptions = ref({});
 const searchOptionCopy = ref({});
 
 onMounted(async () => {
+  let groupbyDefault;
   if (groupbyItemRef?.value?.length) {
     groupbyVal.value = props.groupbyDefault
-    const groupbyDefault = groupbyItemRef.value.find((r) => {
+    groupbyDefault = groupbyItemRef.value.find((r) => {
       return r.value === groupbyVal.value
     })
-    groupbyDefault?.$emit('click')
   }
-  const fields = Object.keys(props.options)
-  const result = await callFields({
-    model: props.model,
-    args: [0, fields]
-  })
-  searchOptions.value = initSearchBar({search_fields: props.options, groupby: props.groupby}, result.result);
-  let hasDefault = false;
-  for (const field of fields) {
-    searchVal[field] = searchOptions.value[field]?.default
-    if (searchOptions.value[field]?.default) {
-      hasDefault = true
+  const fields = Object.keys(props.options);
+  if (fields.length) {
+    const result = await callFields({
+      model: props.model,
+      args: [0, fields]
+    })
+    searchOptions.value = initSearchBar({search_fields: props.options, groupby: props.groupby}, result.result);
+    let hasDefault = false;
+    for (const field of fields) {
       searchVal[field] = searchOptions.value[field]?.default
+      if (searchOptions.value[field]?.default) {
+        hasDefault = true;
+        searchVal[field] = searchOptions.value[field]?.default
+      }
     }
+    hasDefault ? do_search.value?.$.vnode.el?.click() : groupbyDefault?.$emit('click');
   }
-  hasDefault ? do_search.value?.$.vnode.el?.click() : null;
 })
 const emits = defineEmits(['searchClick', 'groupbyClick']);
 

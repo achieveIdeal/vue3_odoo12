@@ -173,6 +173,17 @@ const initList = async (result) => {
   buttons.buttons = initButton(extras, {}, params.type);
 }
 
+const hasDefaultSearch = ()=>{
+  let hasDefault = params.groupby && extras.groupby.length;
+  const search_fields = extras.search_fields || {};
+  for(const field of Object.keys(search_fields)){
+    if(search_fields[field].default){
+      hasDefault = true
+    }
+  }
+  return !hasDefault
+}
+
 const loadData = async () => {
   let fieldsOption;
   if (!Object.keys(options.formFieldsOption).length) {
@@ -186,18 +197,27 @@ const loadData = async () => {
   options.formFieldsOption = (fieldsOption || options).formFieldsOption;
   options.treeFieldsOption = (fieldsOption || options).treeFieldsOption;
   domains = JSON.parse(JSON.stringify(params.domain || []));
+  let needInit = true;
+  const noInit = () => {
+    needInit = false
+  };
   if (params.type === 'form') {
-    loading.value = true;
-    let result = await loadformData(params); // 加载详情
-    initForm(result)
-    loading.value = false;
-    emits('loadedCallable', initForm, loading)
+    emits('loadedCallable', initForm, loading, noInit)
+    if (needInit) {
+      loading.value = true;
+      let result = await loadformData(params); // 加载详情
+      initForm(result);
+      loading.value = false;
+    }
   } else if (params.type === 'list') {
-    disabled.value = true;
-    const result = await loadListData(params); // 加载列表
-    initList(result)
-    loading.value = false;
-    emits('loadedCallable', initList, loading)
+    needInit = hasDefaultSearch()
+    emits('loadedCallable', initList, loading, noInit);
+    if (needInit) {
+      disabled.value = true;
+      const result = await loadListData(params); // 加载列表
+      initList(result)
+      loading.value = false;
+    }
   }
 }
 const reload = loadData
@@ -223,10 +243,10 @@ const groupbyClick = (groupby, domain) => {
     groupbyData = res.result;
     for (const groupbyDetail of groupbyData) {
       groupbyDetail['hasChildren'] = true;
-      if (options[groupby].type === 'selection') {
-        groupbyDetail[groupby] = options[groupby].selection.find(r => r[0] === groupbyDetail[groupby])[1]
+      if (options.formFieldsOption[groupby]?.type === 'selection') {
+        groupbyDetail[groupby] = options.formFieldsOption[groupby].selection.find(r => r[0] === groupbyDetail[groupby])[1]
       }
-      if (['many2one', 'many2many'].indexOf(options[groupby].type) !== -1) {
+      if (['many2one', 'many2many'].indexOf(options.formFieldsOption[groupby]?.type) !== -1) {
         groupbyDetail[groupby] = groupbyDetail[groupby][1]
       }
       groupbyDetail[groupby] = groupbyDetail[groupby] + ' - (' + groupbyDetail[groupby + '_count'] + ')'

@@ -64,7 +64,8 @@ const extras = {
 }
 
 const emits = defineEmits(['loadedCallback', 'selectClick'])
-const loadedCallable = (init, loading) => {
+const loadedCallable = (init, loading, noInit) => {
+  noInit()
   emits('loadedCallback', init, loading)
 }
 const selectClick = (rows, loading) => {

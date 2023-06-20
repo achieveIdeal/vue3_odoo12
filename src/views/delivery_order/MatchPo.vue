@@ -8,7 +8,7 @@ import {inject, reactive} from "vue";
 
 const supplier_id = parseInt(inject('supplier_id') || 0);
 const params = reactive({
-  id:  0,
+  id: 0,
   type: 'list',
   title: '匹配采购订单',
   name: 'delivery_order',
@@ -70,11 +70,12 @@ const extras = {
 }
 
 const emits = defineEmits(['loadedCallback', 'customClick'])
-const loadedCallable = (init, loading) => {
+const loadedCallable = (init, loading, noInit) => {
+  noInit();
   emits('loadedCallback', init, loading)
 }
 
-const customClick = (button, datas, reload, loading)=>{
+const customClick = (button, datas, reload, loading) => {
   emits('customClick', button, datas, reload, loading);
 }
 
