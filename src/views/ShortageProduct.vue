@@ -15,7 +15,6 @@ const params = reactive({
   type:  'list',
   title: '物料欠料表',
   name: 'shortage_product',
-  groupby: 'product_id',
   limit: 20,
   offset: 0,
   domain: [['partner_id', '=', supplier_id]],
@@ -48,7 +47,6 @@ const extras = {
     product_id: {},
     date: {},
   },
-  groupby: ['product_id'],
   attributes: {},
   invisible: ['urgency_date', 'delivery_state', 'delete_flag', 'state', 'partner_id'],
   listInvisible: ['urgency_date', 'delete_flag', 'state', 'partner_id', 'in_stock_qty']
