@@ -198,7 +198,7 @@ const loadData = async () => {
   domains = JSON.parse(JSON.stringify(params.domain || []));
   let needInit = true;
   const noInit = () => {
-    needInit = false
+    needInit = false;
   };
   if (params.type === 'form') {
     emits('loadedCallable', initForm, loading, noInit)
@@ -211,13 +211,13 @@ const loadData = async () => {
   } else if (params.type === 'list') {
     needInit = hasDefaultSearch()
     emits('loadedCallable', initList, loading, noInit);
+    buttons.buttons = initButton(extras, {}, params.type);
     if (needInit) {
       disabled.value = true;
       const result = await loadListData(params); // 加载列表
       initList(result)
       loading.value = false;
     }
-    buttons.buttons = initButton(extras, {}, params.type);
   }
 }
 const reload = loadData

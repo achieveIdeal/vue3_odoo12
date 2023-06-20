@@ -420,7 +420,7 @@ const parseDomain = (domains, data) => {
     for (let index = length - 1; index >= 0; index--) {
         let domain = domainStack[index];
         if (domain === '|') {
-            if (domainStack[index + 1] !== 'undefined' && domainStack[index + 2] !== 'undefined') {
+            if (typeof domainStack[index + 1] !== 'undefined' && typeof domainStack[index + 2] !== 'undefined') {
                 domain = domainStack[index + 1] || domainStack[index + 2];
                 domainStack.splice(index + 1, 1);
                 domainStack.splice(index + 1, 1);
@@ -431,7 +431,7 @@ const parseDomain = (domains, data) => {
             }
         }
         if (domain === '&') {
-            if (domainStack[index + 1] !== 'undefined' && domainStack[index + 2] !== 'undefined') {
+            if (typeof domainStack[index + 1] !== 'undefined' && typeof domainStack[index + 2] !== 'undefined') {
                 domain = domainStack[index + 1] && domainStack[index + 2];
                 domainStack.splice(index + 1, 1);
                 domainStack.splice(index + 1, 1);
