@@ -40,7 +40,9 @@ const extras = {
     delivery_state: {
       default: ['undone']
     },
-    product_id: {},
+    product_id: {
+      noSelect: true
+    },
     date: {},
   },
   attributes: {},

@@ -72,7 +72,7 @@ const extras = {
       limit: 50
     },
     name: {
-      width: '160'
+      width: '200'
     }
   },
   invisible: ['state', 'if_print', 'delivery_order_id'],

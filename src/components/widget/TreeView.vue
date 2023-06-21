@@ -212,6 +212,7 @@
                     <template v-else>
                       <el-input v-model="scoped.row[field]" :type="fieldTypeMap[options[treeField][field]?.type]"
                         :maxlength="options[treeField][field]?.maxlength"
+                        clearable
                         @change="fieldOnchange({
                           field: field,
                           datas: scoped.row,

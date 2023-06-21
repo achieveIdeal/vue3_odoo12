@@ -167,6 +167,7 @@
         </template>
         <template v-else-if="options[field]">
           <el-input v-model="datas[field]" :type="fieldTypeMap[options[field]?.type]" class="form-input"
+                    clearable
                     :maxlength="options[field]?.maxlength"
                     @blur="fieldOnchange({
               field: field,

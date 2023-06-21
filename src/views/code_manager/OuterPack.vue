@@ -70,7 +70,7 @@ const extras = {
       limit: 50
     },
     name: {
-      width: '160'
+      width: '200'
     },
     product_id: {
       readonly: [['state', '=', 'done']]

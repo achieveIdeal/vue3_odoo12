@@ -70,6 +70,7 @@
       </template>
       <template v-else>
         <el-input
+            clearable
             class="form-input"
             v-model="searchVal[field]"
             :type="searchOptions[field]?.type"
@@ -163,7 +164,9 @@ const getDomain = () => {
   let domain = []
   for (let field of Object.keys(searchVal || {})) {
     let operate = '=';
-    let isDate = !isNaN(Date.parse(searchVal[field]))
+    let reDateTime = /^[1-9]\d{3}-(0[1-9]|1[0-2])-(0[1-9]|[1-2][0-9]|3[0-1])\s+(20|21|22|23|[0-1]\d):[0-5]\d:[0-5]\d$/;
+    let reDate =/^[1-9]\d{3}-(0[1-9]|1[0-2])-(0[1-9]|[1-2][0-9]|3[0-1])$/;
+    let isDate = reDateTime.test(searchVal[field]) || reDate.test(searchVal[field]);
     if (!searchVal[field] || searchVal[field] instanceof Array && !searchVal[field].length) {
       if (props.options[field]?.type !== 'boolean') {
         continue
@@ -175,6 +178,7 @@ const getDomain = () => {
     if (typeof searchVal[field] === 'string' && !isDate) {
       operate = 'ilike';
     }
+    console.log(typeof searchVal[field]);
     domain.push([field, operate, searchVal[field]]);
   }
   return domain

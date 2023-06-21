@@ -158,7 +158,7 @@ const initForm = async (result) => {
   let inited = await initFormData(extras, formData, options.formFieldsOption, noloadField);
   for (let lineField of Object.keys(tableDataCountMap || {})) {  // 记录表格数据总数
     params.tables[lineField].count = tableDataCountMap[lineField];
-    params.tables[lineField].limit = 12;
+    params.tables[lineField].limit = params.tables[lineField].limit || 12;
     params.tables[lineField].offset = 0;
   }
 
@@ -205,7 +205,7 @@ const loadData = async () => {
   datas.formData = {};
   datas.treeData = {};
   datas.listData = [];
-  params.limit = 20;
+  params.limit = params.limit || 20;
   params.offset = 0;
   params.domain = params.domain || [];
   options.formFieldsOption = (fieldsOption || options).formFieldsOption;
