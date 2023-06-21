@@ -2,7 +2,7 @@
   <el-tabs v-model="active">
     <template v-if="!!Object.keys(datas||{}).length" v-for="treeField in Object.keys(params||{})" :key="treeField">
       <el-tab-pane v-if="!formOptions[treeField]?.invisible" :label="params[treeField]?.title" :name="treeField">
-        <el-table :data="datas[treeField]?.slice(params[treeField]?.offset,    // 分页
+        <el-table class="table-item" :data="datas[treeField]?.slice(params[treeField]?.offset,    // 分页
           params[treeField]?.offset + params[treeField]?.limit)"
           show-summary
           table-layout="auto"
@@ -246,9 +246,10 @@
               </template>
             </el-table-column>
           </template>
-          <el-table-column fixed="right" label="操作" v-if="!attributes[treeField]?.undel"
+          <el-table-column  fixed="right" label="操作" v-if="!attributes[treeField]?.undel
+          && !(parseDomain(formOptions[treeField]?.readonly, {...formData}) || disabled)"
                            width="120">
-            <template v-if="!(parseDomain(formOptions[treeField]?.readonly, {...formData}) || disabled)" #default="scoped">
+            <template #default="scoped">
               <el-button link
                          size="small"
                          type="danger"
@@ -453,5 +454,10 @@ const fieldOnchange = (params) => {
   margin-top: 20px;
   float: right;
 }
-
+.table-item {
+  text-align: center;
+}
+:deep(.el-table__footer) {
+  display: inline-block;
+}
 </style>

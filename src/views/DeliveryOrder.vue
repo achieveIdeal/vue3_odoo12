@@ -40,13 +40,10 @@ let match_po_types = []
 let codeDatas = ref({});
 let codeAmountTotal = ref(0)
 const params = reactive({
-  id: 0,
-  type: 'list',
   title: '交货单',
   name: 'delivery_order',
   width: '30%',
   domain: [['partner_id', '=', supplier_id]],
-  sort: 'id desc',
   model: 'srm.delivery.order',
   fields:
       ['name', 'partner_id', 'expect_date', 'company_id',
@@ -54,8 +51,6 @@ const params = reactive({
   tables: {
     line_ids: {
       title: '交货订单行',
-      domain: [],
-      sort: 'id desc',
       model: 'srm.delivery.order.line',
       fields: ['product_id', 'material_name', 'jit_id', 'shortage_id', 'amount_planned',
         'delivery_quantity', 'uom_id', 'purchase_order', 'code_names', 'comment', 'origin_data_ids']
@@ -229,9 +224,10 @@ const customClick = (button, datas, reload, loading) => {
   }
 }
 
-const loadedCallable = async (init, loading) => {
+const loadedCallable = async (init, loading, noInit) => {
   let plan_ids = route.query?.plan_ids;
   if (plan_ids || plan_ids?.length) {
+    noInit();
     plan_ids = plan_ids instanceof Array ? plan_ids : [plan_ids];
     loading.value = true;
     const res = await callButton({

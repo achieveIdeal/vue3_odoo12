@@ -103,6 +103,7 @@ const extras = {
   search_fields: {
     default_code: {
       domain: [],
+      noSelect: true,
     }
   },
   attributes: {

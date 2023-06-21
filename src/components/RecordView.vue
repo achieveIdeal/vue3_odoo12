@@ -135,7 +135,7 @@ let extras: ModuleDataType = props.extras; // 额外的属性
 let groupbyData = [];  // 分组查询返回的数据
 let groupbyKey = ref('');  // 默认分组查询值
 const getListViewExpose = () => {
-  const listTable = listViewRef.value?.listTable || {};
+  const listTable = listViewRef.value?.listTable;
   const pageSize = listViewRef.value?.pageSize || 20;
   const recoverPageTo1 = listViewRef.value?.recoverPageTo1 || function () {
   };
@@ -158,6 +158,8 @@ const initForm = async (result) => {
   let inited = await initFormData(extras, formData, options.formFieldsOption, noloadField);
   for (let lineField of Object.keys(tableDataCountMap || {})) {  // 记录表格数据总数
     params.tables[lineField].count = tableDataCountMap[lineField];
+    params.tables[lineField].limit = 12;
+    params.tables[lineField].offset = 0;
   }
 
   let initedTree = {};
@@ -205,6 +207,7 @@ const loadData = async () => {
   datas.listData = [];
   params.limit = 20;
   params.offset = 0;
+  params.domain = params.domain || [];
   options.formFieldsOption = (fieldsOption || options).formFieldsOption;
   options.treeFieldsOption = (fieldsOption || options).treeFieldsOption;
   let needInit = true;
@@ -390,7 +393,7 @@ const saveCreate = (params, savedDatas) => {
     }
     disabled.value = true;
     loading.value = false;
-    router.push({
+    router.replace({
       name: params.name,
       query: {
         id: res.result
@@ -407,9 +410,9 @@ const saveClick = (formEl: FormInstance | undefined) => {  // 处理保存按钮
       for (let file of formViewRef.value?.upload || []) {
         file.submit()
       }
-      if (savedDatas && params.id) {
+      if (Object.keys(savedDatas).length && params.id) {
         saveWrite(params, savedDatas)
-      } else if (savedDatas) {
+      } else if (Object.keys(savedDatas).length) {
         saveCreate(params, savedDatas);
       }
     } else {
@@ -425,7 +428,7 @@ const saveClick = (formEl: FormInstance | undefined) => {  // 处理保存按钮
 }
 const customClick = (button) => {
   const listViewExpose = getListViewExpose();
-  const rows = (listViewExpose || {}).listTable?.getSelectionRows() || []
+  const rows = listViewExpose.listTable?.getSelectionRows() || []
   if (rows.length) {
     emits('customClick', button, rows, reload, loading);
   } else {

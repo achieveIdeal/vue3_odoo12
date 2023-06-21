@@ -150,8 +150,11 @@ export const initSearchBar = (extras, fieldsOption) => {
             domain: extras.search_fields[field]?.domain,
             default: extras.search_fields[field]?.default,
             limit: extras.search_fields[field]?.limit,
+            noSelect: extras.search_fields[field]?.noSelect,
             multiple: extras.search_fields[field]?.multiple || false,
         }
+        console.log(searchOptions[field],field);
+        console.log(extras.search_fields[field]);
     }
     return searchOptions
 }

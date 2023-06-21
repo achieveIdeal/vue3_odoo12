@@ -194,7 +194,7 @@ const loadformData = async (params: ModuleDataType) => {
                 domain: lineParams.domain.concat([['id', 'in', lineParams.id]]),
                 offset: 0,
                 limit: false,
-                sort: lineParams.sort
+                sort: lineParams.sort || 'id desc'
             }
             const result = await callSearchRead(requestData)
             if (result.error) {
@@ -238,7 +238,7 @@ const loadListData = async (params: ModuleDataType) => {
         offset: params.offset || 0,
         limit: params.limit || 20,
         domain: params.domain,
-        sort: params.sort
+        sort: params.sort || 'id desc'
     }
     let dataRes = {}
     if (!params.groupby) {

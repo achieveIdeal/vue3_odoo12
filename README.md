@@ -30,29 +30,20 @@
 
 ```js
 const params = reactive({
-    id: 0,  // id为0时为创建页面， 不为零且记录存在时为详情页， 不需要定义
-    type: 'list',  // 定义加载时显示列表页或详情页， 不需要定义
     title: '交货单',  // 抬头标题
     name: 'delivery_order',  // 路由名称
-    limit: 20,  // 列表页显示数据条数
     width: '30%',  // 详情页单个item显示宽度
-    offset: 0,  // 数据偏移量。一般为零
     groupby: 'state', // 分组查询默认值，须定义在extras的groupby中
     domain: [['partner_id', '=', supplier_id]],  // 列表页加载数据的筛选条件
-    sort: 'id desc',  // 列表页加载数据的排序方式， 遵循sql写法
-    count: 0,  // 列表页数据总数， 不需要定义
+    sort: 'id desc',  // 列表页加载数据的排序方式， 遵循sql写法, 默认 id desc
     model: 'srm.delivery.order',  // 加载数据的模型
     fields:  // 需要加载数据的字段
         ['name', 'partner_id', 'expect_date', 'company_id', 'amount',
             'h_state', 'submit_user_id', 'state', 'jit_flag', 'line_ids'],
     tables: {  // 定义表单页的table数据，渲染treeView时使用
         line_ids: {
-            limit: 10,
-            offset: 0,
             title: '交货订单行',
-            domain: [],
             sort: 'id desc',
-            count: 0,
             model: 'srm.delivery.order.line',
             fields: ['product_id', 'material_name', 'jit_id', 'shortage_id', 'amount_planned',
                 'delivery_quantity', 'uom_id', 'purchase_order', 'code_names', 'comment', 'origin_data_ids']

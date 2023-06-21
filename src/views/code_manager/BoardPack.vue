@@ -59,7 +59,8 @@ const extras = {
   ],
   search_fields: {
     product_id: {
-      domain: []
+      domain: [],
+      noSelect: true
     }
   },
   attributes: {

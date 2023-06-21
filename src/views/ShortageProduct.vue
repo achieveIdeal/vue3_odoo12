@@ -8,15 +8,14 @@ import RecordView from '../components/RecordView.vue'
 
 import {inject, reactive} from "vue";
 import router from "../router";
+import {callButton} from "../service/module/call";
+import {ElMessage} from "element-plus";
 
 const supplier_id = parseInt(inject('supplier_id') || 0);
 const params = reactive({
-  id:0,
-  type:  'list',
   title: '物料欠料表',
   name: 'shortage_product',
   domain: [['partner_id', '=', supplier_id]],
-  sort: 'id desc',
   model: 'shortage.product',
   fields:
       ['name', 'partner_id', 'product_id', 'production_merge_order', 'production_order', 'need_qty',
@@ -49,8 +48,23 @@ const extras = {
   listInvisible: ['urgency_date', 'delete_flag', 'state', 'partner_id', 'in_stock_qty']
 }
 
-const customClick = (button, rows) => {
+const customClick = async (button, rows, loading) => {
   const ids = rows.map(r => r.id)
+  const plan_ids = ids instanceof Array ? ids : [ids];
+  loading.value = true;
+  const res = await callButton({
+    model: params.model,
+    method: 'check_can_create_delivery_order',
+    args: [plan_ids]
+  })
+  if (res.error) {
+    loading.value = false;
+    ElMessage({
+      message: res.error.data.message,
+      type: 'error'
+    });
+    return false
+  }
   router.push({
     path: '/delivery_order',
     query: {
