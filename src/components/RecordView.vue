@@ -2,7 +2,7 @@
   <el-button style="display: none" v-loading.fullscreen.lock="loading" element-loading-text="正在加载..."/>
   <div class="controller-panel">
     <ButtonView
-        v-if="!params.groupby"
+        v-if="!params.groupby && Object.keys(buttons.buttons).length"
         :disabled="disabled"
         :params="{type: params.type, id: params.id, name:props.name}"
         :buttons="buttons"
@@ -15,10 +15,9 @@
         @cancelClick="cancelClick"/>
     <SearchBar
         ref="searchViewRef"
-        v-if="params.type==='list'"
-        :options="extras.search_fields"
+        v-if="params.type==='list' && Object.keys(searcher.searchOptions).length"
         :groupby="extras.groupby"
-        :model="params.model"
+        :searcher="searcher"
         :groupbyDefault="params.groupby"
         @groupbyClick="groupbyClick"
         @searchClick="searchClick"/>
@@ -68,11 +67,13 @@
         :datasCopy="dataCopy.listData"
         :options="options.formFieldsOption"
         :params="params"
+        :colors="extras.colors"
         :groupbyKey="groupbyKey"
         @pageChange="pageChange"
         @selectClick="selectClick"
         @pageSizeChange="pageSizeChange"
         @loadGroupDetail="loadGroupDetail"
+        @handleLineClick="handleLineClick"
         ref="listViewRef"/>
   </template>
 </template>
@@ -93,10 +94,10 @@ import {
   initListData,
   initButton,
   initEmptyTreeData,
-  formatData
+  formatData, initSearchBar
 } from '../tools/init';
 import type {FieldOptionType, DataType, Multiple, ModuleDataType} from "../types";
-import {onchangeField, loadformData, loadListData, getFieldOption} from "../tools";
+import {onchangeField, loadFormData, loadListData, getFieldOption} from "../tools";
 
 let props = defineProps({
   params: {
@@ -134,22 +135,27 @@ let params: ModuleDataType = props.params;
 let extras: ModuleDataType = props.extras; // 额外的属性
 let groupbyData = [];  // 分组查询返回的数据
 let groupbyKey = ref('');  // 默认分组查询值
+let searcher = reactive({searchOptions: {}});  // 默认分组查询值
 const getListViewExpose = () => {
   const listTable = listViewRef.value?.listTable;
   const pageSize = listViewRef.value?.pageSize || 20;
   const recoverPageTo1 = listViewRef.value?.recoverPageTo1 || function () {
   };
+  const defaultCheckedLine = listViewRef.value?.defaultCheckedLine || function () {
+  };
   return {
     listTable,
     pageSize,
-    recoverPageTo1
+    recoverPageTo1,
+    defaultCheckedLine
   }
 };
 
-const emits = defineEmits(['objectClick', 'saveClick', 'customClick', 'pageSizeChange', 'loadGroupDetail',
+const emits = defineEmits(['objectClick', 'saveClick', 'customClick', 'pageSizeChange', 'loadGroupDetail', 'handleLineClick',
   'lineButtonClick', 'loadedCallable', 'selectClick', 'deleteLineClick', 'fieldOnchange']);
 
-const initForm = async (result) => {
+const initForm = async (result, domain) => {
+  params.domain = params.domain.concat(domain || [])
   let formData = result?.formData || datas.formData;
   let treeData = result?.treeData || datas.treeData;
   disabled.value = !!params.id;  //  创建不加载数据  且为可编辑
@@ -177,13 +183,16 @@ const initForm = async (result) => {
   datas.treeData = initedTree.treeData || {};
   dataCopy = JSON.parse(JSON.stringify(datas));
 }
-const initList = async (result) => {
+const initList = async (result, domain) => {
+  params.domain = params.domain.concat(domain || [])
   disabled.value = true;
   const listData = !result ? datas.listData : result.listData;
   const count = !result ? datas.count : result.count;
   const initedList = await initListData(extras, listData, options.formFieldsOption, noloadField);
   datas.listData = initedList.listData;
   params.count = count;
+  const listViewExpose = getListViewExpose();
+  listViewExpose.defaultCheckedLine(datas.listData)
 }
 
 const hasDefaultSearch = () => {
@@ -218,7 +227,7 @@ const loadData = async () => {
     emits('loadedCallable', initForm, loading, noInit)
     if (needInit) {
       loading.value = true;
-      let result = await loadformData(params); // 加载详情
+      let result = await loadFormData(params); // 加载详情
       initForm(result);
       loading.value = false;
     }
@@ -226,6 +235,7 @@ const loadData = async () => {
     needInit = hasDefaultSearch()
     emits('loadedCallable', initList, loading, noInit);
     buttons.buttons = initButton(extras, {}, params.type);
+    searcher.searchOptions = initSearchBar(extras, options.formFieldsOption);
     if (needInit) {
       disabled.value = true;
       const result = await loadListData(params); // 加载列表
@@ -349,6 +359,10 @@ const pageSizeChange = async (size) => {
   emits('pageSizeChange', size, loading)
 }
 
+
+const handleLineClick = (row) => {
+  emits('handleLineClick', row)
+}
 const editClick = () => {
   disabled.value = false;
 }

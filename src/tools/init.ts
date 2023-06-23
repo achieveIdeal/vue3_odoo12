@@ -144,17 +144,13 @@ export const initListData = async (extras, listData, fieldsOption, noloadField) 
 }
 export const initSearchBar = (extras, fieldsOption) => {
     let searchOptions = {}
-    for (let field of Object.keys(extras.search_fields || {}).concat(extras.groupby)) {
+    for (let field of Object.keys(extras.search_fields || {}).concat(extras.groupby||[])) {
         searchOptions[field] = {
             ...fieldsOption[field],
-            domain: extras.search_fields[field]?.domain,
-            default: extras.search_fields[field]?.default,
-            limit: extras.search_fields[field]?.limit,
-            noSelect: extras.search_fields[field]?.noSelect,
-            multiple: extras.search_fields[field]?.multiple || false,
         }
-        console.log(searchOptions[field],field);
-        console.log(extras.search_fields[field]);
+        for (const attribute of Object.keys(extras.search_fields[field]||{})){
+            searchOptions[field][attribute] = extras.search_fields[field][attribute];
+        }
     }
     return searchOptions
 }

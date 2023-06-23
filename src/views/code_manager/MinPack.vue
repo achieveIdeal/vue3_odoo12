@@ -27,10 +27,9 @@ let date_from = ref('');
 let activeRows = ref([]);
 const loading = ref(false);
 const params = reactive({
-  id: 0,
-  type: 'list',
   title: '赋码(最小包装)',
   name: 'min_pack',
+  height: 'calc(100vh - 330px)',
   domain: [['supplier_id', '=', supplier_id]],
   sort: 'id desc',
   model: 'srm.coding',

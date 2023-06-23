@@ -5,19 +5,20 @@
         <el-table class="table-item" :data="datas[treeField]?.slice(params[treeField]?.offset,    // 分页
           params[treeField]?.offset + params[treeField]?.limit)"
           show-summary
-          table-layout="auto"
+          fit
           :summary-method="getSummaries(treeField)"
           sum-text="总计"
+          :row-style="handleTreeRowStyle(treeField)"
           stripe>
           <template v-for="field in params[treeField].fields"
                     :key="field">
             <template v-if="noLoadFields.indexOf(field) === -1 && !options[treeField][field]?.invisible">
               <el-table-column
-                  :width="options[treeField][field]?.width || 150">
+                 :show-overflow-tooltip="disabled"
+                  :width="options[treeField][field]?.width">
                 <template #header>
                   <span v-if="options[treeField][field]?.required" style="color: red;">*</span>
-                  {{ options[treeField][field]?.string }}              {{options[treeField][field]?.width }}
-
+                  {{ options[treeField][field]?.string }}
                 </template>
                 <template #default="scoped">
                   <el-form-item :prop="['treeData', treeField,scoped.$index, field]" class="table-form-item"
@@ -26,7 +27,19 @@
                       message: options[treeField][field]?.string + '不能为空!',
                       trigger: 'blur',
                     }]">
-                    <template v-if="is2One(options[treeField][field]?.type)">
+                    <template v-if="disabled">
+                      <span v-if="is2One(options[treeField][field]?.type)"> {{options[treeField][field]?.selection.find(r=>r[0]===scoped.row[field])[1]}}</span>
+                      <span v-else-if="isSelection(options[treeField][field]?.type)">{{options[treeField][field]?.selection.find(r=>r[0]===scoped.row[field])[1]}}</span>
+                      <span v-else-if="is2Many(options[treeField][field]?.type)">{{options[treeField][field]?.selection.map(r=>scoped.row[field].includes(r[0])).map(r=>r[0])}}</span>
+                      <span class="form-input alien-left" v-else-if="options[treeField][field]?.type==='checkbox'">
+                        <input type="checkbox" v-model="scoped.row[field]">
+                      </span>
+                      <span class="file-content form-input" v-else-if="isFile(options[treeField][field]?.type)">
+                         {{ scoped.row[options[treeField][field]?.filename] }}
+                      </span>
+                      <span v-else>{{scoped.row[field]}}</span>
+                    </template>
+                    <template v-else-if="is2One(options[treeField][field]?.type)">
                       <el-select
                         v-model="scoped.row[field]"
                         placeholder="请选择"
@@ -237,8 +250,9 @@
               </el-table-column>
             </template>
           </template>
-          <template v-if="!(parseDomain(formOptions[treeField]?.readonly, {...formData}) || disabled)" v-for="(button, index) in attributes[treeField]?.buttons|| []" :key="index">
-            <el-table-column :width="button.width || 130" fixed="right" :label="button.text" v-if="!button.invisible">
+          <template v-if="!(parseDomain(formOptions[treeField]?.readonly, {...formData}) || disabled)"
+                    v-for="(button, index) in attributes[treeField]?.buttons|| []" :key="index">
+            <el-table-column :width="button.width|| 120" fixed="right" :label="button.text" v-if="!button.invisible">
               <template #default="scoped">
                 <el-button :type="button.classify || 'primary'"
                            @click="handleButtonClick(treeField, scoped.row, button)"
@@ -248,8 +262,7 @@
             </el-table-column>
           </template>
           <el-table-column  fixed="right" label="操作" v-if="!attributes[treeField]?.undel
-          && !(parseDomain(formOptions[treeField]?.readonly, {...formData}) || disabled)"
-                           width="120">
+          && !(parseDomain(formOptions[treeField]?.readonly, {...formData}) || disabled)" width="120">
             <template #default="scoped">
               <el-button link
                          size="small"
@@ -379,6 +392,26 @@ const getSummaries = (treeField) => (table) => {
   }
   return sums
 }
+
+const handleTreeRowStyle = (treeField)=>(row) => {
+  const colorMap = {
+    success: '#28a745',
+    warning: '#ffc400',
+    error: '#dc3545',
+    info: '#606266'
+  }
+  let curColor = 'info'
+  let colors = props?.attributes[treeField]?.colors || {}
+  for (const color of Object.keys(colors)) {
+    if (parseDomain(colors[color], row.row)) {
+      curColor = color;
+    }
+  }
+  return {
+    color: colorMap[curColor]
+  }
+}
+
 
 const handleDeleteLine = (index, field, row) => {  //  行删除
   const delFiles = upload.value?.filter(r => {

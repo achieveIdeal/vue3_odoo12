@@ -4,7 +4,7 @@
     <MatchPo @loadedCallback="poLoadedCallable" @customClick="poCustomClick" :isDialog="true"/>
   </el-dialog>
   <el-dialog v-model="codeDialogVisible" title="匹配赋码信息" width="70%" draggable destroy-on-close
-             style="height: 400px;overflow: scroll" modal>
+             style="height: 500px;overflow: scroll" modal>
     <MatchCode @loadedCallback="codeLoadedCallable" @customClick="codeCustomClick" @selectClick="codeSelectClick"
                :isDialog="true"/>
     <span class="code-total">选中总数：{{ codeAmountTotal }}</span>
@@ -38,7 +38,7 @@ let usedCodeIds = {};
 let usedPoQty = {};
 let match_po_types = []
 let codeDatas = ref({});
-let codeAmountTotal = ref(0)
+let codeAmountTotal = ref(0);
 const params = reactive({
   title: '交货单',
   name: 'delivery_order',
@@ -116,10 +116,11 @@ const extras = {
           sum: true,
         },
         product_id: {
-          string: '物料编码'
+          string: '物料编码',
+          width: 140
         },
         material_name: {
-          string: '物料描述'
+          string: '物料描述',
         },
         delivery_quantity: {
           sum: true,
@@ -317,7 +318,8 @@ const codeLoadedCallable = async (init, loading) => {
     return false
   }
   loading.value = false;
-  init(res.result);
+  const domain = [['id', 'not in', used], ['default_code', '=', lineData.value.product_id]]
+  init(res.result, domain);
 }
 const poCustomClick = (button, datas) => {
   if (button.method === 'cancel') {
@@ -356,9 +358,9 @@ const codeCustomClick = (button, datas) => {
       });
       return false
     }
-    if (lineData.value.delivery_quantity > codeAmountTotal.value) {
+    if (lineData.value.delivery_quantity != codeAmountTotal.value) {
       ElMessage({
-        message: '赋码数量少于需交货数量!',
+        message: '赋码数量与交货数量不相等，请重新选择!',
         type: 'error'
       });
       return false

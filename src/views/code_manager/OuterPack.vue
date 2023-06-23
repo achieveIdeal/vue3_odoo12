@@ -14,6 +14,7 @@ const params = reactive({
   name: 'outer_pack',
   domain: [['supplier_id', '=', supplier_id]],
   sort: 'id desc',
+  height: 'calc(100vh - 330px)',
   model: 'srm.coding.outer.pack',
   fields: [
     'name',

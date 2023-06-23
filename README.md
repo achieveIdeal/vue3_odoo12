@@ -8,6 +8,7 @@
 ### 使用范式
 
 ```vue
+
 <PageHeader title="title"/>
 <RecordView
     :params="params"
@@ -24,6 +25,7 @@
     @fieldOnchange="fieldOnchange"
 />
 ```
+
 ## 一，参数说明
 
 ### 参数params
@@ -120,6 +122,12 @@ const extras = {
             max: 1000, // 最大值
             maxlength: 100 // 最大长度
         }
+    },
+    colors: { // 定义行显示颜色
+        warning: [['if_print', '=', false]],
+        success: [['if_print', '=', true]],
+        error: [['delivery_order_id']],
+        info: true
     },
     readonly: ['name', 'partner_id'],  // 是否不可编辑
     invisible: ['h_state'],  // 是否隐藏

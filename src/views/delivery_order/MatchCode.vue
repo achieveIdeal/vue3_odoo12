@@ -9,16 +9,14 @@ import {defineEmits, inject, reactive, ref} from "vue";
 const supplier_id = parseInt(inject('supplier_id') || 0);
 let date_from = ref('');
 const params = reactive({
-  id: 0,
   classify: 'list',
   title: '匹配赋码',
   name: 'delivery_order',
   hideDetail: true,
-  limit: 20,
-  offset: 0,
-  domain: [['supplier_id', '=', supplier_id]],
-  sort: 'id desc',
+  domain: [['supplier_id', '=', supplier_id], ['delivery_order_line_id', '=', false],
+    ['if_print', '=', true], ['is_generate', '=', true]],
   count: 0,
+  height:270,
   model: 'srm.coding',
   fields: [
     'name',
@@ -54,9 +52,16 @@ const extras = {
       attributes: {},
     }
   ],
+  search_fields: {
+    date_from: {},
+    name: {}
+  },
   attributes: {
     amount: {
       sum: true
+    },
+    name: {
+      width: 200
     }
   },
   readonly: ['name', 'default_code', 'product_name', 'produce_number', 'amount', 'min_pack_size',

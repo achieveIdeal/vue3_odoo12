@@ -2,12 +2,16 @@
   <el-table :data="datas" ref="listTable" stripe @selection-change="handleSelectionChange"
             show-summary
             lazy
-            :row-key="groupbyKey"
+            fit
+            :height="params.height|| 'calc(100vh - 255px)'"
+            :row-key="groupbyKey || getRowKey"
             :load="loadGroupDetail"
             :tree-props="{ children: 'children', hasChildren: 'hasChildren' }"
-            table-layout="auto"
+            highlight-current-row
+            :row-style="handleRowStyle"
+            @current-change="handleLineClick"
             :summary-method="getSummaries">
-    <el-table-column fixed type="selection" width="55" v-if="!params.groupby"/>
+    <el-table-column fixed type="selection" width="55" v-if="!params.groupby" :reserve-selection="true"/>
     <el-table-column v-if="groupbyKey" width="180">
       <template #default="scoped">
         {{ scoped.row[groupbyKey] }}
@@ -19,7 +23,7 @@
         <el-table-column
             show-overflow-tooltip
             :label="options[field]?.string"
-            :width="options[field]?.width||120">
+            :width="options[field]?.width">
           <template #default="scoped">
             <span v-if="options[field]?.type==='boolean'">
               <input type="checkbox" :checked="scoped.row[field]" disabled style="height: 17px;">
@@ -34,11 +38,11 @@
         </el-table-column>
       </template>
     </template>
-    <el-table-column v-if="!params.hideDetail && !params.groupby" fixed="right" label="操作" width="120">
+    <el-table-column v-if="!params.hideDetail && !params.groupby" fixed="right" label="操作">
       <template #default="scoped">
         <el-button link
                    size="small"
-                   type="danger"
+                   type="primary"
                    @click="getDetail(scoped.row)"
         >查看详情
         </el-button>
@@ -65,6 +69,7 @@
 <script lang="ts" setup>
 import {inject, ref} from "vue";
 import router from "../../router";
+import {parseDomain} from "../../tools";
 
 const props = defineProps({
   options: {
@@ -72,6 +77,10 @@ const props = defineProps({
     default: {}
   },
   params: {
+    type: Object,
+    default: {}
+  },
+  colors: {
     type: Object,
     default: {}
   },
@@ -99,9 +108,34 @@ let listTable = ref({})
 let currentPage = ref(1)
 let height = document.documentElement.clientHeight - 250
 
-let emits = defineEmits(['pageChange', 'editClick', 'selectClick', 'pageSizeChange', 'loadGroupDetail'])
+let emits = defineEmits(['pageChange', 'editClick', 'selectClick', 'pageSizeChange', 'loadGroupDetail', 'handleLineClick'])
 
-const recoverPageTo1=()=>{
+const handleLineClick = (row) => {
+  emits('handleLineClick', row)
+}
+const handleRowStyle = (row) => {
+  const colorMap = {
+    success: '#28a745',
+    warning: '#ffc400',
+    error: '#dc3545',
+    info: '#606266'
+  }
+  let curColor = 'info'
+  for (const color of Object.keys(props?.colors)) {
+    if (parseDomain(props.colors[color], row.row)) {
+      curColor = color;
+    }
+  }
+  return {
+    color: colorMap[curColor]
+  }
+}
+
+const getRowKey = (row) => {
+  return row.id;
+}
+
+const recoverPageTo1 = () => {
   currentPage.value = 1
 }
 
@@ -112,7 +146,7 @@ const handleCurrentChange = () => {
   emits('pageChange', currentPage.value)
 }
 const handleSelectionChange = (rows) => {
-  emits('selectClick', rows)
+  emits('selectClick', rows, listTable.value)
 }
 const getDetail = (data) => {
   router.push({
@@ -147,9 +181,16 @@ const getSummaries = (table) => {
   return sums
 }
 
+const defaultCheckedLine = (datas)=>{
+  for(const data of datas){
+    if(data.front_default_checked){
+      listTable.value.toggleRowSelection(data, true);
+    }
+  }
+}
 
 defineExpose({
-  listTable, pageSize,recoverPageTo1
+  listTable, pageSize, recoverPageTo1,defaultCheckedLine
 })
 </script>
 

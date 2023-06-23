@@ -149,7 +149,7 @@ const getFieldOption = async (params) => {
         return false
     }
     let formFieldsOption = res.result;
-    let treeFieldsOption = {}
+    let treeFieldsOption = {};
     for (let line of Object.keys(params.tables || {})) {
         const result = await callFields(getRequestParams(params.tables[line]));
         treeFieldsOption[line] = result.result;
@@ -161,7 +161,7 @@ const getFieldOption = async (params) => {
     }
 }
 
-const loadformData = async (params: ModuleDataType) => {
+const loadFormData = async (params: ModuleDataType) => {
     let requestParams = getRequestParams(params);
     let treeData = {};
     let tableDataCountMap = {};
@@ -231,7 +231,6 @@ const loadformData = async (params: ModuleDataType) => {
     }
 }
 const loadListData = async (params: ModuleDataType) => {
-    console.log(params.domain);
     let requestData: RequestParamsType = {
         model: params.model,
         fields: params.fields,
@@ -447,7 +446,7 @@ const parseDomain = (domains, data) => {
 
 export {
     searchFieldSelection, onchangeField,
-    getFileType, loadformData,
+    getFileType, loadFormData,
     base64ToBlobUrl, loadListData,
     downLoadFile, getFieldOption,
     encodeFileToBase64,

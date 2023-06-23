@@ -13,6 +13,7 @@ const params = reactive({
   title: '赋码(卡板包装)',
   name: 'board_pack',
   sort: 'id desc',
+  height: 'calc(100vh - 330px)',
   domain: [['supplier_id', '=', supplier_id]],
   model: 'srm.coding.board.pack',
   import_fields: ['product_id', 'product_name', 'outer_pack_size', 'amount', 'outer_pack_ids'],
