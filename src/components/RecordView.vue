@@ -2,7 +2,7 @@
   <el-button style="display: none" v-loading.fullscreen.lock="loading" element-loading-text="正在加载..."/>
   <div class="controller-panel">
     <ButtonView
-        v-if="!params.groupby && Object.keys(buttons.buttons).length"
+        v-if="!params.groupby && Object.keys(buttons.bottonOptions).length"
         :disabled="disabled"
         :params="{type: params.type, id: params.id, name:props.name}"
         :buttons="buttons"
@@ -50,10 +50,10 @@
           :params="params.tables"
           :attributes="extras.attributes||{}"
           :model="params.model"
-          @fieldOnchange="fieldOnchange"
           :disabled="disabled"
           :activeTable="activeTable"
           :emptyData="emptyData"
+          @fieldOnchange="fieldOnchange"
           @pageChange="pageChange"
           @addLineClick="addLineClick"
           @deleteLineClick="deleteLineClick"
@@ -79,8 +79,8 @@
 </template>
 
 <script lang="ts" setup>
-import {inject, PropType, provide, reactive, ref, watch} from "vue";
-import {RouteLocationNormalizedLoaded, useRoute, useRouter} from 'vue-router';
+import {inject, provide, reactive, ref, watch} from "vue";
+import {useRoute, useRouter} from 'vue-router';
 import {FormInstance, ElMessage} from "element-plus";
 import FormView from './widget/FormView.vue';
 import TreeView from './widget/TreeView.vue';
@@ -88,20 +88,13 @@ import ListView from './widget/ListView.vue';
 import SearchBar from './widget/SearchBar.vue';
 import ButtonView from './widget/ButtonView.vue';
 import {callButton, callCreate, callFile, callReadGroup, callWrite, callSearchRead} from "../service/module/call";
-import {
-  initFormData,
-  initTreeData,
-  initListData,
-  initButton,
-  initEmptyTreeData,
-  formatData, initSearchBar
-} from '../tools/init';
+import {initFormData, initTreeData, initListData, initButton, initEmptyTreeData, formatData, initSearchBar} from '../tools/init';
 import type {FieldOptionType, DataType, Multiple, ModuleDataType} from "../types";
 import {onchangeField, loadFormData, loadListData, getFieldOption} from "../tools";
 
 let props = defineProps({
   params: {
-    type: Object as PropType<ModuleDataType>
+    type: Object
   },
   extras: {
     type: Object,
@@ -117,7 +110,7 @@ const noloadField = Object.keys(props.params?.tables || {}).concat(['id']);
 provide('noloadFields', noloadField)
 const id = inject('id', 0);
 
-let route: RouteLocationNormalizedLoaded = useRoute();
+let route = useRoute();
 let router = useRouter();
 const loading = ref(false); // 数据加载动画
 let disabled = ref<boolean>(true); // 编辑控制
@@ -127,15 +120,15 @@ let emptyData = reactive<{ [prop: string]: { [prop: string]: Multiple } }>({}); 
 let activeTable = ref<string>('');  // 控制tree视图激活的table
 let dataCopy: DataType = {formData: {}, treeData: {}};  // 保留原始数据
 let buttons = reactive({buttons: {}});  // 按钮控制
-let listViewRef = ref({});  // 列表页的vue元素
-let formViewRef = ref({});  // 表单页的vue元素
-let searchViewRef = ref({});
+let listViewRef = ref({});  // 列表页的ref
+let formViewRef = ref({});  // 表单页的ref
+let searchViewRef = ref({});  // 搜索框ref
 let formRef = ref({});  // 表单的vue元素
 let params: ModuleDataType = props.params;
 let extras: ModuleDataType = props.extras; // 额外的属性
 let groupbyData = [];  // 分组查询返回的数据
 let groupbyKey = ref('');  // 默认分组查询值
-let searcher = reactive({searchOptions: {}});  // 默认分组查询值
+let searcher = reactive({searchOptions: {}});  //查询字段初始化
 const getListViewExpose = () => {
   const listTable = listViewRef.value?.listTable;
   const pageSize = listViewRef.value?.pageSize || 20;
@@ -154,13 +147,12 @@ const getListViewExpose = () => {
 const emits = defineEmits(['objectClick', 'saveClick', 'customClick', 'pageSizeChange', 'loadGroupDetail', 'handleLineClick',
   'lineButtonClick', 'loadedCallable', 'selectClick', 'deleteLineClick', 'fieldOnchange']);
 
-const initForm = async (result, domain) => {
-  params.domain = params.domain.concat(domain || [])
+const initForm = async (result) => {
   let formData = result?.formData || datas.formData;
   let treeData = result?.treeData || datas.treeData;
   disabled.value = !!params.id;  //  创建不加载数据  且为可编辑
   let tableDataCountMap = result?.tableDataCountMap;
-  buttons.buttons = initButton(extras, formData, params.type);
+  buttons.bottonOptions = initButton(extras, formData, params.type);
   let inited = await initFormData(extras, formData, options.formFieldsOption, noloadField);
   for (let lineField of Object.keys(tableDataCountMap || {})) {  // 记录表格数据总数
     params.tables[lineField].count = tableDataCountMap[lineField];
@@ -203,10 +195,10 @@ const hasDefaultSearch = () => {
       hasDefault = true
     }
   }
-  return !hasDefault
+  return hasDefault
 }
 
-const loadData = async () => {
+const initialize = () => {
   let fieldsOption;
   if (!Object.keys(options.formFieldsOption).length) {
     fieldsOption = await getFieldOption(params);
@@ -219,6 +211,10 @@ const loadData = async () => {
   params.domain = params.domain || [];
   options.formFieldsOption = (fieldsOption || options).formFieldsOption;
   options.treeFieldsOption = (fieldsOption || options).treeFieldsOption;
+}
+
+const loadData = async () => {
+  initialize()
   let needInit = true;
   const noInit = () => {
     needInit = false;
@@ -232,21 +228,21 @@ const loadData = async () => {
       loading.value = false;
     }
   } else if (params.type === 'list') {
-    needInit = hasDefaultSearch()
+    needInit = !hasDefaultSearch();
     emits('loadedCallable', initList, loading, noInit);
-    buttons.buttons = initButton(extras, {}, params.type);
+    buttons.bottonOptions = initButton(extras, {}, params.type);
     searcher.searchOptions = initSearchBar(extras, options.formFieldsOption);
     if (needInit) {
       disabled.value = true;
       const result = await loadListData(params); // 加载列表
-      initList(result)
+      initList(result);
       loading.value = false;
     }
   }
 }
 const reload = loadData
 
-watch(route, async (form: RouteLocationNormalizedLoaded, to: RouteLocationNormalizedLoaded | undefined) => {
+watch(route, async (form, to) => {
   params.id = parseInt(id || route.query.id || '0');
   params.type = params.classify || ((route.query.id || params.id) ? 'form' : 'list');
   if ((form || to).name === params.name) {
@@ -255,8 +251,8 @@ watch(route, async (form: RouteLocationNormalizedLoaded, to: RouteLocationNormal
 }, {immediate: true})
 
 const groupbyClick = (groupby, domain) => {
-  groupbyKey.value = groupby
-  params.groupby = groupby
+  groupbyKey.value = groupby;
+  params.groupby = groupby;
   callReadGroup({
     model: params.model,
     domain: domain.concat(params.domain),
@@ -280,13 +276,14 @@ const groupbyClick = (groupby, domain) => {
   })
 }
 const loadGroupDetail = async (row, treeNode, resolve) => {
+  const domain = searchViewRef.value?.getDomain() || [];
   const count = row[Object.keys(row)[0]]
   const result = await callSearchRead({
     model: params.model,
     fields: params.fields,
     offset: params.offset,
     limit: count,
-    domain: row.__domain.concat(params.domain),
+    domain: row.__domain.concat(params.domain).concat(domain),
     sort: params.sort,
   })
   emits('loadGroupDetail', row, result)
@@ -370,9 +367,11 @@ const cancelClick = () => {
   for (let file of formViewRef.value?.upload || []) {
     file.clearFiles();
   }
-  disabled.value = true;
-  datas.formData = JSON.parse(JSON.stringify(dataCopy.formData))  // 数据复原
-  datas.treeData = JSON.parse(JSON.stringify(dataCopy.treeData))
+  if (params.id) {
+    disabled.value = true;
+    datas.formData = JSON.parse(JSON.stringify(dataCopy.formData))  // 数据复原
+    datas.treeData = JSON.parse(JSON.stringify(dataCopy.treeData))
+  }
 }
 const createClick = () => {
   disabled.value = false;
@@ -528,7 +527,7 @@ const importClick = (result) => {
   })
 }
 const selectClick = (rows) => {
-  for (const button of buttons.buttons) {
+  for (const button of buttons.bottonOptions) {
     if (button.needRow) {
       button.attributes.invisible = !rows.length;
     }

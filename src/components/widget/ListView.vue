@@ -4,7 +4,7 @@
             lazy
             fit
             :height="params.height|| 'calc(100vh - 255px)'"
-            :row-key="groupbyKey || getRowKey"
+            :row-key="getRowKey"
             :load="loadGroupDetail"
             :tree-props="{ children: 'children', hasChildren: 'hasChildren' }"
             highlight-current-row
@@ -132,7 +132,7 @@ const handleRowStyle = (row) => {
 }
 
 const getRowKey = (row) => {
-  return row.id;
+  return row[props.groupbyKey] || row.id;
 }
 
 const recoverPageTo1 = () => {

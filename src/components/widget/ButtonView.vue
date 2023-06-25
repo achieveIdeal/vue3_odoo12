@@ -1,6 +1,6 @@
 <template>
   <el-form-item class="btn-container">
-    <template v-for="button in buttons.buttons" :key="button">
+    <template v-for="button in buttons.bottonOptions" :key="button">
       <template v-if="(button.showType || []).indexOf(params.type) !== -1
      && !button.attributes?.invisible">
         <template v-if="button.type==='edit'">
