@@ -33,7 +33,6 @@ const params = reactive({
   domain: [['supplier_id', '=', supplier_id]],
   sort: 'id desc',
   model: 'srm.coding',
-  groupby: 'default_code',
   fields: [
     'name',
     'supplier_id',
@@ -117,7 +116,6 @@ const extras = {
       width: '200'
     }
   },
-  groupby: ['default_code'],
   invisible: ['is_generate', 'state', 'delivery_order_id'],
   listInvisible: ['supplier_id', 'shelf_life', 'manufacturer_id',
     'produce_number', 'comment',],
