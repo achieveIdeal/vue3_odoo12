@@ -256,7 +256,7 @@ const groupbyClick = (groupby, domain) => {
   callReadGroup({
     model: params.model,
     domain: domain.concat(params.domain),
-    fields: params.groupby || params.fields,
+    fields: params.fields,
     groupby: groupby,
     order_by: params.sort,
   }).then(res => {
