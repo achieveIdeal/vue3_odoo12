@@ -263,7 +263,7 @@ const searchFieldSelection = async (option: FieldOptionType, query: string, doma
         args: [],
         kwargs: {
             'name': query.trim(),
-            'args': option?.domain?.length ? option.domain.concat(domain) : [],
+            'args': domain.length ? domain : option.domain.concat(domain) || [],
             'operator': 'ilike',
             'limit': limit || 10,
             'context': {'lang': 'zh_CN', 'tz': false, 'uid': 2, 'front': true, 'is_cus_code': true}

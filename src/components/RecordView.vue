@@ -2,7 +2,7 @@
   <el-button style="display: none" v-loading.fullscreen.lock="loading" element-loading-text="正在加载..."/>
   <div class="controller-panel">
     <ButtonView
-        v-if="!params.groupby && Object.keys(buttons.bottonOptions).length"
+        v-if="!params.groupby && Object.keys(buttons.buttonOptions).length"
         :disabled="disabled"
         :params="{type: params.type, id: params.id, name:props.name}"
         :buttons="buttons"
@@ -119,7 +119,7 @@ let options: FieldOptionType = {formFieldsOption: {}, treeFieldsOption: {},};
 let emptyData = reactive<{ [prop: string]: { [prop: string]: Multiple } }>({});  // 空数据
 let activeTable = ref<string>('');  // 控制tree视图激活的table
 let dataCopy: DataType = {formData: {}, treeData: {}};  // 保留原始数据
-let buttons = reactive({buttons: {}});  // 按钮控制
+let buttons = reactive({buttonOptions: {}});  // 按钮控制
 let listViewRef = ref({});  // 列表页的ref
 let formViewRef = ref({});  // 表单页的ref
 let searchViewRef = ref({});  // 搜索框ref
@@ -152,7 +152,7 @@ const initForm = async (result) => {
   let treeData = result?.treeData || datas.treeData;
   disabled.value = !!params.id;  //  创建不加载数据  且为可编辑
   let tableDataCountMap = result?.tableDataCountMap;
-  buttons.bottonOptions = initButton(extras, formData, params.type);
+  buttons.buttonOptions = initButton(extras, formData, params.type);
   let inited = await initFormData(extras, formData, options.formFieldsOption, noloadField);
   for (let lineField of Object.keys(tableDataCountMap || {})) {  // 记录表格数据总数
     params.tables[lineField].count = tableDataCountMap[lineField];
@@ -198,7 +198,7 @@ const hasDefaultSearch = () => {
   return hasDefault
 }
 
-const initialize = () => {
+const initialize = async () => {
   let fieldsOption;
   if (!Object.keys(options.formFieldsOption).length) {
     fieldsOption = await getFieldOption(params);
@@ -214,7 +214,7 @@ const initialize = () => {
 }
 
 const loadData = async () => {
-  initialize()
+  await initialize()
   let needInit = true;
   const noInit = () => {
     needInit = false;
@@ -224,18 +224,18 @@ const loadData = async () => {
     if (needInit) {
       loading.value = true;
       let result = await loadFormData(params); // 加载详情
-      initForm(result);
+      await initForm(result);
       loading.value = false;
     }
   } else if (params.type === 'list') {
     needInit = !hasDefaultSearch();
     emits('loadedCallable', initList, loading, noInit);
-    buttons.bottonOptions = initButton(extras, {}, params.type);
+    buttons.buttonOptions = initButton(extras, {}, params.type);
     searcher.searchOptions = initSearchBar(extras, options.formFieldsOption);
     if (needInit) {
       disabled.value = true;
       const result = await loadListData(params); // 加载列表
-      initList(result);
+      await initList(result);
       loading.value = false;
     }
   }
@@ -527,7 +527,7 @@ const importClick = (result) => {
   })
 }
 const selectClick = (rows) => {
-  for (const button of buttons.bottonOptions) {
+  for (const button of buttons.buttonOptions) {
     if (button.needRow) {
       button.attributes.invisible = !rows.length;
     }
