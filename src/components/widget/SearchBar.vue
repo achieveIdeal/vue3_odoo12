@@ -218,7 +218,7 @@ defineExpose({
 }
 
 .search-bar {
-  margin: 5px;
+  margin: 10px;
 }
 
 .group-by {

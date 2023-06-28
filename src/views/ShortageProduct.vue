@@ -36,7 +36,6 @@ const extras = {
   }
   ],
   search_fields: {
-    production_order: {},
     delivery_state: {
       default: ['undone']
     },
