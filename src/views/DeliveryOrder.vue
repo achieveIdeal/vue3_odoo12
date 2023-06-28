@@ -296,30 +296,13 @@ const poLoadedCallable = async (init, loading) => {
   init(result);
 }
 const codeLoadedCallable = async (init, loading) => {
-  const origin_ids = lineData.value['origin_data_ids'];
   resetMatchCodeData();
-  loading.value = true;
   let used = []
   for (const usedIds of Object.values(usedCodeIds)) {
     used = used.concat(usedIds)
   }
-  const res = await callButton({
-    model: params.model,
-    method: 'match_code',
-    args: [origin_ids, lineData.value.delivery_quantity, used, isJITMatch]
-  })
-  if (res.error) {
-    loading.value = false;
-    ElMessage({
-      message: res.error.data.message,
-      type: 'error'
-    });
-    poDialogVisible.value = false;
-    return false
-  }
-  loading.value = false;
   const domain = [['id', 'not in', used], ['default_code', '=', lineData.value.product_id]]
-  init(res.result, domain);
+  init(null, domain);
 }
 const poCustomClick = (button, datas) => {
   if (button.method === 'cancel') {
@@ -384,8 +367,12 @@ const deleteLineClick = (field, index, row) => {
 
 const codeSelectClick = (rows) => {
   codeAmountTotal.value = 0
+  let ids = []
   for (const row of rows) {
-    codeAmountTotal.value += row.amount
+    ids.push(row.id)
+    if(!row.hasChildren){
+      codeAmountTotal.value += row.amount
+    }
   }
 }
 

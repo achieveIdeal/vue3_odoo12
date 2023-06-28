@@ -36,8 +36,8 @@ const params = reactive({
   fields: [
     'name',
     'supplier_id',
-    'produce_number',
     'default_code',
+    'produce_number',
     'product_name',
     'amount',
     'min_pack_size',
@@ -108,15 +108,19 @@ const extras = {
   attributes: {
     default_code: {
       readonly: ['|', ['if_print', '=', true], ['is_generate', '=', true]],
+      string: '物料号'
     },
     supplier_id: {
       domain: [['supplier', '=', true], ['parent_id', '=', false]]
+    },
+    product_name: {
+      string: '物料名称'
     },
     name: {
       width: '200'
     }
   },
-  invisible: ['is_generate', 'state', 'delivery_order_id'],
+  invisible: ['is_generate', 'state', 'delivery_order_id', 'name', 'supplier_id', 'shelf_life'],
   listInvisible: ['supplier_id', 'shelf_life', 'manufacturer_id',
     'produce_number', 'comment',],
   readonly: ['name', 'product_name', 'print_amount', 'name', 'supplier_id',

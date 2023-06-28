@@ -248,6 +248,15 @@ const handleCheckAllChange = (field) => {
   } else {
     props.datas[field] = [];
   }
+  onchangeField({
+    field: field,
+    attributes: props.attributes,
+    datas: props.datas,
+    model: props.params.model,
+    options: props.options,
+    treeOptions: props.treeOptions,
+    treeData: props.treeData
+  }, checkAll)
 };
 
 const handleFileRemove = (field) => () => {

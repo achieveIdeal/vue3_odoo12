@@ -18,8 +18,8 @@ const params = reactive({
   domain: [['partner_id', '=', supplier_id]],
   model: 'shortage.product',
   fields:
-      ['name', 'partner_id', 'product_id', 'production_merge_order', 'production_order', 'need_qty',
-        'shortage_qty', 'delivery_qty', 'order_product', 'product_name', 'date', 'urgency_date',
+      ['name', 'partner_id', 'product_id','product_name', 'need_qty',
+        'shortage_qty', 'delivery_qty', 'delivery_day', 'date', 'urgency_date',
         'delete_flag', 'state', 'delivery_state', 'in_stock_qty', 'reply_date',
       ],
   tables: {}
@@ -45,7 +45,11 @@ const extras = {
     },
     date: {},
   },
-  attributes: {},
+  attributes: {
+    need_qty: {
+      precision: 3
+    }
+  },
   invisible: ['urgency_date', 'delivery_state', 'delete_flag', 'state', 'partner_id'],
   listInvisible: ['urgency_date', 'delete_flag', 'state', 'partner_id', 'in_stock_qty']
 }

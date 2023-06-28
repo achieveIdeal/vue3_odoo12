@@ -4,8 +4,11 @@ import {searchFieldSelection} from './index'
 import {ElMessage} from "element-plus";
 
 const typeStore = useTypeStore();
-const fieldTypeMap = typeStore.types;
 const is2Many = typeStore.is2Many;
+const isDigit = typeStore.isDigit;
+const is2One = typeStore.is2One;
+const isSelection = typeStore.isSelection;
+const isBool = typeStore.isBool;
 
 
 export const setFormAttribute = (formData, formFieldsOption, extras) => {
@@ -25,31 +28,29 @@ export const setFormAttribute = (formData, formFieldsOption, extras) => {
         }
     }
 }
-export const initFormData = async (extras, formData, formFieldsOption, noloadField) => {
+export const initFormData = async (extras, formData, formFieldsOption) => {
     for (let field of formData ? Object.keys(formFieldsOption || {}) : []) {   // 初始化下拉选项值
         let value = formData[field]
-        if (formFieldsOption[field]?.type !== 'boolean' && !value) {
+        if (!isBool(formFieldsOption[field]?.type) && !value) {
             formData[field] = ''
-        } else if (typeof formFieldsOption[field]?.type === 'number' && !value) {
+        } else if (isDigit(formFieldsOption[field]?.type) && !value) {
             formData[field] = 0
             continue
         }
-        if (noloadField.indexOf(field) !== -1 || !(value instanceof Array) || formFieldsOption[field]?.type === 'boolean') {
-            continue;
+        if (is2Many(formFieldsOption[field]?.type)) {
+            await searchFieldSelection(formFieldsOption[field], '', [['id', 'in', formData[field]]], formData[field].length)
         }
-        if (is2Many(formFieldsOption[field].type)) {
-            await searchFieldSelection(formFieldsOption[field], '', [['id', 'in', formData[field]]])
-        }
-        !formFieldsOption[field].selection ? formFieldsOption[field].selection = [] : null;
+        !formFieldsOption[field]?.selection ? formFieldsOption[field].selection = [] : null;
         let sameFlag = false
-        if (formFieldsOption[field].type === 'many2one') {  // 保证选项唯一
+        if (is2One(formFieldsOption[field]?.type)) {  // 保证选项唯一
+            if (!value) continue;
             for (let i of formFieldsOption[field]?.selection) {
                 if (i[0] === value[0] && i[1] === value[1]) {
                     sameFlag = true;
                 }
             }
             if (!sameFlag && value) {
-                formFieldsOption[field].selection.push(value)
+                formFieldsOption[field]?.selection.push(value)
             }
             formData[field] = value[0]
         }
@@ -76,17 +77,14 @@ export const initTreeData = async (extras, treeData, treeFieldsOption, formData)
         for (let lineData of !!lineDatas.length ? lineDatas : []) {
             for (let field of Object.keys(lineData || {})) {
                 let value = lineData[field]
-                if (fieldTypeMap[treeFieldsOption[treeField][field]?.type] === 'number' && !value) {
+                if (isDigit(treeFieldsOption[treeField][field]?.type) && !value) {
                     lineData[field] = 0
                     continue
-                } else if (treeFieldsOption[treeField][field]?.type !== 'boolean' && !value) {
+                } else if (!isBool(treeFieldsOption[treeField][field]?.type) && !value) {
                     lineData[field] = ''
                 }
-                if (field === 'id' || !(value instanceof Array) || treeFieldsOption[treeField][field]?.type === 'boolean') {
-                    continue;
-                }
                 let sameFlag = false
-                if (treeFieldsOption[treeField][field].type === 'many2one') {
+                if (is2One(treeFieldsOption[treeField][field]?.type)) {
                     !treeFieldsOption[treeField][field]['curSelect'] ? treeFieldsOption[treeField][field]['curSelect'] = [] : null;
                     for (let i of treeFieldsOption[treeField][field]['curSelect']) {
                         if (i[0] === value[0] && i[1] === value[1]) {
@@ -99,8 +97,8 @@ export const initTreeData = async (extras, treeData, treeFieldsOption, formData)
                     treeFieldsOption[treeField][field].selection = treeFieldsOption[treeField][field]['curSelect'];
                     lineData[field] = value[0]
                 }
-                if (is2Many(treeFieldsOption[treeField][field].type)) {
-                    await searchFieldSelection(treeFieldsOption[treeField][field], '', [['id', 'in', lineDatas[field]]])
+                if (is2Many(treeFieldsOption[treeField][field]?.type)) {
+                    await searchFieldSelection(treeFieldsOption[treeField][field], '', [['id', 'in', lineDatas[field]]], lineDatas[field].length)
                 }
             }
             if (extras) {
@@ -113,42 +111,56 @@ export const initTreeData = async (extras, treeData, treeFieldsOption, formData)
     }
     return {treeData, treeFieldsOption}
 }
-export const initListData = async (extras, listData, fieldsOption, noloadField) => {
+
+export const setPrecision = (number, precision) => {
+    const numbPrefix = number.toString().split('.')[0];
+    let floatSubfix = ''
+    while (floatSubfix.length < precision) {
+        floatSubfix += '0'
+    }
+    if (floatSubfix.length) {
+        return numbPrefix + '.' + floatSubfix
+    }
+    return number
+}
+
+
+export const initListData = async (extras, listData, fieldsOption) => {
     for (let lineData of listData && listData.length ? listData : []) {
+        setFormAttribute(lineData, fieldsOption, extras)
         for (let field of Object.keys(fieldsOption || {})) {
             let value = lineData[field]
-            if (noloadField.indexOf(field) !== -1) {
-                continue;
-            }
             fieldsOption[field]['listInvisible'] = (extras.listInvisible || []).indexOf(field) !== -1;
-            if (fieldsOption[field]?.type === 'selection') {
-                value = fieldsOption[field].selection.find((val) => {
+            if (isSelection(fieldsOption[field]?.type)) {
+                lineData[field] = fieldsOption[field].selection.find((val) => {
                     return val[0] === value
-                })
-            } else if (fieldsOption[field]?.type !== 'boolean' && !value) {
+                })[1]
+            } else if (isBool(fieldsOption[field]?.type)) {
+                 // 跳过
+            } else if (is2One(fieldsOption[field]?.type)) {
+                lineData[field] = lineData[field] ? lineData[field][1] : ''
+            } else if (isDigit(fieldsOption[field]?.type)) {
+                lineData[field] = setPrecision(lineData[field] || 0, fieldsOption[field]?.precision
+                    || fieldsOption[field]?.digits?.length && fieldsOption[field]?.digits[1])
+            } else if (!isBool(fieldsOption[field]?.type) && !value) {
                 lineData[field] = ''
-                continue
-            } else if (field === 'id' || !(value instanceof Array) || fieldsOption[field]?.type === 'boolean') {
-                continue;
-            }
-            if (is2Many(fieldsOption[field].type)) {
-                await searchFieldSelection(fieldsOption[field], '', [['id', 'in', lineData[field]]])
+            } else if (is2Many(fieldsOption[field]?.type)) {
+                await searchFieldSelection(fieldsOption[field], '', [['id', 'in', lineData[field]]], lineData[field].length)
                 lineData[field] = fieldsOption[field].selection.map(r => r[1]).join(',')
-                continue
+            } else {
+                lineData[field] = value || ''
             }
-            lineData[field] = value && value[1] || ''
         }
     }
-    setFormAttribute({}, fieldsOption, extras);
     return {listData, fieldsOption}
 }
 export const initSearchBar = (extras, fieldsOption) => {
     let searchOptions = {}
-    for (let field of Object.keys(extras.search_fields || {}).concat(extras.groupby||[])) {
+    for (let field of Object.keys(extras.search_fields || {}).concat(extras.groupby || [])) {
         searchOptions[field] = {
             ...fieldsOption[field],
         }
-        for (const attribute of Object.keys(extras.search_fields[field]||{})){
+        for (const attribute of Object.keys(extras.search_fields[field] || {})) {
             searchOptions[field][attribute] = extras.search_fields[field][attribute];
         }
     }
@@ -175,7 +187,7 @@ export const initEmptyTreeData = (emptyData, treeFieldsOption) => {
     for (let treeField of Object.keys(treeFieldsOption || {})) {  // 设置空数据
         emptyData[treeField] = {};
         for (let field of Object.keys(treeFieldsOption[treeField] || {})) {
-            if (fieldTypeMap[treeFieldsOption[treeField][field]?.type] === 'number') {
+            if (isDigit(treeFieldsOption[treeField][field]?.type)) {
                 emptyData[treeField][field] = 0;
                 continue
             }

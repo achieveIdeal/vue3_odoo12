@@ -2,7 +2,7 @@
   <el-button style="display: none" v-loading.fullscreen.lock="loading" element-loading-text="正在加载..."/>
   <div class="controller-panel">
     <ButtonView
-        v-if="!params.groupby && Object.keys(buttons.buttonOptions).length"
+        v-if="Object.keys(buttons.buttonOptions).length"
         :disabled="disabled"
         :params="{type: params.type, id: params.id, name:props.name}"
         :buttons="buttons"
@@ -73,7 +73,6 @@
         @selectClick="selectClick"
         @pageSizeChange="pageSizeChange"
         @loadGroupDetail="loadGroupDetail"
-        @handleLineClick="handleLineClick"
         ref="listViewRef"/>
   </template>
 </template>
@@ -88,7 +87,15 @@ import ListView from './widget/ListView.vue';
 import SearchBar from './widget/SearchBar.vue';
 import ButtonView from './widget/ButtonView.vue';
 import {callButton, callCreate, callFile, callReadGroup, callWrite, callSearchRead} from "../service/module/call";
-import {initFormData, initTreeData, initListData, initButton, initEmptyTreeData, formatData, initSearchBar} from '../tools/init';
+import {
+  initFormData,
+  initTreeData,
+  initListData,
+  initButton,
+  initEmptyTreeData,
+  formatData,
+  initSearchBar
+} from '../tools/init';
 import type {FieldOptionType, DataType, Multiple, ModuleDataType} from "../types";
 import {onchangeField, loadFormData, loadListData, getFieldOption} from "../tools";
 
@@ -144,7 +151,7 @@ const getListViewExpose = () => {
   }
 };
 
-const emits = defineEmits(['objectClick', 'saveClick', 'customClick', 'pageSizeChange', 'loadGroupDetail', 'handleLineClick',
+const emits = defineEmits(['objectClick', 'saveClick', 'customClick', 'pageSizeChange', 'loadGroupDetail',
   'lineButtonClick', 'loadedCallable', 'selectClick', 'deleteLineClick', 'fieldOnchange']);
 
 const initForm = async (result) => {
@@ -250,33 +257,8 @@ watch(route, async (form, to) => {
   }
 }, {immediate: true})
 
-const groupbyClick = (groupby, domain) => {
-  groupbyKey.value = groupby;
-  params.groupby = groupby;
-  callReadGroup({
-    model: params.model,
-    domain: domain.concat(params.domain),
-    fields: params.fields,
-    groupby: groupby,
-    order_by: params.sort,
-  }).then(res => {
-    groupbyData = res.result;
-    for (const groupbyDetail of groupbyData) {
-      groupbyDetail['hasChildren'] = true;
-      if (options.formFieldsOption[groupby]?.type === 'selection') {
-        groupbyDetail[groupby] = options.formFieldsOption[groupby].selection.find(r => r[0] === groupbyDetail[groupby])[1]
-      }
-      if (['many2one', 'many2many'].indexOf(options.formFieldsOption[groupby]?.type) !== -1) {
-        groupbyDetail[groupby] = groupbyDetail[groupby][1]
-      }
-      groupbyDetail[groupby] = groupbyDetail[groupby] + ' - (' + groupbyDetail[groupby + '_count'] + ')'
-    }
-    datas.listData = groupbyData;
-    params.count = groupbyData.length;
-  })
-}
-const loadGroupDetail = async (row, treeNode, resolve) => {
-  const domain = searchViewRef.value?.getDomain() || [];
+const getGroupChildren = async (row)=>{
+    const domain = searchViewRef.value?.getDomain() || [];
   const count = row[Object.keys(row)[0]]
   const result = await callSearchRead({
     model: params.model,
@@ -288,7 +270,59 @@ const loadGroupDetail = async (row, treeNode, resolve) => {
   })
   emits('loadGroupDetail', row, result)
   const records = await initListData(extras, result.result.records, options.formFieldsOption, noloadField);
-  return resolve(records.listData)
+  const diffRows = [];
+  const newRowIds = records.listData.map(r => r.id) || [];
+  if (row.children?.length) {
+    for (const odlRow of row.children) {
+      if (newRowIds.indexOf(odlRow.id) !== -1) {
+        diffRows.push(odlRow)
+      }
+    }
+    return diffRows
+  } else {
+    return records.listData
+  }
+}
+
+const groupbyClick = (groupby, domain) => {
+  groupbyKey.value = groupby;
+  params.groupby = groupby;
+  callReadGroup({
+    model: params.model,
+    domain: domain.concat(params.domain),
+    fields: params.fields,
+    groupby: groupby,
+    order_by: params.sort,
+  }).then(async res => {
+    groupbyData = res.result;
+    for (const groupbyDetail of groupbyData) {
+      groupbyDetail['hasChildren'] = true;
+      groupbyDetail['id'] = groupbyDetail[groupby];
+      groupbyDetail['children'] = await getGroupChildren(groupbyDetail);
+      if (options.formFieldsOption[groupby]?.type === 'selection') {
+        groupbyDetail[groupby] = options.formFieldsOption[groupby].selection.find(r => r[0] === groupbyDetail[groupby])[1]
+      }
+      if (['many2one', 'many2many'].indexOf(options.formFieldsOption[groupby]?.type) !== -1) {
+        groupbyDetail[groupby] = groupbyDetail[groupby][1]
+      }
+      groupbyDetail[groupby] = (groupbyDetail[groupby] || '未定义') + '(' + groupbyDetail[groupby + '_count'] + ')'
+    }
+    datas.listData = groupbyData;
+    const listTable = getListViewExpose().listTable
+    for (const line of datas.listData) {
+      listTable.toggleRowExpansion(line, false);
+    }
+    listTable.clearSelection();
+    params.count = groupbyData.length;
+  })
+}
+
+
+
+const loadGroupDetail = async (row, treeNode, resolve) => {
+  const children = await getGroupChildren(row)
+  row.children = children
+  resolve(children)
 }
 
 const searchClick = async (domain) => {  // 搜索数据重置
@@ -356,10 +390,6 @@ const pageSizeChange = async (size) => {
   emits('pageSizeChange', size, loading)
 }
 
-
-const handleLineClick = (row) => {
-  emits('handleLineClick', row)
-}
 const editClick = () => {
   disabled.value = false;
 }

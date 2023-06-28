@@ -17,7 +17,8 @@
           :value="field"
       ></el-option>
     </el-select>
-    <template v-if="!!Object.keys(searcher.searchOptions||{}).length" v-for="field in Object.keys(searcher.searchOptions||{})" :key="field">
+    <template v-if="!!Object.keys(searcher.searchOptions||{}).length"
+              v-for="field in Object.keys(searcher.searchOptions||{})" :key="field">
       <el-select
           v-if="is2Many(searcher.searchOptions[field]?.type) || is2One(searcher.searchOptions[field]?.type) && !searcher.searchOptions[field].noSelect"
           class="form-input"
@@ -41,6 +42,7 @@
       </el-select>
       <el-select v-else-if="isSelection(searcher.searchOptions[field]?.type) && !searcher.searchOptions[field].noSelect"
                  class="form-input"
+                 :style="{width: (searcher.searchOptions[field]?.width||200) + 'px'}"
                  v-model="searchVal[field]"
                  :placeholder="'搜索:' + searcher.searchOptions[field]?.string"
                  multiple
@@ -57,12 +59,16 @@
       </el-select>
       <template v-else-if="fieldTypeMap[searcher.searchOptions[field]?.type]==='checkbox'">
         <span>
-            {{ searcher.searchOptions[field]?.string }}: <input class="check-box" type="checkbox" v-model="searchVal[field]">
+            {{ searcher.searchOptions[field]?.string }}: <input
+            :style="{width: (searcher.searchOptions[field]?.width||200) + 'px'}"
+            class="check-box" type="checkbox" v-model="searchVal[field]">
         </span>
       </template>
       <template v-else-if="fieldTypeMap[searcher.searchOptions[field]?.type] === 'number'">
         <el-input-number v-model="searchVal[field]"
                          class="form-input"
+                         :style="{width: (searcher.searchOptions[field]?.width||200)+ 'px'}"
+
                          :precision="searcher.searchOptions[field]?.precision || searcher.searchOptions[field]?.digits?.length&&searcher.searchOptions[field]?.digits[1]"
                          controls-position="right"
                          :min="searcher.searchOptions[field]?.min"
@@ -72,13 +78,15 @@
         <el-input
             clearable
             class="form-input"
+            :style="{width: (searcher.searchOptions[field]?.width||200) + 'px'}"
             v-model="searchVal[field]"
             :type="searcher.searchOptions[field]?.type"
             :placeholder="'搜索:' + searcher.searchOptions[field]?.string"
         />
       </template>
     </template>
-    <el-button v-if="!!Object.keys(searcher.searchOptions||{}).length" ref="do_search" :icon="Search" @click="searchClick"/>
+    <el-button v-if="!!Object.keys(searcher.searchOptions||{}).length" ref="do_search" :icon="Search"
+               @click="searchClick"/>
   </div>
 </template>
 
@@ -89,10 +97,10 @@ import {searchFieldSelection} from "../../tools";
 import {useTypeStore} from "../../store";
 
 let props = defineProps({
-  searcher:{
+  searcher: {
     type: Object,
     default: {
-      searchOptions:{'1': 1}
+      searchOptions: {'1': 1}
     }
   },
   groupby: {
@@ -114,7 +122,7 @@ const searchVal = reactive({});
 const groupbyVal = ref('');
 const groupbyItemRef = ref({});
 const searchOptionCopy = ref({});
-onMounted( () => {
+onMounted(() => {
   const searchOptions = props.searcher.searchOptions || {}
   let groupbyDefault;
   if (groupbyItemRef?.value?.length) {
@@ -154,7 +162,7 @@ const getDomain = () => {
   for (let field of Object.keys(searchVal || {})) {
     let operate = '=';
     let reDateTime = /^[1-9]\d{3}-(0[1-9]|1[0-2])-(0[1-9]|[1-2][0-9]|3[0-1])\s+(20|21|22|23|[0-1]\d):[0-5]\d:[0-5]\d$/;
-    let reDate =/^[1-9]\d{3}-(0[1-9]|1[0-2])-(0[1-9]|[1-2][0-9]|3[0-1])$/;
+    let reDate = /^[1-9]\d{3}-(0[1-9]|1[0-2])-(0[1-9]|[1-2][0-9]|3[0-1])$/;
     let isDate = reDateTime.test(searchVal[field]) || reDate.test(searchVal[field]);
     if (!searchVal[field] || searchVal[field] instanceof Array && !searchVal[field].length) {
       if (props.searcher?.searchOptions[field]?.type !== 'boolean') {
@@ -165,7 +173,7 @@ const getDomain = () => {
       operate = 'in';
     }
     if (typeof searchVal[field] === 'string' && !isDate) {
-      searchVal[field]= searchVal[field].trim()
+      searchVal[field] = searchVal[field].trim()
       operate = 'ilike';
     }
     domain.push([field, operate, searchVal[field]]);
@@ -202,7 +210,7 @@ defineExpose({
 .form-input {
   background-color: #fff;
   width: 200px;
-  margin-right: 20px;
+  margin-right: 5px;
 }
 
 .check-box {
@@ -210,7 +218,7 @@ defineExpose({
 }
 
 .search-bar {
-  margin: 10px;
+  margin: 5px;
 }
 
 .group-by {

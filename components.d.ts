@@ -35,6 +35,7 @@ declare module '@vue/runtime-core' {
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']
     SearchBar: typeof import('./src/components/widget/SearchBar.vue')['default']
+    SearchBarVersion2: typeof import('./src/components/widget/SearchBarVersion2.vue')['default']
     TreeView: typeof import('./src/components/widget/TreeView.vue')['default']
   }
   export interface ComponentCustomProperties {

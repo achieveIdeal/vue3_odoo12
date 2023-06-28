@@ -19,7 +19,9 @@ export const useTypeStore = defineStore("type", {
         many2oneTypes: ['many2one'],
         fileType: ['binary'],
         selectionTypes: ['selection'],
-        toManyTypes: ['many2many', 'one2many']
+        toManyTypes: ['many2many', 'one2many'],
+        numberTypes: ['float', 'integer'],
+        BooleanType: ['boolean'],
     }),
     getters: {
         is2One: (state) => (type: string) => {
@@ -33,6 +35,12 @@ export const useTypeStore = defineStore("type", {
         },
         isFile: (state) => (type: string) => {
             return state.fileType.indexOf(type) !== -1
+        },
+        isDigit: (state) => (type) => {
+            return state.numberTypes.indexOf(type) !== -1
+        },
+        isBool: (state) => (type) => {
+            return state.BooleanType.indexOf(type) !== -1
         },
     },
 })

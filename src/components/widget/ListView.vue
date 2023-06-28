@@ -4,25 +4,20 @@
             lazy
             fit
             :height="params.height|| 'calc(100vh - 255px)'"
-            :row-key="getRowKey"
+            row-key="id"
             :load="loadGroupDetail"
             :tree-props="{ children: 'children', hasChildren: 'hasChildren' }"
-            highlight-current-row
             :row-style="handleRowStyle"
-            @current-change="handleLineClick"
+            @expand-change="expandChange"
             :summary-method="getSummaries">
-    <el-table-column fixed type="selection" width="55" v-if="!params.groupby" :reserve-selection="true"/>
-    <el-table-column v-if="groupbyKey" width="180">
-      <template #default="scoped">
-        {{ scoped.row[groupbyKey] }}
-      </template>
-    </el-table-column>
+    <el-table-column fixed type="selection" width="55" :reserve-selection="true"/>
     <template v-for="field in params.fields?.length && params.fields || []"
               :key="field">
       <template v-if="noLoadFields.indexOf(field) === -1 && !options[field]?.listInvisible">
         <el-table-column
             show-overflow-tooltip
             :label="options[field]?.string"
+            :min-width="options[field]?.minWidth"
             :width="options[field]?.width">
           <template #default="scoped">
             <span v-if="options[field]?.type==='boolean'">
@@ -107,12 +102,17 @@ let pageSize = ref(20);
 let listTable = ref({})
 let currentPage = ref(1)
 let height = document.documentElement.clientHeight - 250
+let resolveCopy = {}
+let isLoadedGroupDetail = {};
+let emits = defineEmits(['pageChange', 'editClick', 'selectClick', 'pageSizeChange', 'loadGroupDetail'])
 
-let emits = defineEmits(['pageChange', 'editClick', 'selectClick', 'pageSizeChange', 'loadGroupDetail', 'handleLineClick'])
+// const getRowKey = (row)=>{
+//   if(row.hasChildren){
+//     return 'children.id'
+//   }
+//   return 'id'
+// }
 
-const handleLineClick = (row) => {
-  emits('handleLineClick', row)
-}
 const handleRowStyle = (row) => {
   const colorMap = {
     success: '#28a745',
@@ -130,23 +130,42 @@ const handleRowStyle = (row) => {
     color: colorMap[curColor]
   }
 }
-
-const getRowKey = (row) => {
-  return row[props.groupbyKey] || row.id;
-}
-
 const recoverPageTo1 = () => {
   currentPage.value = 1
 }
 
+const expandChange = (row, expanded) => {
+  if (expanded) { // 当前是展开状态
+    if (isLoadedGroupDetail[row.id]) {
+      isLoadedGroupDetail[row.id] = false;
+    } else {
+      loadGroupDetail(row, '', resolveCopy[row.id])
+    }
+  }
+}
+
 const loadGroupDetail = (row, treeNode, resolve) => {
+  isLoadedGroupDetail[row.id] = true;
+  resolveCopy[row.id] = resolve;
   emits('loadGroupDetail', row, treeNode, resolve)
 }
 const handleCurrentChange = () => {
   emits('pageChange', currentPage.value)
 }
+
 const handleSelectionChange = (rows) => {
-  emits('selectClick', rows, listTable.value)
+  const validRowIds = []
+  const validRows = []
+  for (const row of rows) {
+    if (validRowIds.indexOf(row.id) === -1) {
+      validRowIds.push(row.id)
+      validRows.push(row)
+    }
+  }
+  for (const validRow of validRows) {
+    listTable.value.toggleRowSelection(validRow, true)
+  }
+  emits('selectClick', validRows, listTable.value)
 }
 const getDetail = (data) => {
   router.push({
@@ -181,16 +200,16 @@ const getSummaries = (table) => {
   return sums
 }
 
-const defaultCheckedLine = (datas)=>{
-  for(const data of datas){
-    if(data.front_default_checked){
+const defaultCheckedLine = (datas) => {
+  for (const data of datas) {
+    if (data.front_default_checked) {
       listTable.value.toggleRowSelection(data, true);
     }
   }
 }
 
 defineExpose({
-  listTable, pageSize, recoverPageTo1,defaultCheckedLine
+  listTable, pageSize, recoverPageTo1, defaultCheckedLine
 })
 </script>
 

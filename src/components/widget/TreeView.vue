@@ -4,17 +4,17 @@
       <el-tab-pane v-if="!formOptions[treeField]?.invisible" :label="params[treeField]?.title" :name="treeField">
         <el-table class="table-item" :data="datas[treeField]?.slice(params[treeField]?.offset,    // 分页
           params[treeField]?.offset + params[treeField]?.limit)"
-          show-summary
-          fit
-          :summary-method="getSummaries(treeField)"
-          sum-text="总计"
-          :row-style="handleTreeRowStyle(treeField)"
-          stripe>
+                  show-summary
+                  fit
+                  :summary-method="getSummaries(treeField)"
+                  sum-text="总计"
+                  :row-style="handleTreeRowStyle(treeField)"
+                  stripe>
           <template v-for="field in params[treeField].fields"
                     :key="field">
             <template v-if="noLoadFields.indexOf(field) === -1 && !options[treeField][field]?.invisible">
               <el-table-column
-                 :show-overflow-tooltip="disabled"
+                  :show-overflow-tooltip="disabled"
                   :width="options[treeField][field]?.width">
                 <template #header>
                   <span v-if="options[treeField][field]?.required" style="color: red;">*</span>
@@ -22,31 +22,40 @@
                 </template>
                 <template #default="scoped">
                   <el-form-item :prop="['treeData', treeField,scoped.$index, field]" class="table-form-item"
-                    :rules="[{
+                                :rules="[{
                       required: options[treeField][field]?.required,
                       message: options[treeField][field]?.string + '不能为空!',
                       trigger: 'blur',
                     }]">
                     <template v-if="disabled">
-                      <span v-if="is2One(options[treeField][field]?.type)"> {{options[treeField][field]?.selection.find(r=>r[0]===scoped.row[field])[1]}}</span>
-                      <span v-else-if="isSelection(options[treeField][field]?.type)">{{options[treeField][field]?.selection.find(r=>r[0]===scoped.row[field])[1]}}</span>
-                      <span v-else-if="is2Many(options[treeField][field]?.type)">{{options[treeField][field]?.selection.map(r=>scoped.row[field].includes(r[0])).map(r=>r[0])}}</span>
+                      <span
+                          v-if="is2One(options[treeField][field]?.type)"> {{ options[treeField][field]?.selection.find(r => r[0] === scoped.row[field])[1] }}</span>
+                      <span
+                          v-else-if="isSelection(options[treeField][field]?.type)">{{ options[treeField][field]?.selection.find(r => r[0] === scoped.row[field])[1] }}</span>
+                      <span
+                          v-else-if="is2Many(options[treeField][field]?.type)">{{ options[treeField][field]?.selection.map(r => scoped.row[field].includes(r[0])).map(r => r[0]) }}</span>
                       <span class="form-input alien-left" v-else-if="options[treeField][field]?.type==='checkbox'">
                         <input type="checkbox" v-model="scoped.row[field]">
                       </span>
                       <span class="file-content form-input" v-else-if="isFile(options[treeField][field]?.type)">
                          {{ scoped.row[options[treeField][field]?.filename] }}
                       </span>
-                      <span v-else>{{scoped.row[field]}}</span>
+                      <span class="file-content form-input" v-else-if="isDigit(options[treeField][field]?.type)">
+                         {{
+                          setPrecision(scoped.row[field], options[treeField][field]?.precision ||
+                              options[treeField][field]?.digits?.length && options[treeField][field]?.digits[1])
+                        }}
+                      </span>
+                      <span v-else>{{ scoped.row[field] }}</span>
                     </template>
                     <template v-else-if="is2One(options[treeField][field]?.type)">
                       <el-select
-                        v-model="scoped.row[field]"
-                        placeholder="请选择"
-                        filterable
-                        clearable
-                        remote
-                        @change="fieldOnchange({
+                          v-model="scoped.row[field]"
+                          placeholder="请选择"
+                          filterable
+                          clearable
+                          remote
+                          @change="fieldOnchange({
                           field: field,
                           datas: scoped.row,
                           attributes: attributes[treeField]?.fields,
@@ -60,27 +69,27 @@
                             options: formOptions
                           }
                       })"
-                        :loading="loading"
-                        reserve-keyword
-                        :remote-method="searchSelection(options[treeField][field])"
-                        :disabled="parseDomain(formOptions[treeField]?.readonly,
+                          :loading="loading"
+                          reserve-keyword
+                          :remote-method="searchSelection(options[treeField][field])"
+                          :disabled="parseDomain(formOptions[treeField]?.readonly,
                           {...formData, [treeField]: scoped.row}) ||
                           parseDomain(options[treeField][field]?.readonly,
                           {...formData, [treeField]: scoped.row})  || disabled"
-                    >
+                      >
                         <el-option
-                          v-for="item in options[treeField][field]?.selection"
-                          :key="item[0]"
-                          :label="item[1]"
-                          :value="item[0]"/>
+                            v-for="item in options[treeField][field]?.selection"
+                            :key="item[0]"
+                            :label="item[1]"
+                            :value="item[0]"/>
                       </el-select>
                     </template>
                     <template v-else-if="isSelection(options[treeField][field]?.type)">
                       <el-select
-                        v-model="scoped.row[field]"
-                        placeholder="请选择"
-                        clearable
-                        @change="fieldOnchange({
+                          v-model="scoped.row[field]"
+                          placeholder="请选择"
+                          clearable
+                          @change="fieldOnchange({
                           field: field,
                           datas: scoped.row,
                           attributes: attributes[treeField]?.fields,
@@ -94,33 +103,33 @@
                             options: formOptions
                           }
                         })"
-                        filterable
-                        :disabled="parseDomain(formOptions[treeField]?.readonly,
+                          filterable
+                          :disabled="parseDomain(formOptions[treeField]?.readonly,
                           {...formData, [treeField]: scoped.row}) ||
                           parseDomain(options[treeField][field]?.readonly ,
                           {...formData, [treeField]: scoped.row})  || disabled"
-                        >
+                      >
                         <el-option
-                          v-for="item in options[treeField][field]?.selection"
-                          :key="item[0]"
-                          :label="item[1]"
-                          :value="item[0]"/>
+                            v-for="item in options[treeField][field]?.selection"
+                            :key="item[0]"
+                            :label="item[1]"
+                            :value="item[0]"/>
                       </el-select>
                     </template>
                     <template v-else-if="is2Many(options[treeField][field]?.type)">
                       <el-select
-                        v-model="scoped.row[field]"
-                        placeholder="请选择"
-                        multiple
-                        filterable
-                        clearable
-                        remote
-                        reserve-keyword
-                        :disabled="parseDomain(formOptions[treeField]?.readonly,
+                          v-model="scoped.row[field]"
+                          placeholder="请选择"
+                          multiple
+                          filterable
+                          clearable
+                          remote
+                          reserve-keyword
+                          :disabled="parseDomain(formOptions[treeField]?.readonly,
                           {...formData, [treeField]: scoped.row}) ||
                           parseDomain(options[treeField][field]?.readonly,
                           {...formData, [treeField]: scoped.row}) || disabled"
-                        @change="fieldOnchange({
+                          @change="fieldOnchange({
                         field: field,
                         attributes: attributes[treeField]?.fields,
                         datas: scoped.row,
@@ -134,10 +143,10 @@
                           options: formOptions
                           }
                         })"
-                        :loading="loading"
-                        :remote-method="searchSelection(options[treeField][field])"
-                        collapse-tags
-                        collapse-tags-tooltip
+                          :loading="loading"
+                          :remote-method="searchSelection(options[treeField][field])"
+                          collapse-tags
+                          collapse-tags-tooltip
                       >
                         <el-option
                             v-for="item in options[treeField][field]?.selection"
@@ -150,7 +159,7 @@
                     <template v-else-if="options[treeField][field]?.type==='checkbox'">
                       <div class="form-input alien-left">
                         <input type="checkbox" v-model="scoped.row[field]"
-                          @change="fieldOnchange({
+                               @change="fieldOnchange({
                             field: field,
                             attributes: attributes[treeField]?.fields,
                             datas: scoped.row,
@@ -164,7 +173,7 @@
                               options: formOptions
                             }
                           })"
-                          :disabled="parseDomain(formOptions[treeField]?.readonly,
+                               :disabled="parseDomain(formOptions[treeField]?.readonly,
                             {...formData, [treeField]: scoped.row}) ||
                             parseDomain(options[treeField][field]?.readonly ,
                             {...formData, [treeField]: scoped.row}) || disabled">
@@ -172,14 +181,14 @@
                     </template>
                     <template v-else-if="fieldTypeMap[options[treeField][field]?.type] === 'number'">
                       <el-input-number v-model="scoped.row[field]"
-                        controls-position="right"
-                        :style="{width: options[treeField][field]?.width || 130+ 'px'}"
-                        :min="options[treeField][field]?.min"
-                        :max="options[treeField][field]?.max"
-                        :precision="options[treeField][field]?.precision ||
+                                       controls-position="right"
+                                       :style="{width: options[treeField][field]?.width || 130+ 'px'}"
+                                       :min="options[treeField][field]?.min"
+                                       :max="options[treeField][field]?.max"
+                                       :precision="options[treeField][field]?.precision ||
                         options[treeField][field]?.digits&&
                         options[treeField][field]?.digits?.length&&options[treeField][field]?.digits[1]"
-                        @change="fieldOnchange({
+                                       @change="fieldOnchange({
                           field: field,
                           datas: scoped.row,
                           attributes: attributes[treeField]?.fields,
@@ -193,29 +202,30 @@
                             options: formOptions
                           }
                       })"
-                       :disabled="parseDomain(formOptions[treeField]?.readonly,
+                                       :disabled="parseDomain(formOptions[treeField]?.readonly,
                        {...formData, [treeField]: scoped.row}) ||
                         parseDomain(options[treeField][field]?.readonly , {...formData, [treeField]: scoped.row}) || disabled"/>
                     </template>
                     <template v-else-if="isFile(options[treeField][field]?.type)">
                       <div class="file-content form-input">
                         <el-upload
-                          ref="upload"
-                          class="upload-file-tree"
-                          :data-index="treeField+'_' + scoped.$index+'_' + field"
-                          action="#"
-                          :limit="1"
-                          :file-list="scoped.row[options[treeField][field]?.filename]?[{name: scoped.row[options[treeField][field]?.filename]}]:[]"
-                          :list-type="options[treeField][field]?.list_type?.split(',')"
-                          :on-change="handleFileChange(scoped.$index, treeField, field)"
-                          :on-remove="handleFileRemove(scoped.$index, treeField, field)"
-                          :on-exceed="handleExceed(treeField, scoped.$index, field)"
-                          :auto-upload="false"
-                          :on-preview="downLoadFile(scoped.row[field], scoped.row[options[treeField][field]?.filename])"
-                          :disabled="parseDomain(options[treeField][field]?.readonly , {...formData, [treeField]: scoped.row}) || disabled"
+                            ref="upload"
+                            class="upload-file-tree"
+                            :data-index="treeField+'_' + scoped.$index+'_' + field"
+                            action="#"
+                            :limit="1"
+                            :file-list="scoped.row[options[treeField][field]?.filename]?[{name: scoped.row[options[treeField][field]?.filename]}]:[]"
+                            :list-type="options[treeField][field]?.list_type?.split(',')"
+                            :on-change="handleFileChange(scoped.$index, treeField, field)"
+                            :on-remove="handleFileRemove(scoped.$index, treeField, field)"
+                            :on-exceed="handleExceed(treeField, scoped.$index, field)"
+                            :auto-upload="false"
+                            :on-preview="downLoadFile(scoped.row[field], scoped.row[options[treeField][field]?.filename])"
+                            :disabled="parseDomain(options[treeField][field]?.readonly , {...formData, [treeField]: scoped.row}) || disabled"
                         >
                           <template #trigger>
-                            <el-icon class="edit-upload-file" v-if="!(parseDomain(options[treeField][field]?.readonly , {...formData, [treeField]: scoped.row}) || disabled)">
+                            <el-icon class="edit-upload-file"
+                                     v-if="!(parseDomain(options[treeField][field]?.readonly , {...formData, [treeField]: scoped.row}) || disabled)">
                               <Edit/>
                             </el-icon>
                           </template>
@@ -224,9 +234,9 @@
                     </template>
                     <template v-else>
                       <el-input v-model="scoped.row[field]" :type="fieldTypeMap[options[treeField][field]?.type]"
-                        :maxlength="options[treeField][field]?.maxlength"
-                        clearable
-                        @change="fieldOnchange({
+                                :maxlength="options[treeField][field]?.maxlength"
+                                clearable
+                                @change="fieldOnchange({
                           field: field,
                           datas: scoped.row,
                           attributes: attributes[treeField]?.fields,
@@ -240,7 +250,7 @@
                             options: formOptions
                           }
                         })"
-                        :disabled="parseDomain(formOptions[treeField]?.readonly,
+                                :disabled="parseDomain(formOptions[treeField]?.readonly,
                           {...formData, [treeField]: scoped.row}) ||
                           parseDomain(options[treeField][field]?.readonly ,
                           {...formData, [treeField]: scoped.row})|| disabled"/>
@@ -261,7 +271,7 @@
               </template>
             </el-table-column>
           </template>
-          <el-table-column  fixed="right" label="操作" v-if="!attributes[treeField]?.undel
+          <el-table-column fixed="right" label="操作" v-if="!attributes[treeField]?.undel
           && !(parseDomain(formOptions[treeField]?.readonly, {...formData}) || disabled)" width="120">
             <template #default="scoped">
               <el-button link
@@ -273,9 +283,11 @@
             </template>
           </el-table-column>
         </el-table>
-        <el-button v-if="!(disabled || parseDomain(formOptions[treeField]?.readonly, {...formData})) && !attributes[treeField]?.unadd" class="mt-4"
-                   style="width: 100%"
-                   @click="onAddItem(treeField)"
+        <el-button
+            v-if="!(disabled || parseDomain(formOptions[treeField]?.readonly, {...formData})) && !attributes[treeField]?.unadd"
+            class="mt-4"
+            style="width: 100%"
+            @click="onAddItem(treeField)"
         >添加一行
         </el-button>
         <el-pagination
@@ -301,12 +313,13 @@ import {Edit} from "@element-plus/icons-vue";
 import {useTypeStore} from "../../store";
 import type {FieldOptionType, ModuleDataType, DataType} from "../../types";
 import {onchangeField, searchFieldSelection, downLoadFile, encodeFileToBase64, parseDomain} from "../../tools";
-
+import {setPrecision} from "../../tools/init";
 const typeStore = useTypeStore();
 const fieldTypeMap = typeStore.types;
 const is2One = typeStore.is2One;
 const is2Many = typeStore.is2Many;
 const isSelection = typeStore.isSelection;
+const isDigit = typeStore.isDigit;
 const isFile = typeStore.isFile;
 const noLoadFields = inject<string[]>('noloadFields');
 const upload = ref<UploadInstance>();
@@ -365,7 +378,7 @@ let loading = ref(false)
 
 const searchSelection = (option: FieldOptionType) => (query: string) => {
   loading.value = true;
-  searchFieldSelection(option, query, [], option.limit).then(()=> {
+  searchFieldSelection(option, query, [], option.limit).then(() => {
     loading.value = false;
   });
 }
@@ -393,7 +406,7 @@ const getSummaries = (treeField) => (table) => {
   return sums
 }
 
-const handleTreeRowStyle = (treeField)=>(row) => {
+const handleTreeRowStyle = (treeField) => (row) => {
   const colorMap = {
     success: '#28a745',
     warning: '#ffc400',
@@ -488,9 +501,11 @@ const fieldOnchange = (params) => {
   margin-top: 20px;
   float: right;
 }
+
 .table-item {
   text-align: center;
 }
+
 :deep(.el-table__footer) {
   display: inline-block;
 }

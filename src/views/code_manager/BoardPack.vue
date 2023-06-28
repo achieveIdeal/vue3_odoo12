@@ -78,7 +78,7 @@ const extras = {
   },
   invisible: ['state', 'if_print', 'delivery_order_id'],
   readonly: ['name', 'product_name', 'name'],
-  required: ['product_id', 'amount'],
+  required: ['product_id', 'amount','outer_pack_ids'],
   listInvisible: ['if_print']
 }
 

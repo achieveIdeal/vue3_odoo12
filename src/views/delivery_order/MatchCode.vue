@@ -16,18 +16,17 @@ const params = reactive({
   domain: [['supplier_id', '=', supplier_id], ['delivery_order_line_id', '=', false],
     ['if_print', '=', true], ['is_generate', '=', true]],
   count: 0,
-  height:270,
+  height: 270,
   model: 'srm.coding',
+  groupby: 'outer_pack_id',
   fields: [
+    'outer_pack_id',
     'name',
     'default_code',
     'product_name',
-    'produce_number',
     'amount',
     'min_pack_size',
     'date_from',
-    'shelf_life',
-    'manufacturer_id',
   ],
   tables: {}
 })
@@ -52,9 +51,15 @@ const extras = {
       attributes: {},
     }
   ],
+  groupby: ['outer_pack_id'],
   search_fields: {
-    date_from: {},
-    name: {}
+    date_from: {
+      width: 140
+    },
+    name: {},
+    outer_pack_id: {
+      noSelect: true
+    }
   },
   attributes: {
     amount: {
@@ -62,6 +67,15 @@ const extras = {
     },
     name: {
       width: 200
+    },
+    outer_pack_id: {
+      width: 250
+    },
+    default_code: {
+      width: 110
+    },
+    date_from:{
+      width:110
     }
   },
   readonly: ['name', 'default_code', 'product_name', 'produce_number', 'amount', 'min_pack_size',
