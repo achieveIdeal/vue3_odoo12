@@ -257,8 +257,8 @@ watch(route, async (form, to) => {
   }
 }, {immediate: true})
 
-const getGroupChildren = async (row)=>{
-    const domain = searchViewRef.value?.getDomain() || [];
+const getGroupChildren = async (row) => {
+  const domain = searchViewRef.value?.getDomain() || [];
   const count = row[Object.keys(row)[0]]
   const result = await callSearchRead({
     model: params.model,
@@ -318,7 +318,6 @@ const groupbyClick = (groupby, domain) => {
 }
 
 
-
 const loadGroupDetail = async (row, treeNode, resolve) => {
   const children = await getGroupChildren(row)
   row.children = children
@@ -368,8 +367,8 @@ const pageChange = async (currentPage: number, treeField: string) => {  // 列�
   }
   loading.value = false;
 }
-const pageSizeChange = async (size) => {
-  if (params.count < size && params.count < params.limit) {
+const pageSizeChange = async (size, currentSize) => {
+  if (params.count < size && params.count < currentSize) {
     return
   }
   const domain = searchViewRef.value?.getDomain() || [];
@@ -456,6 +455,7 @@ const saveClick = (formEl: FormInstance | undefined) => {  // 处理保存按钮
       if (Object.keys(savedDatas).length && params.id) {
         saveWrite(params, savedDatas)
       } else if (Object.keys(savedDatas).length) {
+        let savedDatas = formatData(datas, {formData: {}, treeData: []}, options);
         saveCreate(params, savedDatas);
       }
     } else {

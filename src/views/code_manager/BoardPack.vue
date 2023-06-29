@@ -74,7 +74,13 @@ const extras = {
     },
     name: {
       width: '200'
-    }
+    },
+    amount:{
+      min: 0
+    },
+outer_pack_size: {
+      min:0
+}
   },
   invisible: ['state', 'if_print', 'delivery_order_id'],
   readonly: ['name', 'product_name', 'name'],

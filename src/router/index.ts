@@ -32,6 +32,11 @@ let dpRoutes: Array<RouteRecordRaw> = [
         path: '/supplier_info',
         component: () => import("../views/SupplierInfo.vue"),
     },
+    {
+        name: 'res_users',
+        path: '/res_users',
+        component: () => import("../views/DpSupplierPermiss.vue"),
+    },
 ];
 // 2.返回一个 router 实列，为函数，配置 history 模式
 const router = createRouter({

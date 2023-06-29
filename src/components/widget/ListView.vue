@@ -52,12 +52,13 @@
       v-model:page-size="pageSize"
       @size-change="handleSizeChange"
       class="list-pagination"
-      :page-size="params.limit || 20"
+      :page-size="params?.limit || 20"
       small
       layout="total, sizes, prev, pager, next, jumper"
       background
       :total="params?.count || 0"
       @current-change="handleCurrentChange"
+      ref="paginationRef"
   />
 </template>
 
@@ -97,7 +98,7 @@ const props = defineProps({
 })
 
 const noLoadFields = inject('noloadFields');
-
+const paginationRef = ref({})
 let pageSize = ref(20);
 let listTable = ref({})
 let currentPage = ref(1)
@@ -105,13 +106,6 @@ let height = document.documentElement.clientHeight - 250
 let resolveCopy = {}
 let isLoadedGroupDetail = {};
 let emits = defineEmits(['pageChange', 'editClick', 'selectClick', 'pageSizeChange', 'loadGroupDetail'])
-
-// const getRowKey = (row)=>{
-//   if(row.hasChildren){
-//     return 'children.id'
-//   }
-//   return 'id'
-// }
 
 const handleRowStyle = (row) => {
   const colorMap = {
@@ -154,8 +148,8 @@ const handleCurrentChange = () => {
 }
 
 const handleSelectionChange = (rows) => {
-  const validRowIds = []
-  const validRows = []
+  const validRowIds = [];
+  const validRows = [];
   for (const row of rows) {
     if (validRowIds.indexOf(row.id) === -1) {
       validRowIds.push(row.id)
@@ -178,7 +172,8 @@ const getDetail = (data) => {
 const handleSizeChange = (size) => {
   pageSize.value = size;
   currentPage.value = 1;
-  emits('pageSizeChange', size);
+  const currentSize = paginationRef.value.pageSize;
+  emits('pageSizeChange', size, currentSize);
 }
 const getSummaries = (table) => {
   const sums = [];

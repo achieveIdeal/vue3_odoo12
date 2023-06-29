@@ -12,7 +12,7 @@
       </span>
     </template>
   </el-dialog>
-  <RecordView :params="params" :extras="extras" @customClick="customClick"/>
+  <RecordView :params="params" :extras="extras" @customClick="customClick" @loadedCallable="loadedCallable"/>
 </template>
 
 <script lang="ts" setup>
@@ -118,16 +118,45 @@ const extras = {
     },
     name: {
       width: '200'
+    },
+    amount: {
+      min: 0
+    },
+    min_pack_size: {
+      min: 0
     }
   },
-  invisible: ['is_generate', 'state', 'delivery_order_id', 'name', 'supplier_id', 'shelf_life'],
+  invisible: ['is_generate', 'state', 'delivery_order_id', 'shelf_life'],
   listInvisible: ['supplier_id', 'shelf_life', 'manufacturer_id',
     'produce_number', 'comment',],
-  readonly: ['name', 'product_name', 'print_amount', 'name', 'supplier_id',
+  readonly: ['name', 'product_name', 'print_amount', 'name', 'supplier_id', 'produce_number',
     'if_print', 'delivery_order_id', 'shelf_life'],
   required: ['default_code', 'date_from', 'amount', 'min_pack_size', 'produce_number']
 }
 
+
+const loadedCallable = async (init, loading, noInit) => {
+  if (!params.id && params.type === 'form') {
+    noInit();
+    loading.value = true;
+    const res = await callButton({
+      model: params.model,
+      method: 'prepare_create',
+      args: []
+    })
+    if (res.error) {
+      loading.value = false;
+      ElMessage({
+        message: res.error.data.message,
+        type: 'error'
+      });
+      router.back();
+      return false
+    }
+    loading.value = false;
+    init(res.result);
+  }
+}
 
 const customClick = (button, rows, reload) => {
   const ids = rows.map(r => r.id);

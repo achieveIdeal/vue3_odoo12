@@ -8,7 +8,11 @@
 import {provide} from "vue";
 import zhCn from "element-plus/lib/locale/lang/zh-cn"
 import {ElConfigProvider} from "element-plus";
-provide('supplier_id', parseInt(document.getElementById('app').attributes['data-id']?.value||0))
+
+const appElement = document.getElementById('app');
+for(const field of Object.keys(appElement.dataset)){
+  provide(field, appElement.dataset[field]);
+}
 
 </script>
 
