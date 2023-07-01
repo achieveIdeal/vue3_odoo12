@@ -53,7 +53,7 @@ const params = reactive({
       title: '交货订单行',
       model: 'srm.delivery.order.line',
       fields: ['product_id', 'material_name', 'jit_id', 'shortage_id', 'amount_planned',
-        'delivery_quantity', 'uom_id', 'purchase_order', 'code_names', 'comment', 'origin_data_ids']
+        'delivery_quantity', 'receive_quantity', 'uom_id', 'purchase_order', 'code_names', 'comment', 'origin_data_ids']
     }
   }
 })
@@ -127,6 +127,9 @@ const extras = {
           readonly: [['line_ids.purchase_order', '!=', '']],
           min: 0,
         },
+        receive_quantity:{
+          invisible: [['state', '!=', 'done']]
+        }
       },
       buttons: [{
         method: 'match_po',
@@ -370,7 +373,7 @@ const codeSelectClick = (rows) => {
   let ids = []
   for (const row of rows) {
     ids.push(row.id)
-    if(!row.hasChildren){
+    if (!row.hasChildren) {
       codeAmountTotal.value += row.amount
     }
   }

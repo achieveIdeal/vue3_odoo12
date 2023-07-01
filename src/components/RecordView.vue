@@ -42,7 +42,7 @@
           ref="formViewRef"
           :disabled="disabled"/>
       <TreeView
-          v-if="Object.keys(params.tables||{}).length"
+          v-if="Object.keys(options.treeFieldsOption||{}).length"
           :datas="datas.treeData"
           :formData="datas.formData"
           :options="options.treeFieldsOption"
@@ -70,6 +70,7 @@
         :colors="extras.colors"
         :groupbyKey="groupbyKey"
         @pageChange="pageChange"
+        @deleteRow="deleteRow"
         @selectClick="selectClick"
         @pageSizeChange="pageSizeChange"
         @loadGroupDetail="loadGroupDetail"
@@ -151,8 +152,9 @@ const getListViewExpose = () => {
   }
 };
 
-const emits = defineEmits(['objectClick', 'saveClick', 'customClick', 'pageSizeChange', 'loadGroupDetail',
-  'lineButtonClick', 'loadedCallable', 'selectClick', 'deleteLineClick', 'fieldOnchange']);
+const emits = defineEmits(['objectClick', 'saveClick', 'customClick', 'pageSizeChange', 'loadGroupDetail', 'deleteRow',
+  'lineButtonClick', 'loadedCallable', 'selectClick', 'deleteLineClick', 'fieldOnchange', 'saveWriteClick',
+  'saveCreateClick']);
 
 const initForm = async (result) => {
   let formData = result?.formData || datas.formData;
@@ -161,12 +163,11 @@ const initForm = async (result) => {
   let tableDataCountMap = result?.tableDataCountMap;
   buttons.buttonOptions = initButton(extras, formData, params.type);
   let inited = await initFormData(extras, formData, options.formFieldsOption, noloadField);
-  for (let lineField of Object.keys(tableDataCountMap || {})) {  // 记录表格数据总数
+  for (let lineField of Object.keys(params.tables || {})) {  // 记录表格数据总数
     params.tables[lineField].count = tableDataCountMap[lineField];
     params.tables[lineField].limit = params.tables[lineField].limit || 12;
     params.tables[lineField].offset = 0;
   }
-
   let initedTree = {};
   if (Object.keys(params.tables || {}).length) {
     for (let field of Object.keys(params.tables || {})) {
@@ -452,11 +453,28 @@ const saveClick = (formEl: FormInstance | undefined) => {  // 处理保存按钮
       for (let file of formViewRef.value?.upload || []) {
         file.submit()
       }
+      let noeSave = false;
       if (Object.keys(savedDatas).length && params.id) {
-        saveWrite(params, savedDatas)
+        emits('saveWriteClick', () => {
+          noeSave = true;
+          saveWrite(params, savedDatas)
+        }, datas.formData, savedDatas)
+        console.log(noeSave);
+        !noeSave && saveWrite(params, savedDatas)
       } else if (Object.keys(savedDatas).length) {
         let savedDatas = formatData(datas, {formData: {}, treeData: []}, options);
-        saveCreate(params, savedDatas);
+        emits('saveCreateClick', () => {
+          noeSave = true;
+          saveCreate(params, savedDatas)
+        },savedDatas)
+        !noeSave && saveCreate(params, savedDatas);
+      } else {
+        ElMessage({
+          dangerouslyUseHTMLString: true,
+          message: '数据未更改, 请检查!',
+          type: 'error'
+        })
+        return false;
       }
     } else {
       ElMessage({
@@ -565,13 +583,19 @@ const selectClick = (rows) => {
   emits('selectClick', rows, reload, loading)
 }
 
+const deleteRow = (row) => {
+  emits('deleteRow', row, reload)
+}
+
 const lineButtonClick = (treeField, data, button) => {
   emits('lineButtonClick', treeField, data, button, reload, loading);
 }
 const addLineClick = (field) => {
   !params.tables[field].count ? params.tables[field].count = 0 : null;
+  !datas.treeData[field] ? datas.treeData[field] = [] : null;
   datas.treeData[field].push(JSON.parse(JSON.stringify(emptyData[field])))
   params.tables[field].count++;
+
 }
 const deleteLineClick = (field, index, row) => {
   let lineData = datas.treeData[field];

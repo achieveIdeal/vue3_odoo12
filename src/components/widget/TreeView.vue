@@ -1,7 +1,8 @@
 <template>
   <el-tabs v-model="active">
-    <template v-if="!!Object.keys(datas||{}).length" v-for="treeField in Object.keys(params||{})" :key="treeField">
-      <el-tab-pane v-if="!formOptions[treeField]?.invisible" :label="params[treeField]?.title" :name="treeField">
+    <template v-for="treeField in Object.keys(params||{})" :key="treeField">
+      <el-tab-pane v-if="!parseDomain(formOptions[treeField]?.invisible, formData)" :label="params[treeField]?.title"
+                   :name="treeField">
         <el-table class="table-item" :data="datas[treeField]?.slice(params[treeField]?.offset,    // 分页
           params[treeField]?.offset + params[treeField]?.limit)"
                   show-summary
@@ -12,7 +13,8 @@
                   stripe>
           <template v-for="field in params[treeField].fields"
                     :key="field">
-            <template v-if="noLoadFields.indexOf(field) === -1 && !options[treeField][field]?.invisible">
+            <template
+                v-if="noLoadFields.indexOf(field) === -1 && !parseDomain(options[treeField][field]?.invisible, formData)">
               <el-table-column
                   :show-overflow-tooltip="disabled"
                   :width="options[treeField][field]?.width">
@@ -29,11 +31,17 @@
                     }]">
                     <template v-if="disabled">
                       <span
-                          v-if="is2One(options[treeField][field]?.type)"> {{ options[treeField][field]?.selection.find(r => r[0] === scoped.row[field])[1] }}</span>
+                          v-if="is2One(options[treeField][field]?.type)"> {{
+                          options[treeField][field]?.selection.find(r => r[0] === scoped.row[field])[1]
+                        }}</span>
                       <span
-                          v-else-if="isSelection(options[treeField][field]?.type)">{{ options[treeField][field]?.selection.find(r => r[0] === scoped.row[field])[1] }}</span>
+                          v-else-if="isSelection(options[treeField][field]?.type)">{{
+                          options[treeField][field]?.selection.find(r => r[0] === scoped.row[field])[1]
+                        }}</span>
                       <span
-                          v-else-if="is2Many(options[treeField][field]?.type)">{{ options[treeField][field]?.selection.map(r => scoped.row[field].includes(r[0])).map(r => r[0]) }}</span>
+                          v-else-if="is2Many(options[treeField][field]?.type)">{{
+                          options[treeField][field]?.selection.map(r => scoped.row[field].includes(r[0])).map(r => r[0])
+                        }}</span>
                       <span class="form-input alien-left" v-else-if="options[treeField][field]?.type==='checkbox'">
                         <input type="checkbox" v-model="scoped.row[field]">
                       </span>
@@ -42,7 +50,7 @@
                       </span>
                       <span class="file-content form-input" v-else-if="isDigit(options[treeField][field]?.type)">
                          {{
-                          setPrecision(scoped.row[field], options[treeField][field]?.precision ||
+                          (scoped.row[field]||0).toFixed(options[treeField][field]?.precision ||
                               options[treeField][field]?.digits?.length && options[treeField][field]?.digits[1])
                         }}
                       </span>
@@ -80,7 +88,7 @@
                         <el-option
                             v-for="item in options[treeField][field]?.selection"
                             :key="item[0]"
-                            :label="item[1]"
+                            :label="item[1] || ''"
                             :value="item[0]"/>
                       </el-select>
                     </template>
@@ -112,7 +120,7 @@
                         <el-option
                             v-for="item in options[treeField][field]?.selection"
                             :key="item[0]"
-                            :label="item[1]"
+                            :label="item[1] || ''"
                             :value="item[0]"/>
                       </el-select>
                     </template>
@@ -151,7 +159,7 @@
                         <el-option
                             v-for="item in options[treeField][field]?.selection"
                             :key="item[0]"
-                            :label="item[1]"
+                            :label="item[1] || ''"
                             :value="item[0]"
                         ></el-option>
                       </el-select>
@@ -262,19 +270,23 @@
           </template>
           <template v-if="!(parseDomain(formOptions[treeField]?.readonly, {...formData}) || disabled)"
                     v-for="(button, index) in attributes[treeField]?.buttons|| []" :key="index">
-            <el-table-column :width="button.width|| 130" fixed="right" :label="button.text" v-if="!button.invisible">
+            <el-table-column :width="button.width|| 130" fixed="right" :label="button.text">
               <template #default="scoped">
                 <el-button :type="button.classify || 'primary'"
+                           v-if="parseDomain(!button.invisible,{...formData, [treeField]: scoped.row})"
                            @click="handleButtonClick(treeField, scoped.row, button)"
                 >{{ button.text }}
                 </el-button>
               </template>
             </el-table-column>
           </template>
-          <el-table-column fixed="right" label="操作" v-if="!attributes[treeField]?.undel
-          && !(parseDomain(formOptions[treeField]?.readonly, {...formData}) || disabled)" width="120">
+          <el-table-column fixed="right" label="操作"
+                           v-if="!(parseDomain(formOptions[treeField]?.readonly, {...formData}) || disabled)"
+                           width="120">
+
             <template #default="scoped">
               <el-button link
+                         v-if="parseDomain(attributes[treeField]?.undel || true,{...formData, [treeField]: scoped.row})"
                          size="small"
                          type="danger"
                          @click="handleDeleteLine(scoped.$index, treeField,scoped.row)"
@@ -313,7 +325,7 @@ import {Edit} from "@element-plus/icons-vue";
 import {useTypeStore} from "../../store";
 import type {FieldOptionType, ModuleDataType, DataType} from "../../types";
 import {onchangeField, searchFieldSelection, downLoadFile, encodeFileToBase64, parseDomain} from "../../tools";
-import {setPrecision} from "../../tools/init";
+
 const typeStore = useTypeStore();
 const fieldTypeMap = typeStore.types;
 const is2One = typeStore.is2One;
@@ -391,12 +403,15 @@ const getSummaries = (treeField) => (table) => {
   for (const data of table.data) {
     let index = 0;
     for (const field of props.params[treeField]?.fields) {
-      if (noLoadFields.indexOf(field) !== -1 || props.options[treeField][field]?.invisible) {
+      if (noLoadFields.indexOf(field) !== -1 ||
+          parseDomain(props.options[treeField][field]?.invisible, {...props.formData, [treeField]: data})) {
         continue
       }
       sums[index] = !sums[index] ? 0 : sums[index];
-      if (props.options[treeField][field]?.sum) {
-        sums[index] += data[field];
+      if (props.options[treeField][field]?.sum && isDigit(props.options[treeField][field]?.type)) {
+        sums[index] = (parseFloat(sums[index]) + parseFloat(data[field])).toFixed(props.options[treeField][field]?.precision ||
+                        props.options[treeField][field]?.digits&&
+                        props.options[treeField][field]?.digits?.length&&props.options[treeField][field]?.digits[1] || 0);
       } else {
         sums[index] = ''
       }

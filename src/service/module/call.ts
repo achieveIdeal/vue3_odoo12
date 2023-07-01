@@ -1,6 +1,10 @@
 import Request from "../index";
 import {RequestParamsType} from "../../types/index";
 
+
+const appElement = document.getElementById('app');
+const supplier_id =  parseInt(appElement.dataset['supplier_id'] || 0)
+
 export function callButton(data: RequestParamsType) {
     data.args.push({'front': true})
     return Request.post({
@@ -28,7 +32,7 @@ export function callFields(data: RequestParamsType) {
                 model: data.model,
                 method: 'fields_get',
                 args: data.args,
-                kwargs: data.kwargs || {'context': {'lang': 'zh_CN', 'tz': false, 'uid': 2, 'front': true}}
+                kwargs: data.kwargs || {'context': {'lang': 'zh_CN', 'tz': false, 'uid': 2, 'front': true, supplier_id}}
             }
         }
     })
@@ -44,7 +48,7 @@ export function callKw(data: RequestParamsType) {
                 model: data.model,
                 method: data.method,
                 args: data.args,
-                kwargs: data.kwargs || {'context': {'lang': 'zh_CN', 'tz': false, 'uid': 2, 'front': true}}
+                kwargs: data.kwargs || {'context': {'lang': 'zh_CN', 'tz': false, 'uid': 2, 'front': true, supplier_id}}
             }
         }
     })
@@ -56,7 +60,7 @@ export function callNames(data: RequestParamsType) {
         model: data.model,
         method: 'name_search',
         args: data.args,
-        kwargs: data.kwargs || {'context': {'lang': 'zh_CN', 'tz': false, 'uid': 2, 'front': true}}
+        kwargs: data.kwargs || {'context': {'lang': 'zh_CN', 'tz': false, 'uid': 2, 'front': true, supplier_id}}
     })
 }
 
@@ -75,7 +79,7 @@ export function callRead(data: RequestParamsType) {
         model: data.model,
         method: 'read',
         args: data.args,
-        kwargs: data.kwargs || {'context': {'lang': 'zh_CN', 'tz': false, 'uid': 2, 'front': true}}
+        kwargs: data.kwargs || {'context': {'lang': 'zh_CN', 'tz': false, 'uid': 2, 'front': true, supplier_id}}
     })
 }
 
@@ -105,7 +109,7 @@ export function callReadGroup(data) {
         args: [],
         kwargs: {
             'context':
-                {'lang': 'zh_CN', 'tz': false, 'uid': 2, 'front': true},
+                {'lang': 'zh_CN', 'tz': false, 'uid': 2, 'front': true, supplier_id},
             domain: data.domain,
             fields: data.fields,
             groupby: data.groupby,

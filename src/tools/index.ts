@@ -10,11 +10,15 @@ import {
 import {ElMessage} from "element-plus";
 import {initTreeData} from "./init";
 // 请求数据
+
+const appElement = document.getElementById('app');
+const supplier_id = parseInt(appElement.dataset['supplier_id'] || 0)
+
 const getRequestParams = (params: ModuleDataType): RequestParamsType => {
     let id = params.id instanceof Array && params.id || [params.id];
     return {
         model: params.model,
-        args: [id, params.fields]
+        args: [id, params.fields.concat(Object.keys(params.tables || {}))]
     }
 }
 
@@ -31,7 +35,6 @@ const buildOnchangeSpecs = function (fieldsInfo, treeOption, fields) {
             var field = fieldsInfo[name];
             var key = prefix + name;
             specs[key] = (field.onchange) || "";
-
             if ((treeOption || {})[name]) {
                 generateSpecs(treeOption[name], Object.keys(treeOption[name] || {}), key + '.');
             }
@@ -74,7 +77,8 @@ const onchangeField = async (params: OnchangeParamsType, checkAll) => {
                 'lang': 'zh_CN',
                 'tz': false,
                 'uid': 1,
-                front: true
+                front: true,
+                supplier_id
             }],
             path: model + '/onchange'
         }
@@ -122,12 +126,11 @@ const onchangeField = async (params: OnchangeParamsType, checkAll) => {
             }
             if (!!Object.keys(treeData || {}).length && Object.keys(treeData || {}).indexOf(changedField) !== -1) {
                 const changeLines = []
-                const originLength = treeData[changedField].length;
                 for (let index = 1; index < value[changedField].length; index++) {
                     changeLines.push(value[changedField][index][2]);
                 }
-                treeData[changedField] = changeLines.slice(originLength);
-                initTreeData(null, treeData, treeOptions);
+                treeData[changedField] = changeLines;
+                initTreeData({}, treeData, treeOptions, datas);
                 continue
             }
             datas[changedField] = value[changedField];
@@ -185,10 +188,10 @@ const loadFormData = async (params: ModuleDataType) => {
     formData = dataRes.result[0];
     for (let line of Object.keys(params.tables || {})) {
         let lineParams = params.tables[line] || {};
-        lineParams.id = dataRes.result?.length && dataRes.result[0][line];
+        lineParams.id = dataRes.result?.length && dataRes.result[0][line] || 0;
         let dataResult
         if (lineParams.domain && lineParams.domain.length) {
-            let requestData: RequestParamsType = {
+            let requestData = {
                 model: lineParams.model,
                 fields: lineParams.fields,
                 domain: lineParams.domain.concat([['id', 'in', lineParams.id]]),

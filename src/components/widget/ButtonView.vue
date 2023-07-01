@@ -6,10 +6,10 @@
         <template v-if="button.type==='edit'">
           <template v-if="disabled">
             <el-button class="el-button--primary" @click.prevent="handleEdit">
-              编辑
+              {{button.text||'编辑'}}
             </el-button>
           </template>
-          <template v-if="!disabled && params.id !== '0'">
+          <template v-if="!disabled && params.id">
             <el-button class="el-button--primary" @click.prevent="handleSave">
               保存
             </el-button>
@@ -24,7 +24,7 @@
               class="el-button--primary" @click.prevent="handleCreate">
             {{ button.text || 创建 }}
           </el-button>
-          <template v-if="!disabled && params.id === '0'">
+          <template v-if="!disabled && !params.id">
             <el-button class="el-button--primary" @click.prevent="handleSave">
               保存
             </el-button>

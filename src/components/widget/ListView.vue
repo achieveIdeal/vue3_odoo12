@@ -41,6 +41,13 @@
                    @click="getDetail(scoped.row)"
         >查看详情
         </el-button>
+        <el-button link
+                   v-if="params.canDel"
+                   size="small"
+                   type="danger"
+                   @click="deleteRow(scoped.row)"
+        >删除
+        </el-button>
       </template>
     </el-table-column>
   </el-table>
@@ -105,7 +112,7 @@ let currentPage = ref(1)
 let height = document.documentElement.clientHeight - 250
 let resolveCopy = {}
 let isLoadedGroupDetail = {};
-let emits = defineEmits(['pageChange', 'editClick', 'selectClick', 'pageSizeChange', 'loadGroupDetail'])
+let emits = defineEmits(['pageChange', 'editClick', 'selectClick', 'pageSizeChange', 'loadGroupDetail', 'deleteRow'])
 
 const handleRowStyle = (row) => {
   const colorMap = {
@@ -169,6 +176,10 @@ const getDetail = (data) => {
     }
   })
 }
+
+const deleteRow = (row) => {
+  emits('deleteRow', row)
+}
 const handleSizeChange = (size) => {
   pageSize.value = size;
   currentPage.value = 1;
@@ -180,12 +191,13 @@ const getSummaries = (table) => {
   for (const data of table.data) {
     let index = 0;
     for (const field of props.params?.fields) {
-      if (noLoadFields.indexOf(field) !== -1 || props.options[field]?.invisible) {
+      if (noLoadFields.indexOf(field) !== -1 || parseDomain(props.options[field]?.invisible, data)) {
         continue
       }
       sums[index] = !sums[index] ? 0 : sums[index];
       if (props.options[field]?.sum) {
-        sums[index] += data[field];
+        sums[index] = (sums[index] + data[field]).toFixed(props.options[field]?.precision ||
+            props.options[field]?.digits?.length && props.options[field]?.digits[1] || 0);
       } else {
         sums[index] = ''
       }

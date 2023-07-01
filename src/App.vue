@@ -13,7 +13,6 @@ const appElement = document.getElementById('app');
 for(const field of Object.keys(appElement.dataset)){
   provide(field, appElement.dataset[field]);
 }
-
 </script>
 
 <style scoped>

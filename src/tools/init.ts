@@ -62,9 +62,15 @@ export const setTreeAttribute = (treeField, lineData, formData, treeFieldsOption
     let attributes = extras.attributes ? extras.attributes[treeField]?.fields : {};
     if (!attributes) return
     for (const field of Object.keys(treeFieldsOption[treeField] || {})) { // 设置自定义的属性
-        treeFieldsOption[treeField][field]['readonly'] = (attributes.readonly || []).indexOf(field) !== -1;
-        treeFieldsOption[treeField][field]['invisible'] = (attributes.invisible || []).indexOf(field) !== -1;
-        treeFieldsOption[treeField][field]['required'] = (attributes.required || []).indexOf(field) !== -1;
+        if (attributes.invisible?.length && (attributes.invisible || []).indexOf(field) !== -1) {
+            treeFieldsOption[treeField][field]['invisible'] = true;
+        }
+        if (attributes.readonly?.length && (attributes.readonly || []).indexOf(field) !== -1) {
+            treeFieldsOption[treeField][field]['readonly'] = true;
+        }
+        if (attributes.required?.length && (attributes.required || []).indexOf(field) !== -1) {
+            treeFieldsOption[treeField][field]['required'] = true;
+        }
         let extraOptions = attributes[field];
         for (const attribute of Object.keys(extraOptions || {})) {
             treeFieldsOption[treeField][field][attribute] = extraOptions[attribute];
@@ -73,13 +79,16 @@ export const setTreeAttribute = (treeField, lineData, formData, treeFieldsOption
 }
 export const initTreeData = async (extras, treeData, treeFieldsOption, formData) => {
     for (let treeField of Object.keys(treeFieldsOption || {})) {
-        let lineDatas = treeData[treeField]
+        !treeData[treeField] ? treeData[treeField] = [] : null;
+        let lineDatas = treeData[treeField] || [];
+        if (!lineDatas.length) {
+            setTreeAttribute(treeField, {}, formData, treeFieldsOption, extras);
+        }
         for (let lineData of !!lineDatas.length ? lineDatas : []) {
             for (let field of Object.keys(lineData || {})) {
                 let value = lineData[field]
                 if (isDigit(treeFieldsOption[treeField][field]?.type) && !value) {
                     lineData[field] = 0
-                    continue
                 } else if (!isBool(treeFieldsOption[treeField][field]?.type) && !value) {
                     lineData[field] = ''
                 }
@@ -112,18 +121,6 @@ export const initTreeData = async (extras, treeData, treeFieldsOption, formData)
     return {treeData, treeFieldsOption}
 }
 
-export const setPrecision = (number, precision) => {
-    const numbPrefix = number.toString().split('.')[0];
-    let floatSubfix = ''
-    while (floatSubfix.length < precision) {
-        floatSubfix += '0'
-    }
-    if (floatSubfix.length) {
-        return numbPrefix + '.' + floatSubfix
-    }
-    return number
-}
-
 
 export const initListData = async (extras, listData, fieldsOption) => {
     for (let lineData of listData && listData.length ? listData : []) {
@@ -136,11 +133,11 @@ export const initListData = async (extras, listData, fieldsOption) => {
                     return val[0] === value
                 })[1]
             } else if (isBool(fieldsOption[field]?.type)) {
-                 // 跳过
+                // 跳过
             } else if (is2One(fieldsOption[field]?.type)) {
                 lineData[field] = lineData[field] ? lineData[field][1] : ''
             } else if (isDigit(fieldsOption[field]?.type)) {
-                lineData[field] = setPrecision(lineData[field] || 0, fieldsOption[field]?.precision
+                lineData[field] = (lineData[field] || 0).toFixed( fieldsOption[field]?.precision
                     || fieldsOption[field]?.digits?.length && fieldsOption[field]?.digits[1])
             } else if (!isBool(fieldsOption[field]?.type) && !value) {
                 lineData[field] = ''
@@ -200,9 +197,12 @@ export const formatData = function (datas, dataCopy, options): Object {  // 数�
     let updated = {}
     for (let field of Object.keys(datas.formData || {})) {
         if (datas.formData[field] !== dataCopy.formData[field]) {
-            updated[field] = datas.formData[field];
             if (datas.formData[field] instanceof Array) {
-                updated[field] = [[6, 0, datas.formData[field]]];
+                if (datas.formData[field].find(r => !(dataCopy.formData[field] || []).includes(r))) {
+                    updated[field] = [[6, 0, datas.formData[field]]];
+                }
+            } else {
+                updated[field] = datas.formData[field];
             }
         }
     }
@@ -210,7 +210,7 @@ export const formatData = function (datas, dataCopy, options): Object {  // 数�
         let isChanged = false;
         let delFlag = {};
         let addFlag = false;
-        let updatedLineCopy = JSON.parse(JSON.stringify(updated[treeField] || {}))
+        let updatedLineCopy = JSON.parse(JSON.stringify(datas.formData[treeField] || []))
         updated[treeField] = []
         for (const treeCopyId of dataCopy.formData[treeField] || []) {
             if (updatedLineCopy.indexOf(treeCopyId) === -1 && !delFlag[treeCopyId]) {  //  处理删除行
