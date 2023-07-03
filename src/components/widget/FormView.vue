@@ -3,17 +3,41 @@
     <template v-for="field in params.fields" :key="field">
       <el-form-item
           class="form-item"
-          :style="{width: params.width|| (isDialog && '43%' || '47%')}"
+          :style="{width: params.width|| (isDialog && '43%' || '47%'), 'border-bottom': (disabled || parseDomain(options[field]?.readonly,datas)) && !isFile(options[field]?.type) && '#FAFAFA 1px solid'}"
           :label="options[field]?.string"
           :prop="['formData', field]"
-          :rules="[{
+          :rules="options[field]?.rules||[{
         required: options[field]?.required,
         message: options[field]?.string + '不能为空!',
         trigger: 'blur'
         }]"
-          v-if="noLoadFields.indexOf(field) === -1 && !parseDomain(props.options[field]?.invisible, datas)"
+          v-if="noLoadFields.indexOf(field) === -1 && !parseDomain(options[field]?.invisible, datas)"
       >
-        <template v-if="is2One(options[field]?.type)">
+        <template v-if="(disabled || parseDomain(options[field]?.readonly,datas)) && !isFile(options[field]?.type)">
+          <span v-if="is2One(options[field]?.type)">
+            {{ (options[field]?.selection.find(r => r[0] === datas[field]) || [''])[1] }}
+          </span>
+          <span v-else-if="isSelection(options[field]?.type)">
+            {{ (options[field]?.selection.find(r => r[0] === datas[field]) || [''])[1] }}
+          </span>
+          <span v-else-if="is2Many(options[field]?.type)">
+            {{ options[field]?.selection.map(r => datas[field].includes(r[0])).map(r => r[0]) }}
+          </span>
+          <span class="form-input alien-left" v-else-if="isBool(options[field]?.type)">
+            <input type="checkbox" v-model="datas[field]">
+          </span>
+          <span class="file-content form-input" v-else-if="isFile(options[field]?.type)">
+            {{ datas[options[field]?.filename] }}
+          </span>
+          <span class="file-content form-input" v-else-if="isDigit(options[field]?.type)">
+          {{
+              (datas[field] || 0).toFixed(options[field]?.precision ||
+                  options[field]?.digits?.length && options[field]?.digits[1])
+            }}
+          </span>
+          <span v-else>{{ datas[field] }}</span>
+        </template>
+        <template v-else-if="is2One(options[field]?.type)">
           <el-select class="form-input alien-left"
                      v-model="datas[field]"
                      placeholder="请选择"
@@ -107,7 +131,7 @@
           </el-select>
 
         </template>
-        <template v-else-if="fieldTypeMap[options[field]?.type]==='checkbox'">
+        <template v-else-if="isBool(options[field]?.type)">
           <div class="form-input alien-left">
             <input type="checkbox" v-model="datas[field]"
                    :disabled="parseDomain(options[field]?.readonly, datas)  || disabled"
@@ -122,7 +146,7 @@
               })">
           </div>
         </template>
-        <template v-else-if="fieldTypeMap[options[field]?.type] === 'number'">
+        <template v-else-if="isDigit(options[field]?.type)">
           <span style="display: none;">{{ datas[field] ? datas[field] : datas[field] = 0 }}</span>
           <el-input-number v-model="datas[field]"
                            class="form-input"
@@ -200,6 +224,8 @@ const typeStore = useTypeStore();
 const fieldTypeMap = typeStore.types;
 const is2One = typeStore.is2One;
 const is2Many = typeStore.is2Many;
+const isBool = typeStore.isBool;
+const isDigit = typeStore.isDigit;
 const isSelection = typeStore.isSelection;
 const isFile = typeStore.isFile;
 const noLoadFields = inject<string[]>('noloadFields');

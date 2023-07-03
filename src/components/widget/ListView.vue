@@ -13,7 +13,7 @@
     <el-table-column fixed type="selection" width="55" :reserve-selection="true"/>
     <template v-for="field in params.fields?.length && params.fields || []"
               :key="field">
-      <template v-if="noLoadFields.indexOf(field) === -1 && !options[field]?.listInvisible">
+      <template v-if="field!== 'id' && !options[field]?.listInvisible">
         <el-table-column
             show-overflow-tooltip
             :label="options[field]?.string"
@@ -104,7 +104,6 @@ const props = defineProps({
   }
 })
 
-const noLoadFields = inject('noloadFields');
 const paginationRef = ref({})
 let pageSize = ref(20);
 let listTable = ref({})
@@ -191,7 +190,7 @@ const getSummaries = (table) => {
   for (const data of table.data) {
     let index = 0;
     for (const field of props.params?.fields) {
-      if (noLoadFields.indexOf(field) !== -1 || parseDomain(props.options[field]?.invisible, data)) {
+      if (field==='id' || parseDomain(props.options[field]?.invisible, data)) {
         continue
       }
       sums[index] = !sums[index] ? 0 : sums[index];

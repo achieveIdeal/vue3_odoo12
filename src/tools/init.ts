@@ -16,10 +16,10 @@ export const setFormAttribute = (formData, formFieldsOption, extras) => {
         let attributes = extras?.attributes || {};
         for (const field of Object.keys(formFieldsOption || {})) {  // 自定义属性 readonly 和invisible等
             if (['readonly', 'invisible', 'listInvisible', 'required'].indexOf(field) !== -1) continue
-            formFieldsOption[field]['readonly'] = (extras?.readonly || []).indexOf(field) !== -1;
-            formFieldsOption[field]['invisible'] = (extras?.invisible || []).indexOf(field) !== -1;
-            formFieldsOption[field]['listInvisible'] = (extras?.listInvisible || []).indexOf(field) !== -1;
-            formFieldsOption[field]['required'] = (extras?.required || []).indexOf(field) !== -1;
+            formFieldsOption[field]['readonly'] = (extras?.readonly || []).indexOf(field) !== -1 || extras?.readonly === '_all_';
+            formFieldsOption[field]['invisible'] = (extras?.invisible || []).indexOf(field) !== -1 || extras?.invisible === '_all_';
+            formFieldsOption[field]['listInvisible'] = (extras?.listInvisible || []).indexOf(field) !== -1 || extras?.listInvisible === '_all_';
+            formFieldsOption[field]['required'] = (extras?.required || []).indexOf(field) !== -1 || extras?.required === '_all_';
             let extraOptions = attributes[field];
             for (const attribute of Object.keys(extraOptions || {})) {
                 if (attribute === 'fields') continue;
@@ -30,6 +30,9 @@ export const setFormAttribute = (formData, formFieldsOption, extras) => {
 }
 export const initFormData = async (extras, formData, formFieldsOption) => {
     for (let field of formData ? Object.keys(formFieldsOption || {}) : []) {   // 初始化下拉选项值
+        let attributes = extras.attributes || {};
+        let extraOptions = attributes[field];
+        formData[field] = formData[field] || extraOptions?.default;
         let value = formData[field]
         if (!isBool(formFieldsOption[field]?.type) && !value) {
             formData[field] = ''
@@ -62,16 +65,11 @@ export const setTreeAttribute = (treeField, lineData, formData, treeFieldsOption
     let attributes = extras.attributes ? extras.attributes[treeField]?.fields : {};
     if (!attributes) return
     for (const field of Object.keys(treeFieldsOption[treeField] || {})) { // 设置自定义的属性
-        if (attributes.invisible?.length && (attributes.invisible || []).indexOf(field) !== -1) {
-            treeFieldsOption[treeField][field]['invisible'] = true;
-        }
-        if (attributes.readonly?.length && (attributes.readonly || []).indexOf(field) !== -1) {
-            treeFieldsOption[treeField][field]['readonly'] = true;
-        }
-        if (attributes.required?.length && (attributes.required || []).indexOf(field) !== -1) {
-            treeFieldsOption[treeField][field]['required'] = true;
-        }
+        treeFieldsOption[treeField][field]['invisible'] = (attributes.invisible || []).indexOf(field) !== -1 || attributes.invisible === '_all_';
+        treeFieldsOption[treeField][field]['readonly'] = (attributes.readonly || []).indexOf(field) !== -1 || attributes.readonly === '_all_';
+        treeFieldsOption[treeField][field]['required'] = (attributes.required || []).indexOf(field) !== -1 || attributes.required === '_all_';
         let extraOptions = attributes[field];
+        lineData[field] = lineData[field] || extraOptions?.default
         for (const attribute of Object.keys(extraOptions || {})) {
             treeFieldsOption[treeField][field][attribute] = extraOptions[attribute];
         }
@@ -86,6 +84,9 @@ export const initTreeData = async (extras, treeData, treeFieldsOption, formData)
         }
         for (let lineData of !!lineDatas.length ? lineDatas : []) {
             for (let field of Object.keys(lineData || {})) {
+                let attributes = extras.attributes ? extras.attributes[treeField]?.fields : {};
+                let extraOptions = attributes[field];
+                 lineData[field] =  lineData[field] ||  extraOptions?.default;
                 let value = lineData[field]
                 if (isDigit(treeFieldsOption[treeField][field]?.type) && !value) {
                     lineData[field] = 0
@@ -104,7 +105,7 @@ export const initTreeData = async (extras, treeData, treeFieldsOption, formData)
                         treeFieldsOption[treeField][field]['curSelect'].push(value)
                     }
                     treeFieldsOption[treeField][field].selection = treeFieldsOption[treeField][field]['curSelect'];
-                    lineData[field] = value[0]
+                    lineData[field] = value[0];
                 }
                 if (is2Many(treeFieldsOption[treeField][field]?.type)) {
                     await searchFieldSelection(treeFieldsOption[treeField][field], '', [['id', 'in', lineDatas[field]]], lineDatas[field].length)
@@ -137,11 +138,11 @@ export const initListData = async (extras, listData, fieldsOption) => {
             } else if (is2One(fieldsOption[field]?.type)) {
                 lineData[field] = lineData[field] ? lineData[field][1] : ''
             } else if (isDigit(fieldsOption[field]?.type)) {
-                lineData[field] = (lineData[field] || 0).toFixed( fieldsOption[field]?.precision
+                lineData[field] = (lineData[field] || 0).toFixed(fieldsOption[field]?.precision
                     || fieldsOption[field]?.digits?.length && fieldsOption[field]?.digits[1])
             } else if (!isBool(fieldsOption[field]?.type) && !value) {
                 lineData[field] = ''
-            } else if (is2Many(fieldsOption[field]?.type)) {
+            } else if (is2Many(fieldsOption[field]?.type) && !fieldsOption[field]?.listInvisible) {
                 await searchFieldSelection(fieldsOption[field], '', [['id', 'in', lineData[field]]], lineData[field].length)
                 lineData[field] = fieldsOption[field].selection.map(r => r[1]).join(',')
             } else {
@@ -185,10 +186,10 @@ export const initEmptyTreeData = (emptyData, treeFieldsOption) => {
         emptyData[treeField] = {};
         for (let field of Object.keys(treeFieldsOption[treeField] || {})) {
             if (isDigit(treeFieldsOption[treeField][field]?.type)) {
-                emptyData[treeField][field] = 0;
+                emptyData[treeField][field] = treeFieldsOption[treeField][field]?.default || 0;
                 continue
             }
-            emptyData[treeField][field] = '';
+            emptyData[treeField][field] = treeFieldsOption[treeField][field]?.default || 0;
         }
     }
 }
@@ -207,6 +208,10 @@ export const formatData = function (datas, dataCopy, options): Object {  // 数�
         }
     }
     for (const treeField of Object.keys(datas.treeData || {})) {
+        if (parseDomain(options.formFieldsOption[treeField]?.invisible, {
+            ...datas.formData,
+            [treeField]: datas.treeData[treeField]
+        })) continue
         let isChanged = false;
         let delFlag = {};
         let addFlag = false;
@@ -219,23 +224,28 @@ export const formatData = function (datas, dataCopy, options): Object {  // 数�
                 updated[treeField].push([2, treeCopyId, false]);
             }
         }
+        console.log(updated);
         for (const treeData of datas.treeData[treeField]) {
-            let index = 0;
             let changedField = {};
-            for (const field of Object.keys(treeData || {})) {  // 处理修改行， !dataCopy.treeData[treeField][index]: 为处理新增行
-                if (field === 'id') continue;
-                if (!dataCopy.treeData[treeField] || !dataCopy.treeData[treeField][index]
-                    || treeData[field] !== dataCopy.treeData[treeField][index][field]) {
-                    isChanged = true;
-                    changedField[field] = treeData[field];
+            const copyLine = (dataCopy.treeData[treeField] || []).find(r => r.id === treeData.id); // 没有找到就是新增的没有id的行
+            if (!copyLine) {
+                changedField = treeData;
+                isChanged = true;
+            } else {
+                for (const field of Object.keys(treeData || {})) {  // 处理修改行
+                    if (treeData[field] !== copyLine[field]) {
+                        isChanged = true;
+                        changedField[field] = treeData[field];
+                    }
                 }
             }
-            index++;  // 行索引
-            if (isChanged && treeData.id && !delFlag[treeData.id]) {  // 更新
-                updated[treeField].push([1, treeData.id, changedField])
-            } else if (isChanged && !delFlag[treeData.id]) {  // 新增
-                updated[treeField].push([0, 0, changedField]);
-                addFlag = true;
+            if (Object.keys(changedField).length) {
+                if (isChanged && treeData.id && !delFlag[treeData.id]) {  // 更新
+                    updated[treeField].push([1, treeData.id, changedField])
+                } else if (isChanged && !delFlag[treeData.id]) {  // 新增
+                    updated[treeField].push([0, 0, changedField]);
+                    addFlag = true;
+                }
             }
         }
         if (!isChanged) {  // 未发生修改或新增的数据不处理
@@ -243,7 +253,7 @@ export const formatData = function (datas, dataCopy, options): Object {  // 数�
         }
         if (options.formFieldsOption[treeField].required && (!datas.treeData[treeField].length && !addFlag)) {  // 行数据非空约束
             ElMessage({
-                message: params.tables[treeField].title + '不能为空！',
+                message: options.formFieldsOption[treeField].string + '不能为空！',
                 type: 'error'
             })
             return false

@@ -31,6 +31,7 @@
         label-width="120px"
         class="form-inline">
       <FormView
+          v-if="Object.keys(datas.formData).length"
           :datas="datas.formData"
           :treeData="datas.treeData"
           :options="options.formFieldsOption"
@@ -42,7 +43,7 @@
           ref="formViewRef"
           :disabled="disabled"/>
       <TreeView
-          v-if="Object.keys(options.treeFieldsOption||{}).length"
+          v-if="activeTable"
           :datas="datas.treeData"
           :formData="datas.formData"
           :options="options.treeFieldsOption"
@@ -130,7 +131,7 @@ let dataCopy: DataType = {formData: {}, treeData: {}};  // 保留原始数据
 let buttons = reactive({buttonOptions: {}});  // 按钮控制
 let listViewRef = ref({});  // 列表页的ref
 let formViewRef = ref({});  // 表单页的ref
-let searchViewRef = ref({});  // 搜索框ref
+let searchViewRef = ref({getDomain: ()=>[]});  // 搜索框ref
 let formRef = ref({});  // 表单的vue元素
 let params: ModuleDataType = props.params;
 let extras: ModuleDataType = props.extras; // 额外的属性
@@ -259,7 +260,7 @@ watch(route, async (form, to) => {
 }, {immediate: true})
 
 const getGroupChildren = async (row) => {
-  const domain = searchViewRef.value?.getDomain() || [];
+  const domain = searchViewRef?.value?.getDomain() || [];
   const count = row[Object.keys(row)[0]]
   const result = await callSearchRead({
     model: params.model,
@@ -459,22 +460,19 @@ const saveClick = (formEl: FormInstance | undefined) => {  // 处理保存按钮
           noeSave = true;
           saveWrite(params, savedDatas)
         }, datas.formData, savedDatas)
-        console.log(noeSave);
         !noeSave && saveWrite(params, savedDatas)
       } else if (Object.keys(savedDatas).length) {
         let savedDatas = formatData(datas, {formData: {}, treeData: []}, options);
         emits('saveCreateClick', () => {
           noeSave = true;
           saveCreate(params, savedDatas)
-        },savedDatas)
+        }, savedDatas)
         !noeSave && saveCreate(params, savedDatas);
-      } else {
-        ElMessage({
-          dangerouslyUseHTMLString: true,
-          message: '数据未更改, 请检查!',
-          type: 'error'
-        })
+      } else if (!savedDatas) {
         return false;
+      } else {
+        disabled.value = true;
+        reload()
       }
     } else {
       ElMessage({
