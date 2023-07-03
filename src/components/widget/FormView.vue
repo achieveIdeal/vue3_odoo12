@@ -20,11 +20,11 @@
           <span v-else-if="isSelection(options[field]?.type)">
             {{ (options[field]?.selection.find(r => r[0] === datas[field]) || [''])[1] }}
           </span>
-          <span v-else-if="is2Many(options[field]?.type)">
-            {{ options[field]?.selection.map(r => datas[field].includes(r[0])).map(r => r[0]) }}
+          <span v-else-if="is2Many(options[field]?.type)" class="to-many-disabled">
+            {{ options[field]?.selection.filter(r => datas[field].includes(r[0])).map(r => r[1]).join(', ') }}
           </span>
           <span class="form-input alien-left" v-else-if="isBool(options[field]?.type)">
-            <input type="checkbox" v-model="datas[field]">
+            <input type="checkbox" disabled v-model="datas[field]">
           </span>
           <span class="file-content form-input" v-else-if="isFile(options[field]?.type)">
             {{ datas[options[field]?.filename] }}
@@ -356,4 +356,18 @@ defineExpose({
   vertical-align: sub;
   margin-left: 20px;
 }
+
+.to-many-disabled {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  word-break: break-word;
+}
+
+.to-many-disabled:hover {
+  overflow: visible;
+  white-space: normal;
+}
+
+
 </style>

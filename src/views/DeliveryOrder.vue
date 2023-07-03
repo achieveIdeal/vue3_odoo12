@@ -115,6 +115,9 @@ const extras = {
         amount_planned: {
           sum: true,
         },
+        code_names: {
+          showOverflowTooltip: true
+        },
         product_id: {
           string: '物料编码',
           width: 140
@@ -127,7 +130,7 @@ const extras = {
           readonly: [['line_ids.purchase_order', '!=', '']],
           min: 0,
         },
-        receive_quantity:{
+        receive_quantity: {
           invisible: [['state', '!=', 'done']]
         }
       },
@@ -151,7 +154,7 @@ const extras = {
       width: 200
     }, company_id: {
       width: 220
-    }
+    },
   },
   readonly: ['name', 'partner_id', 'expect_date', 'company_id',
     'h_state', 'submit_user_id', 'state'],

@@ -32,7 +32,7 @@ export const initFormData = async (extras, formData, formFieldsOption) => {
     let attributes = extras.attributes || {};
     for (let field of formData ? Object.keys(formFieldsOption || {}) : []) {   // 初始化下拉选项值
         let extraOptions = attributes[field];
-        formData[field] = formData[field] || extraOptions?.default;
+        formData[field] = formData[field] || extraOptions?.default || '';
         let value = formData[field]
         if (!isBool(formFieldsOption[field]?.type) && !value) {
             formData[field] = ''
@@ -85,7 +85,7 @@ export const initTreeData = async (extras, treeData, treeFieldsOption, formData)
             let attributes = extras.attributes ? extras.attributes[treeField]?.fields : {};
             for (let field of Object.keys(lineData || {})) {
                 let extraOptions = attributes[field];
-                lineData[field] = lineData[field] || extraOptions?.default;
+                lineData[field] = lineData[field] || extraOptions?.default || '';
                 let value = lineData[field]
                 if (isDigit(treeFieldsOption[treeField][field]?.type) && !value) {
                     lineData[field] = 0

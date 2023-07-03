@@ -16,6 +16,7 @@
             <template
                 v-if="noLoadFields.indexOf(field) === -1 && !parseDomain(options[treeField][field]?.invisible, formData)">
               <el-table-column
+                  :show-overflow-tooltip="options[treeField][field]?.showOverflowTooltip"
                   :width="options[treeField][field]?.width">
                 <template #header>
                   <span v-if="options[treeField][field]?.required" style="color: red;">*</span>
@@ -42,10 +43,10 @@
                         }}</span>
                       <span
                           v-else-if="is2Many(options[treeField][field]?.type)">{{
-                          options[treeField][field]?.selection.map(r => scoped.row[field].includes(r[0])).map(r => r[0])
+                          options[treeField][field]?.selection.filter(r => scoped.row[field].includes(r[0])).map(r => r[1]).join(', ')
                         }}</span>
                       <span class="form-input alien-left" v-else-if="isBool(options[treeField][field]?.type)">
-                        <input type="checkbox" v-model="scoped.row[field]">
+                        <input type="checkbox" disabled v-model="scoped.row[field]">
                       </span>
                       <span class="file-content form-input" v-else-if="isFile(options[treeField][field]?.type)">
                          {{ scoped.row[options[treeField][field]?.filename] }}
@@ -225,7 +226,6 @@
                       <el-input v-model="scoped.row[field]" :type="fieldTypeMap[options[treeField][field]?.type]"
                                 :maxlength="options[treeField][field]?.maxlength"
                                 clearable
-                                style="overflow: unset;"
                                 @change="fieldOnchange({
                           field: field,
                           datas: scoped.row,
