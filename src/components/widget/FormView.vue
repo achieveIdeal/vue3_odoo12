@@ -1,11 +1,12 @@
 <template>
-  <div class="form-input-item">
+  <div :style="{left: params.left|| '2.2%',  position: 'relative','text-align': 'left'}">
     <template v-for="field in params.fields" :key="field">
       <el-form-item
           class="form-item"
-          :style="{width: params.width|| (isDialog && '43%' || '47%'), 'border-bottom': (disabled || parseDomain(options[field]?.readonly,datas)) && !isFile(options[field]?.type) && '#FAFAFA 1px solid'}"
+          :style="{width: params.width|| (isDialog && '43%' || '47%')}"
           :label="options[field]?.string"
           :prop="['formData', field]"
+          :label-width="options[field]?.labelWidth"
           :rules="options[field]?.rules||[{
         required: options[field]?.required,
         message: options[field]?.string + '不能为空!',
@@ -14,28 +15,27 @@
           v-if="noLoadFields.indexOf(field) === -1 && !parseDomain(options[field]?.invisible, datas)"
       >
         <template v-if="(disabled || parseDomain(options[field]?.readonly,datas)) && !isFile(options[field]?.type)">
-          <span v-if="is2One(options[field]?.type)">
-            {{ (options[field]?.selection.find(r => r[0] === datas[field]) || [''])[1] }}
+          <span class="disabled-form-item" :style="options[field].style" v-if="is2One(options[field]?.type)">
+            {{ (options[field]?.selection.find(r => r[0] === datas[field]) || ['　'])[1] || '　' }}
           </span>
-          <span v-else-if="isSelection(options[field]?.type)">
-            {{ (options[field]?.selection.find(r => r[0] === datas[field]) || [''])[1] }}
+          <span class="disabled-form-item" :style="options[field].style" v-else-if="isSelection(options[field]?.type)">
+            {{ (options[field]?.selection.find(r => r[0] === datas[field]) || ['　'])[1] }}
           </span>
-          <span v-else-if="is2Many(options[field]?.type)" class="to-many-disabled">
+          <span class="disabled-form-item to-many-disabled" :style="options[field].style"
+                v-else-if="is2Many(options[field]?.type)">
             {{ options[field]?.selection.filter(r => datas[field].includes(r[0])).map(r => r[1]).join(', ') }}
           </span>
-          <span class="form-input alien-left" v-else-if="isBool(options[field]?.type)">
+          <span :style="options[field].style" class="form-input alien-left" v-else-if="isBool(options[field]?.type)">
             <input type="checkbox" disabled v-model="datas[field]">
           </span>
-          <span class="file-content form-input" v-else-if="isFile(options[field]?.type)">
-            {{ datas[options[field]?.filename] }}
-          </span>
-          <span class="file-content form-input" v-else-if="isDigit(options[field]?.type)">
+          <span class="disabled-form-item" :style="options[field].style"
+                v-else-if="isDigit(options[field]?.type)">
           {{
               (datas[field] || 0).toFixed(options[field]?.precision ||
                   options[field]?.digits?.length && options[field]?.digits[1])
             }}
           </span>
-          <span v-else>{{ datas[field] }}</span>
+          <span class="disabled-form-item" :style="options[field].style" v-else>{{ datas[field] || '　' }}</span>
         </template>
         <template v-else-if="is2One(options[field]?.type)">
           <el-select class="form-input alien-left"
@@ -329,6 +329,9 @@ defineExpose({
 </script>
 
 <style lang="less">
+.form-item .el-form-item__label {
+  font-weight: 700;
+}
 
 .form-input {
   width: 100%;
@@ -344,12 +347,6 @@ defineExpose({
 
 .upload-file-edit .el-upload-list {
   top: -41px;
-}
-
-.form-input-item {
-  position: relative;
-  left: 2.2%;
-  text-align: left;
 }
 
 .check-all-box {
@@ -369,5 +366,9 @@ defineExpose({
   white-space: normal;
 }
 
+.disabled-form-item {
+  width: 100%;
+  border-bottom: 1px solid #eef1fa;
+}
 
 </style>

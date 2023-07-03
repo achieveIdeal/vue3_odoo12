@@ -33,31 +33,28 @@
                           {...formData, [treeField]: scoped.row})|| attributes[treeField]?.fields?.readonly==='_all_'||
                           parseDomain(options[treeField][field]?.readonly,
                           {...formData, [treeField]: scoped.row})) && !isFile(options[treeField][field]?.type)">
-                      <span
+                      <span :style="options[treeField][field].style"
                           v-if="is2One(options[treeField][field]?.type)"> {{
                           (options[treeField][field]?.selection.find(r => r[0] === scoped.row[field]) || [''])[1]
                         }}</span>
-                      <span
+                      <span :style="options[treeField][field].style"
                           v-else-if="isSelection(options[treeField][field]?.type)">{{
                           (options[treeField][field]?.selection.find(r => r[0] === scoped.row[field]) || [''])[1]
                         }}</span>
-                      <span
+                      <span :style="options[treeField][field].style"
                           v-else-if="is2Many(options[treeField][field]?.type)">{{
                           options[treeField][field]?.selection.filter(r => scoped.row[field].includes(r[0])).map(r => r[1]).join(', ')
                         }}</span>
-                      <span class="form-input alien-left" v-else-if="isBool(options[treeField][field]?.type)">
+                      <span :style="options[treeField][field].style" class="form-input alien-left" v-else-if="isBool(options[treeField][field]?.type)">
                         <input type="checkbox" disabled v-model="scoped.row[field]">
                       </span>
-                      <span class="file-content form-input" v-else-if="isFile(options[treeField][field]?.type)">
-                         {{ scoped.row[options[treeField][field]?.filename] }}
-                      </span>
-                      <span class="file-content form-input" v-else-if="isDigit(options[treeField][field]?.type)">
+                      <span :style="options[treeField][field].style" v-else-if="isDigit(options[treeField][field]?.type)">
                          {{
                           (scoped.row[field] || 0).toFixed(options[treeField][field]?.precision ||
                               options[treeField][field]?.digits?.length && options[treeField][field]?.digits[1])
                         }}
                       </span>
-                      <span v-else>{{ scoped.row[field] }}</span>
+                      <span :style="options[treeField][field].style" v-else>{{ scoped.row[field] }}</span>
                     </template>
                     <template v-else-if="is2One(options[treeField][field]?.type)">
                       <el-select
