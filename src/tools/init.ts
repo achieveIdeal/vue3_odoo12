@@ -69,7 +69,6 @@ export const setTreeAttribute = (treeField, lineData, formData, treeFieldsOption
         treeFieldsOption[treeField][field]['readonly'] = (attributes.readonly || []).indexOf(field) !== -1 || attributes.readonly === '_all_';
         treeFieldsOption[treeField][field]['required'] = (attributes.required || []).indexOf(field) !== -1 || attributes.required === '_all_';
         let extraOptions = attributes[field];
-        lineData[field] = lineData[field] || extraOptions?.default
         for (const attribute of Object.keys(extraOptions || {})) {
             treeFieldsOption[treeField][field][attribute] = extraOptions[attribute];
         }
@@ -224,7 +223,6 @@ export const formatData = function (datas, dataCopy, options): Object {  // 数�
                 updated[treeField].push([2, treeCopyId, false]);
             }
         }
-        console.log(updated);
         for (const treeData of datas.treeData[treeField]) {
             let changedField = {};
             const copyLine = (dataCopy.treeData[treeField] || []).find(r => r.id === treeData.id); // 没有找到就是新增的没有id的行

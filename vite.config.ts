@@ -41,7 +41,7 @@ export default defineConfig({
     server: {
         proxy: {
             '/front': {
-                target: 'http://127.0.0.1:8069', // 实际请求地址
+                target: 'http://127.0.0.1:8070', // 实际请求地址
                 changeOrigin: true,
                 rewrite: (path) => path.replace(/^\/front/, "front"),
             },

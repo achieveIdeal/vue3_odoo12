@@ -195,7 +195,7 @@ const getSummaries = (table) => {
       }
       sums[index] = !sums[index] ? 0 : sums[index];
       if (props.options[field]?.sum) {
-        sums[index] = (sums[index] + data[field]).toFixed(props.options[field]?.precision ||
+        sums[index] = (parseFloat(sums[index] || 0) + parseFloat(data[field]||0)).toFixed(props.options[field]?.precision ||
             props.options[field]?.digits?.length && props.options[field]?.digits[1] || 0);
       } else {
         sums[index] = ''
