@@ -16,10 +16,10 @@
       >
         <template v-if="(disabled || parseDomain(options[field]?.readonly,datas)) && !isFile(options[field]?.type)">
           <span class="disabled-form-item" :style="options[field].style" v-if="is2One(options[field]?.type)">
-            {{ (options[field]?.selection.find(r => r[0] === datas[field]) || ['　'])[1] || '　' }}
+            {{ (options[field]?.selection.find(r => r[0] === datas[field]) || [''])[1] || '　' }}
           </span>
           <span class="disabled-form-item" :style="options[field].style" v-else-if="isSelection(options[field]?.type)">
-            {{ (options[field]?.selection.find(r => r[0] === datas[field]) || ['　'])[1] }}
+            {{ (options[field]?.selection.find(r => r[0] === datas[field]) || [''])[1] || '　' }}
           </span>
           <span class="disabled-form-item to-many-disabled" :style="options[field].style"
                 v-else-if="is2Many(options[field]?.type)">
