@@ -55,8 +55,10 @@ const onchangeField = async (params: OnchangeParamsType, checkAll) => {
     for (const treeField of Object.keys(treeData || {})) {
         paramsDatas[treeField] = []
         for (const data of treeData[treeField]) {
-            if (data.id) {
-                paramsDatas[treeField].push([1, data.id, data])
+            const dataId = data.id;
+            if (dataId) {
+                delete data['id'];
+                paramsDatas[treeField].push([1, dataId, data])
             } else {
                 paramsDatas[treeField].push([0, 0, data])
             }
@@ -125,9 +127,14 @@ const onchangeField = async (params: OnchangeParamsType, checkAll) => {
                 continue
             }
             if (!!Object.keys(treeData || {}).length && Object.keys(treeData || {}).indexOf(changedField) !== -1) {
-                const changeLines = []
+                const changeLines = [];
+                const existIds = [];
                 for (let index = 1; index < value[changedField].length; index++) {
-                    changeLines.push(value[changedField][index][2]);
+                    if (existIds.indexOf(value[changedField][index][2].id) === -1) {
+                        console.log(value[changedField][index][2].id);
+                        existIds.push(value[changedField][index][2].id)
+                        changeLines.push(value[changedField][index][2]);
+                    }
                 }
                 treeData[changedField] = changeLines;
                 initTreeData({}, treeData, treeOptions, datas);
@@ -447,9 +454,36 @@ const parseDomain = (domains, data) => {
     return domainStack.every(item => Boolean(item));
 }
 
+
+const dateFtt = (fmt, date) => {
+    var o = {
+        "M+": date.getMonth() + 1, //月份
+        "d+": date.getDate(), //日
+        "h+": date.getHours(), //小时
+        "m+": date.getMinutes(), //分
+        "s+": date.getSeconds(), //秒
+        "q+": Math.floor((date.getMonth() + 3) / 3), //季度
+        S: date.getMilliseconds(), //毫秒
+    };
+    if (/(y+)/.test(fmt))
+        fmt = fmt.replace(
+            RegExp.$1,
+            (date.getFullYear() + "").substr(4 - RegExp.$1.length)
+        );
+    for (var k in o)
+        if (new RegExp("(" + k + ")").test(fmt))
+            fmt = fmt.replace(
+                RegExp.$1,
+                RegExp.$1.length == 1
+                    ? o[k]
+                    : ("00" + o[k]).substr(("" + o[k]).length)
+            );
+    return fmt;
+}
+
 export {
     searchFieldSelection, onchangeField,
-    getFileType, loadFormData,
+    getFileType, loadFormData, dateFtt,
     base64ToBlobUrl, loadListData,
     downLoadFile, getFieldOption,
     encodeFileToBase64,

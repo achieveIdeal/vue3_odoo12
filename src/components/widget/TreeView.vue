@@ -3,6 +3,19 @@
     <template v-for="treeField in Object.keys(params||{})" :key="treeField">
       <el-tab-pane v-if="!parseDomain(formOptions[treeField]?.invisible, formData)" :label="params[treeField]?.title"
                    :name="treeField">
+        <div class="tree-btn-group" v-if="!disabled&&attributes[treeField]?.importTemplate">
+          <el-upload v-model:file-list="fileList" class="import-excel"
+                     :before-upload="before(treeField)"
+                     :limit="1" accept="xlsx,xls">
+            <el-button ref="importButtonRef" type="success">导入</el-button>
+          </el-upload>
+          <el-button style="margin-right: 2px;" @click="importClick(importButtonRef)" type="success">导入</el-button>
+          <el-button v-if="!disabled"
+                     class="el-button--cancel"
+                     @click.prevent="handleDownTemplate(attributes[treeField].importTemplate)">
+            下载模板
+          </el-button>
+        </div>
         <el-table class="table-item" :data="datas[treeField]?.slice(params[treeField]?.offset,    // 分页
           params[treeField]?.offset + params[treeField]?.limit)"
                   show-summary
@@ -34,21 +47,23 @@
                           parseDomain(options[treeField][field]?.readonly,
                           {...formData, [treeField]: scoped.row})) && !isFile(options[treeField][field]?.type)">
                       <span :style="options[treeField][field].style"
-                          v-if="is2One(options[treeField][field]?.type)"> {{
+                            v-if="is2One(options[treeField][field]?.type)"> {{
                           (options[treeField][field]?.selection.find(r => r[0] === scoped.row[field]) || [''])[1]
                         }}</span>
                       <span :style="options[treeField][field].style"
-                          v-else-if="isSelection(options[treeField][field]?.type)">{{
+                            v-else-if="isSelection(options[treeField][field]?.type)">{{
                           (options[treeField][field]?.selection.find(r => r[0] === scoped.row[field]) || [''])[1]
                         }}</span>
                       <span :style="options[treeField][field].style"
-                          v-else-if="is2Many(options[treeField][field]?.type)">{{
+                            v-else-if="is2Many(options[treeField][field]?.type)">{{
                           options[treeField][field]?.selection.filter(r => scoped.row[field].includes(r[0])).map(r => r[1]).join(', ')
                         }}</span>
-                      <span :style="options[treeField][field].style" class="form-input alien-left" v-else-if="isBool(options[treeField][field]?.type)">
+                      <span :style="options[treeField][field].style" class="form-input alien-left"
+                            v-else-if="isBool(options[treeField][field]?.type)">
                         <input type="checkbox" disabled v-model="scoped.row[field]">
                       </span>
-                      <span :style="options[treeField][field].style" v-else-if="isDigit(options[treeField][field]?.type)">
+                      <span :style="options[treeField][field].style"
+                            v-else-if="isDigit(options[treeField][field]?.type)">
                          {{
                           (scoped.row[field] || 0).toFixed(options[treeField][field]?.precision ||
                               options[treeField][field]?.digits?.length && options[treeField][field]?.digits[1])
@@ -285,21 +300,26 @@
             small
             background
             layout="total, prev, pager, next"
-            :total="params[treeField].count||0"
+            :total="datas[treeField]?.length || 0"
             @current-change="handleCurrentChange(treeField)"
         />
+        <div v-if="params[treeField]?.totalFields">
+
+        </div>
       </el-tab-pane>
     </template>
   </el-tabs>
 </template>
 
 <script lang="ts" setup>
-import {inject, onMounted, PropType, reactive, ref, watch} from "vue";
-import {genFileId, UploadInstance, UploadProps, UploadRawFile} from "element-plus";
+import {inject, onMounted, PropType, reactive, ref} from "vue";
+import {ElMessage, genFileId, UploadInstance, UploadProps, UploadRawFile, UploadUserFile} from "element-plus";
 import {Edit} from "@element-plus/icons-vue";
 import {useTypeStore} from "../../store";
 import type {FieldOptionType, ModuleDataType, DataType} from "../../types";
-import {onchangeField, searchFieldSelection, downLoadFile, encodeFileToBase64, parseDomain} from "../../tools";
+import {onchangeField, searchFieldSelection, downLoadFile, encodeFileToBase64, parseDomain,dateFtt} from "../../tools";
+import {read, utils} from 'xlsx';
+import {callNames} from "../../service/module/call";
 
 const typeStore = useTypeStore();
 const fieldTypeMap = typeStore.types;
@@ -349,6 +369,7 @@ const props = defineProps({
 })
 
 let active = ref('')
+let importButtonRef = ref('')
 let currentPage = ref<number>(1)
 let invisible = reactive<{ [prop: string]: boolean }>({})
 let selection: {
@@ -364,6 +385,99 @@ onMounted(() => {
 
 let loading = ref(false)
 
+const handleDownTemplate = (template) => {
+  if (template) {
+    location.href = template
+  } else {
+    ElMessage({
+      message: '请指定模板资源路径!',
+      type: 'error'
+    })
+
+  }
+}
+
+
+const fileList = ref<UploadUserFile[]>([])
+
+const readFile = (file: File) => {
+  return new Promise(resolve => {
+    let reader = new FileReader();
+    reader.readAsBinaryString(file);
+    reader.onload = ev => {
+      resolve(ev.target?.result);
+    }
+  });
+}
+
+const importClick = (uploadButtonRef) => {
+  uploadButtonRef[0].$.vnode.el.click()
+}
+
+
+const readExcelFile = async (treeField, file: File, sheetIndex: number) => {
+  let datas = await readFile(file);
+  const importFields = props.params[treeField].import_fields;
+  let workbook = read(datas, {type: 'binary', cellDates: true});
+  let worksheet = workbook.Sheets[workbook.SheetNames[sheetIndex]];
+  datas = utils.sheet_to_json(worksheet, {header: 1});
+  const result = []
+  const headerLen = datas[0].length;
+  for (const data of datas.slice(1, datas.length)) {
+    let hasContent = false;
+    for (let i = 0; i < importFields.length; i++) {
+      const fieldOption = props.options[treeField][importFields[i]]
+      const fieldType = fieldOption.type
+      data[i] = data[i] || fieldOption.default
+      if (data[i] instanceof Date) {
+        data[i] = dateFtt("yyyy-MM-dd", data[i])
+        if (fieldType === 'datetime') {
+          data[i] = dateFtt("yyyy-MM-dd hh:mm:ss", data[i])
+        }
+      } else if (isDigit(fieldType)) {
+        data[i] = parseFloat(data[i] || 0)
+      } else if (isSelection(fieldType)) {
+        data[i] = fieldOption.selection.find(r => r[0] === data[i])
+      } else if (is2One(fieldType) || is2Many(fieldType)) {
+        const res = await callNames({
+          model: fieldOption.relation,
+          args: [],
+          kwargs: {
+            'name': data[i],
+            'args': [],
+            'operator': '=',
+            'context': {'lang': 'zh_CN', 'tz': false, 'uid': 2, 'front': true}
+          }
+        })
+        data[i] = res.result;
+      }
+    }
+    data.length && data.length < headerLen ? data.length = headerLen : null;
+    for (let index = 0; index < data.length; index++) {
+      !!data[index] ? hasContent = true : null;
+    }
+    hasContent && result.push(data)
+  }
+  if (!importFields?.length) {
+    ElMessage({
+      message: '没有指定导入字段！',
+      type: 'error'
+    })
+    return false;
+  }
+  for (const res of result) {
+    const importRes = {}
+    for (let i = 0; i < importFields.length; i++) {
+      importRes[importFields[i]] = res[i]
+    }
+    props.params[treeField].count ++;
+    props.datas[treeField].push(importRes)
+  }
+}
+const before = (treeField) => (file: any) => {
+  readExcelFile(treeField, file, 0)
+  return false
+}
 const searchSelection = (option: FieldOptionType) => (query: string) => {
   loading.value = true;
   searchFieldSelection(option, query, [], option.limit).then(() => {
@@ -384,7 +498,7 @@ const getSummaries = (treeField) => (table) => {
       }
       sums[index] = !sums[index] ? 0 : sums[index];
       if (props.options[treeField][field]?.sum && isDigit(props.options[treeField][field]?.type)) {
-        sums[index] = (parseFloat(sums[index]||0) + parseFloat(data[field] ||0)).toFixed(props.options[treeField][field]?.precision ||
+        sums[index] = (parseFloat(sums[index] || 0) + parseFloat(data[field] || 0)).toFixed(props.options[treeField][field]?.precision ||
             props.options[treeField][field]?.digits &&
             props.options[treeField][field]?.digits?.length && props.options[treeField][field]?.digits[1] || 0);
       } else {
@@ -393,6 +507,7 @@ const getSummaries = (treeField) => (table) => {
       index++;
     }
   }
+  sums[0] = props.params[treeField].totalTitle || sum[0] || '总计:'
   return sums
 }
 
@@ -499,4 +614,13 @@ const fieldOnchange = (params) => {
 :deep(.el-table__footer) {
   display: inline-block;
 }
+
+.tree-btn-group {
+  text-align: left;
+}
+
+.import-excel {
+  display: none;
+}
+
 </style>

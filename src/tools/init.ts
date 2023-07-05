@@ -16,10 +16,10 @@ export const setFormAttribute = (formData, formFieldsOption, extras) => {
         let attributes = extras?.attributes || {};
         for (const field of Object.keys(formFieldsOption || {})) {  // 自定义属性 readonly 和invisible等
             if (['readonly', 'invisible', 'listInvisible', 'required'].indexOf(field) !== -1) continue
-            formFieldsOption[field]['readonly'] = (extras?.readonly || []).indexOf(field) !== -1 || extras?.readonly === '_all_';
-            formFieldsOption[field]['invisible'] = (extras?.invisible || []).indexOf(field) !== -1 || extras?.invisible === '_all_';
-            formFieldsOption[field]['listInvisible'] = (extras?.listInvisible || []).indexOf(field) !== -1 || extras?.listInvisible === '_all_';
-            formFieldsOption[field]['required'] = (extras?.required || []).indexOf(field) !== -1 || extras?.required === '_all_';
+            formFieldsOption[field]['readonly'] = (extras?.readonly || []).indexOf(field) !== -1 || extras?.readonly === '_all_' || formFieldsOption[field]['readonly'];
+            formFieldsOption[field]['invisible'] = (extras?.invisible || []).indexOf(field) !== -1 || extras?.invisible === '_all_' || formFieldsOption[field]['invisible'];
+            formFieldsOption[field]['listInvisible'] = (extras?.listInvisible || []).indexOf(field) !== -1 || extras?.listInvisible === '_all_' || formFieldsOption[field]['listInvisible'];
+            formFieldsOption[field]['required'] = (extras?.required || []).indexOf(field) !== -1 || extras?.required === '_all_' || formFieldsOption[field]['required'];
             let extraOptions = attributes[field];
             for (const attribute of Object.keys(extraOptions || {})) {
                 if (attribute === 'fields') continue;
@@ -65,9 +65,9 @@ export const setTreeAttribute = (treeField, lineData, formData, treeFieldsOption
     let attributes = extras.attributes ? extras.attributes[treeField]?.fields : {};
     if (!attributes) return
     for (const field of Object.keys(treeFieldsOption[treeField] || {})) { // 设置自定义的属性
-        treeFieldsOption[treeField][field]['invisible'] = (attributes.invisible || []).indexOf(field) !== -1 || attributes.invisible === '_all_';
-        treeFieldsOption[treeField][field]['readonly'] = (attributes.readonly || []).indexOf(field) !== -1 || attributes.readonly === '_all_';
-        treeFieldsOption[treeField][field]['required'] = (attributes.required || []).indexOf(field) !== -1 || attributes.required === '_all_';
+        treeFieldsOption[treeField][field]['invisible'] = (attributes.invisible || []).indexOf(field) !== -1 || attributes.invisible === '_all_' || treeFieldsOption[treeField][field]['invisible'];
+        treeFieldsOption[treeField][field]['readonly'] = (attributes.readonly || []).indexOf(field) !== -1 || attributes.readonly === '_all_' || treeFieldsOption[treeField][field]['readonly'];
+        treeFieldsOption[treeField][field]['required'] = (attributes.required || []).indexOf(field) !== -1 || attributes.required === '_all_' || treeFieldsOption[treeField][field]['required'];
         let extraOptions = attributes[field];
         for (const attribute of Object.keys(extraOptions || {})) {
             treeFieldsOption[treeField][field][attribute] = extraOptions[attribute];

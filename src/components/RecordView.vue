@@ -131,7 +131,7 @@ let dataCopy: DataType = {formData: {}, treeData: {}};  // 保留原始数据
 let buttons = reactive({buttonOptions: {}});  // 按钮控制
 let listViewRef = ref({});  // 列表页的ref
 let formViewRef = ref({});  // 表单页的ref
-let searchViewRef = ref({getDomain: ()=>[]});  // 搜索框ref
+let searchViewRef = ref({getDomain: () => []});  // 搜索框ref
 let formRef = ref({});  // 表单的vue元素
 let params: ModuleDataType = props.params;
 let extras: ModuleDataType = props.extras; // 额外的属性
@@ -408,7 +408,7 @@ const createClick = () => {
   disabled.value = false;
 }
 
-const saveWrite = (params, savedDatas) => {
+const saveWrite = (savedDatas) => {
   loading.value = true;
   callWrite(params, savedDatas).then(async res => {
     if (res.error) {
@@ -424,7 +424,7 @@ const saveWrite = (params, savedDatas) => {
     loading.value = false;
   })
 }
-const saveCreate = (params, savedDatas) => {
+const saveCreate = (savedDatas) => {
   loading.value = true;
   callCreate(params, savedDatas).then(res => {
     if (res.error) {
@@ -456,18 +456,16 @@ const saveClick = (formEl: FormInstance | undefined) => {  // 处理保存按钮
       }
       let noeSave = false;
       if (Object.keys(savedDatas).length && params.id) {
-        emits('saveWriteClick', () => {
+        emits('saveWriteClick', datas, savedDatas, saveWrite, () => {
           noeSave = true;
-          saveWrite(params, savedDatas)
-        }, datas.formData, savedDatas)
-        !noeSave && saveWrite(params, savedDatas)
+        })
+        !noeSave && saveWrite(savedDatas)
       } else if (Object.keys(savedDatas).length) {
         let savedDatas = formatData(datas, {formData: {}, treeData: []}, options);
-        emits('saveCreateClick', () => {
+        emits('saveCreateClick', savedDatas, saveCreate,() => {
           noeSave = true;
-          saveCreate(params, savedDatas)
-        }, savedDatas)
-        !noeSave && saveCreate(params, savedDatas);
+        })
+        !noeSave && saveCreate(savedDatas);
       } else if (!savedDatas) {
         return false;
       } else {

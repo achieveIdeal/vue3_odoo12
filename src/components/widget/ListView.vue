@@ -33,7 +33,7 @@
         </el-table-column>
       </template>
     </template>
-    <el-table-column v-if="!params.hideDetail && !params.groupby" fixed="right" label="操作">
+    <el-table-column v-if="!params.hideDetail && !params.groupby" fixed="right" label="操作" width="120">
       <template #default="scoped">
         <el-button link
                    size="small"
@@ -70,7 +70,7 @@
 </template>
 
 <script lang="ts" setup>
-import {inject, ref} from "vue";
+import {ref} from "vue";
 import router from "../../router";
 import {parseDomain} from "../../tools";
 

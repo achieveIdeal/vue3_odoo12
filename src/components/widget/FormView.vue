@@ -154,7 +154,7 @@
                            controls-position="right"
                            :min="options[field]?.min"
                            :max="options[field]?.max"
-                           @blur="fieldOnchange({
+                           @change="fieldOnchange({
               field: field,
               datas: datas,
               attributes: attributes,
@@ -194,7 +194,7 @@
                     class="form-input"
                     clearable
                     :maxlength="options[field]?.maxlength"
-                    @blur="fieldOnchange({
+                    @change="fieldOnchange({
               field: field,
               attributes: attributes,
               datas: datas,
@@ -320,6 +320,7 @@ const searchSelection = (option: FieldOptionType) => (query: string) => {
 
 const fieldOnchange = (params) => {
   emits('fieldOnchange', params);
+  console.log(11);
   onchangeField(params, checkAll)
 }
 
