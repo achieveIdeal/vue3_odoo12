@@ -11,7 +11,7 @@
             @expand-change="expandChange"
             :summary-method="getSummaries">
     <el-table-column fixed type="selection" width="55" :reserve-selection="true"/>
-    <template v-for="field in params.fields?.length && params.fields || []"
+    <template v-for="field in params.listFields?.length ? params.listFields :params.fields"
               :key="field">
       <template v-if="field!== 'id' && !options[field]?.listInvisible">
         <el-table-column
@@ -190,12 +190,12 @@ const getSummaries = (table) => {
   for (const data of table.data) {
     let index = 0;
     for (const field of props.params?.fields) {
-      if (field==='id' || parseDomain(props.options[field]?.invisible, data)) {
+      if (field === 'id' || parseDomain(props.options[field]?.invisible, data)) {
         continue
       }
       sums[index] = !sums[index] ? 0 : sums[index];
       if (props.options[field]?.sum) {
-        sums[index] = (parseFloat(sums[index] || 0) + parseFloat(data[field]||0)).toFixed(props.options[field]?.precision ||
+        sums[index] = (parseFloat(sums[index] || 0) + parseFloat(data[field] || 0)).toFixed(props.options[field]?.precision ||
             props.options[field]?.digits?.length && props.options[field]?.digits[1] || 0);
       } else {
         sums[index] = ''

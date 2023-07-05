@@ -320,7 +320,6 @@ const searchSelection = (option: FieldOptionType) => (query: string) => {
 
 const fieldOnchange = (params) => {
   emits('fieldOnchange', params);
-  console.log(11);
   onchangeField(params, checkAll)
 }
 

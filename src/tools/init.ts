@@ -15,7 +15,7 @@ export const setFormAttribute = (formData, formFieldsOption, extras) => {
     if (!!Object.keys(formFieldsOption || {}).length) {
         let attributes = extras?.attributes || {};
         for (const field of Object.keys(formFieldsOption || {})) {  // 自定义属性 readonly 和invisible等
-            if (['readonly', 'invisible', 'listInvisible', 'required'].indexOf(field) !== -1) continue
+            if (['readonly', 'invisible', 'listInvisible', 'required'].indexOf(field) !== -1) continue;
             formFieldsOption[field]['readonly'] = (extras?.readonly || []).indexOf(field) !== -1 || extras?.readonly === '_all_' || formFieldsOption[field]['readonly'];
             formFieldsOption[field]['invisible'] = (extras?.invisible || []).indexOf(field) !== -1 || extras?.invisible === '_all_' || formFieldsOption[field]['invisible'];
             formFieldsOption[field]['listInvisible'] = (extras?.listInvisible || []).indexOf(field) !== -1 || extras?.listInvisible === '_all_' || formFieldsOption[field]['listInvisible'];
@@ -33,11 +33,11 @@ export const initFormData = async (extras, formData, formFieldsOption) => {
     for (let field of formData ? Object.keys(formFieldsOption || {}) : []) {   // 初始化下拉选项值
         let extraOptions = attributes[field];
         formData[field] = formData[field] || extraOptions?.default || '';
-        let value = formData[field]
+        let value = formData[field];
         if (!isBool(formFieldsOption[field]?.type) && !value) {
-            formData[field] = ''
+            formData[field] = '';
         } else if (isDigit(formFieldsOption[field]?.type) && !value) {
-            formData[field] = 0
+            formData[field] = 0;
             continue
         }
         if (is2Many(formFieldsOption[field]?.type)) {
@@ -53,7 +53,7 @@ export const initFormData = async (extras, formData, formFieldsOption) => {
                 }
             }
             if (!sameFlag && value) {
-                formFieldsOption[field]?.selection.push(value)
+                formFieldsOption[field]?.selection.push(value);
             }
             formData[field] = value[0]
         }
@@ -224,24 +224,24 @@ export const formatData = function (datas, dataCopy, options): Object {  // 数�
             }
         }
         for (const treeData of datas.treeData[treeField]) {
-            let changedField = {};
+            let changedFieldsData = {};
             const copyLine = (dataCopy.treeData[treeField] || []).find(r => r.id === treeData.id); // 没有找到就是新增的没有id的行
             if (!copyLine) {
-                changedField = treeData;
+                changedFieldsData = treeData;
                 isChanged = true;
             } else {
                 for (const field of Object.keys(treeData || {})) {  // 处理修改行
                     if (treeData[field] !== copyLine[field]) {
                         isChanged = true;
-                        changedField[field] = treeData[field];
+                        changedFieldsData[field] = treeData[field];
                     }
                 }
             }
-            if (Object.keys(changedField).length) {
+            if (Object.keys(changedFieldsData).length) {
                 if (isChanged && treeData.id && !delFlag[treeData.id]) {  // 更新
-                    updated[treeField].push([1, treeData.id, changedField])
+                    updated[treeField].push([1, treeData.id, changedFieldsData])
                 } else if (isChanged && !delFlag[treeData.id]) {  // 新增
-                    updated[treeField].push([0, 0, changedField]);
+                    updated[treeField].push([0, 0, changedFieldsData]);
                     addFlag = true;
                 }
             }
@@ -257,5 +257,6 @@ export const formatData = function (datas, dataCopy, options): Object {  // 数�
             return false
         }
     }
+    console.log(updated);
     return updated
 }
