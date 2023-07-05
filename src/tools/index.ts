@@ -128,8 +128,9 @@ const onchangeField = async (params: OnchangeParamsType, checkAll) => {
             }
             if (!!Object.keys(treeData || {}).length && Object.keys(treeData || {}).indexOf(changedField) !== -1) {
                 const changeLines = [];
-                for (let index = 1; index < value[changedField].length; index++) {
-                    changeLines.push(value[changedField][index][2]);
+                const newLines = value[changedField]
+                for (let index = 1; index < newLines.length; index++) {
+                    changeLines.push(newLines[index][2]);
                 }
                 treeData[changedField] = changeLines;
                 initTreeData({}, treeData, treeOptions, datas);
