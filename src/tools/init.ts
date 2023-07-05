@@ -137,8 +137,8 @@ export const initListData = async (extras, listData, fieldsOption) => {
             } else if (is2One(fieldsOption[field]?.type)) {
                 lineData[field] = lineData[field] ? lineData[field][1] : ''
             } else if (isDigit(fieldsOption[field]?.type)) {
-                lineData[field] = (lineData[field] || 0).toFixed(fieldsOption[field]?.precision
-                    || fieldsOption[field]?.digits?.length && fieldsOption[field]?.digits[1])
+                lineData[field] = parseFloat((lineData[field] || 0).toFixed(fieldsOption[field]?.precision
+                    || fieldsOption[field]?.digits?.length && fieldsOption[field]?.digits[1]))
             } else if (!isBool(fieldsOption[field]?.type) && !value) {
                 lineData[field] = ''
             } else if (is2Many(fieldsOption[field]?.type) && !fieldsOption[field]?.listInvisible) {

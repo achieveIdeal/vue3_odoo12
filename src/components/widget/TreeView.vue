@@ -498,16 +498,16 @@ const getSummaries = (treeField) => (table) => {
       }
       sums[index] = !sums[index] ? 0 : sums[index];
       if (props.options[treeField][field]?.sum && isDigit(props.options[treeField][field]?.type)) {
-        sums[index] = (parseFloat(sums[index] || 0) + parseFloat(data[field] || 0)).toFixed(props.options[treeField][field]?.precision ||
+        sums[index] = parseFloat((sums[index] || 0) + parseFloat(data[field] || 0).toFixed(props.options[treeField][field]?.precision ||
             props.options[treeField][field]?.digits &&
-            props.options[treeField][field]?.digits?.length && props.options[treeField][field]?.digits[1] || 0);
+            props.options[treeField][field]?.digits?.length && props.options[treeField][field]?.digits[1] || 0));
       } else {
         sums[index] = ''
       }
       index++;
     }
   }
-  sums[0] = props.params[treeField].totalTitle || sum[0] || '总计:'
+  sums[0] = props.params[treeField].totalTitle || sums[0] || '总计:'
   return sums
 }
 

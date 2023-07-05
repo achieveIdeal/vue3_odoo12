@@ -336,11 +336,12 @@ const poCustomClick = (button, datas) => {
   poDialogVisible.value = false;
 }
 const codeCustomClick = (button, datas) => {
+  const validDatas = (datas.length?datas:[]).filter(r=>!r.hasChildren);
   if (button.method === 'cancel') {
     resetMatchCodeData();
     lineData.value.code_names = ''
   } else {
-    if (!Object.keys(datas || {}).length) {
+    if (!Object.keys(validDatas || {}).length) {
       ElMessage({
         message: '请选择一条记录!',
         type: 'error'
@@ -355,9 +356,9 @@ const codeCustomClick = (button, datas) => {
       return false
     }
     !codeDatas.value[lineData.value['origin_data_ids']] ? codeDatas.value[lineData.value['origin_data_ids']] = [] : null;
-    codeDatas.value[lineData.value['origin_data_ids']].push(datas);
-    usedCodeIds[lineData.value['origin_data_ids']] = (datas || []).map(r => r.id)
-    lineData.value.code_names = (datas || []).map(r => {
+    codeDatas.value[lineData.value['origin_data_ids']].push(validDatas);
+    usedCodeIds[lineData.value['origin_data_ids']] = (validDatas || []).map(r => r.id)
+    lineData.value.code_names = (validDatas || []).map(r => {
       return r.name
     }).join(',')
   }

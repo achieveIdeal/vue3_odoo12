@@ -15,7 +15,7 @@ const supplier_id = parseInt(inject('supplier_id') || 0);
 const params = reactive({
   title: '物料欠料表',
   width: '30%',
-  left: '7%',
+  left: '3%',
   name: 'shortage_product',
   domain: [['partner_id', '=', supplier_id]],
   model: 'shortage.product',
