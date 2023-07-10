@@ -12,8 +12,9 @@
         @createClick="createClick"
         @customClick="customClick"
         @importClick="importClick"
+        @exportClick="exportClick"
         @cancelClick="cancelClick"/>
-    <SearchBar
+    <SearchView
         ref="searchViewRef"
         v-if="params.type==='list' && Object.keys(searcher.searchOptions).length"
         :groupby="extras.groupby"
@@ -69,9 +70,9 @@
         :options="options.formFieldsOption"
         :params="params"
         :colors="extras.colors"
-        :groupbyKey="groupbyKey"
         @pageChange="pageChange"
         @deleteRow="deleteRow"
+        @groupbyClick="groupbyClick"
         @selectClick="selectClick"
         @pageSizeChange="pageSizeChange"
         @loadGroupDetail="loadGroupDetail"
@@ -86,7 +87,7 @@ import {FormInstance, ElMessage} from "element-plus";
 import FormView from './widget/FormView.vue';
 import TreeView from './widget/TreeView.vue';
 import ListView from './widget/ListView.vue';
-import SearchBar from './widget/SearchBar.vue';
+// import SearchBar from './widget/SearchBar.vue';
 import ButtonView from './widget/ButtonView.vue';
 import {callButton, callCreate, callFile, callReadGroup, callWrite, callSearchRead} from "../service/module/call";
 import {
@@ -99,7 +100,8 @@ import {
   initSearchBar
 } from '../tools/init';
 import type {FieldOptionType, DataType, Multiple, ModuleDataType} from "../types";
-import {onchangeField, loadFormData, loadListData, getFieldOption} from "../tools";
+import {onchangeField, loadFormData, loadListData, getFieldOption, parseDomain, downLoadFileBold} from "../tools";
+import Request from '../service/index'
 
 let props = defineProps({
   params: {
@@ -136,7 +138,7 @@ let formRef = ref({});  // 表单的vue元素
 let params: ModuleDataType = props.params;
 let extras: ModuleDataType = props.extras; // 额外的属性
 let groupbyData = [];  // 分组查询返回的数据
-let groupbyKey = ref('');  // 默认分组查询值
+let groupbyKey = ref([]);  // 默认分组查询值
 let searcher = reactive({searchOptions: {}});  //查询字段初始化
 const getListViewExpose = () => {
   const listTable = listViewRef.value?.listTable;
@@ -286,53 +288,75 @@ const getGroupChildren = async (row) => {
   }
 }
 
-const groupbyClick = (groupby, domain) => {
-  groupbyKey.value = groupby;
-  params.groupby = groupby;
+const groupbyClick = (row, treeNode, resolve) => {
+  const domain = searchViewRef.value?.getDomain();
+  const childGroupby = row?.__context?.group_by
+  const groupbys = childGroupby || searchViewRef.value.searchFacets.filter(r => r.groupby).map(r => r.groupby);
+  groupbyKey.value = groupbys;
+  params.groupby = groupbys;
   callReadGroup({
     model: params.model,
-    domain: domain.concat(params.domain),
+    domain: domain.concat(params.domain).concat(row?.__domain || []),
     fields: params.fields,
-    groupby: groupby,
+    groupby: groupbys,
     order_by: params.sort,
   }).then(async res => {
     groupbyData = res.result;
+    let groupby = groupbys[0]
+    const groupbyOptions = options.formFieldsOption[groupby];
     for (const groupbyDetail of groupbyData) {
       groupbyDetail['hasChildren'] = true;
-      groupbyDetail['id'] = groupbyDetail[groupby];
-      groupbyDetail['children'] = await getGroupChildren(groupbyDetail);
+      groupbyDetail['id'] = row.id ? row.id + groupbyDetail[groupby] : groupbyDetail[groupby];
+      const value = groupbyDetail[groupby];
+      if (groupbyOptions?.type === 'selection') {
+        groupbyDetail[params.fields[0]] = groupbyOptions.selection.find(r => r[0] === value)[1];
+      } else if (groupbyOptions?.type === 'many2one') {
+        groupbyDetail[params.fields[0]] = groupbyDetail[groupby][1]
+      } else {
+        groupbyDetail[params.fields[0]] = groupbyDetail[groupby];
+      }
       if (options.formFieldsOption[groupby]?.type === 'selection') {
         groupbyDetail[groupby] = options.formFieldsOption[groupby].selection.find(r => r[0] === groupbyDetail[groupby])[1]
       }
       if (['many2one', 'many2many'].indexOf(options.formFieldsOption[groupby]?.type) !== -1) {
         groupbyDetail[groupby] = groupbyDetail[groupby][1]
+      } if (!childGroupby){
+         groupbyDetail['children'] = await getGroupChildren(groupbyDetail);
       }
       groupbyDetail[groupby] = (groupbyDetail[groupby] || '未定义') + '(' + groupbyDetail[groupby + '_count'] + ')'
     }
-    datas.listData = groupbyData;
-    const listTable = getListViewExpose().listTable
-    for (const line of datas.listData) {
-      listTable.toggleRowExpansion(line, false);
+    if (childGroupby) {
+      row.children = groupbyData;
+      resolve(groupbyData);
+    } else {
+      datas.listData = groupbyData;
+      params.count = groupbyData.length;
+      const listTable = getListViewExpose().listTable
+      for (const line of datas.listData) {
+        listTable.toggleRowExpansion(line, false);
+      }
+      listTable.clearSelection();
+      params.count = groupbyData.length;
     }
-    listTable.clearSelection();
-    params.count = groupbyData.length;
   })
 }
 
 
 const loadGroupDetail = async (row, treeNode, resolve) => {
   const children = await getGroupChildren(row)
-  row.children = children
+  row.children = children;
   resolve(children)
+
 }
 
-const searchClick = async (domain) => {  // 搜索数据重置
+const searchClick = async () => {  // 搜索数据重置
+  const domain = searchViewRef?.value?.getDomain() || [];
   const listViewExpose = getListViewExpose();
   listViewExpose?.recoverPageTo1();
   const size = listViewExpose.pageSize;
   loading.value = true;
-  groupbyKey.value = '';
-  params.groupby = '';
+  groupbyKey.value = [];
+  params.groupby = [];
   const result = await loadListData({
     model: params.model,
     fields: params.fields,
@@ -462,7 +486,7 @@ const saveClick = (formEl: FormInstance | undefined) => {  // 处理保存按钮
         !noeSave && saveWrite(savedDatas)
       } else if (Object.keys(savedDatas).length) {
         let savedDatas = formatData(datas, {formData: {}, treeData: []}, options);
-        emits('saveCreateClick', savedDatas, saveCreate,() => {
+        emits('saveCreateClick', savedDatas, saveCreate, () => {
           noeSave = true;
         })
         !noeSave && saveCreate(savedDatas);
@@ -491,6 +515,43 @@ const customClick = (button) => {
   } else {
     emits('customClick', button, formatData(datas, {formData: {}, treeData: []}, options), reload, loading);
   }
+}
+const exportClick = () => {
+  const listViewExpose = getListViewExpose();
+  const rows = listViewExpose.listTable?.getSelectionRows() || []
+  const model = params.model;
+  const exportFields = [];
+  const headers = [];
+  const datas = [];
+  for (const field of params.listFields || params.fields) {
+    if (!parseDomain(options.formFieldsOption[field]?.invisible, datas.formData)) {
+      headers.push(options.formFieldsOption[field]?.string);
+      exportFields.push(field);
+    }
+  }
+  for (const row of rows.filter(r => !r.hasChildren)) {
+    const line = []
+    for (const field of exportFields) {
+      line.push(row[field]);
+    }
+    datas.push(line)
+  }
+  loading.value = true;
+  Request.get({
+    url: 'http://127.0.0.1:8070/web/export/xls_view',
+    params: {
+      data: JSON.stringify({
+        model: model,
+        headers: headers,
+        rows: datas
+      }),
+      token: 'dummy-because-api-expects-one'
+    },
+    responseType: 'blob'
+  }).then(async res => {  // 请求成功后处理流
+    downLoadFileBold(res, params.title, 'xls');
+    loading.value = false;
+  })
 }
 const objectClick = async (name: string) => {   // 处理非创建和编辑按钮点击
   const listViewExpose = getListViewExpose();
@@ -620,7 +681,7 @@ const fieldOnchange = (params) => {
 <style lang="less" scoped>
 .controller-panel {
   position: relative;
-  z-index: 2;
+  z-index: 3;
   border-bottom: 1px solid #ced4da;
   text-align: left;
   width: 100%;
@@ -629,6 +690,7 @@ const fieldOnchange = (params) => {
   vertical-align: middle;
   align-items: center;
   display: flex;
+  justify-content: space-between;
 
   .search-bar {
     flex: 1;

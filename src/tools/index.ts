@@ -478,9 +478,136 @@ const dateFtt = (fmt, date) => {
     return fmt;
 }
 
+
+const getDateTypeValue = (type) => {
+    let date = new Date();
+    let startDate = ''
+    let endDate = ''
+    // 今天
+    if (type == 'today') {
+        startDate = date
+        endDate = startDate;
+    } else if (type == 'yesterday') {
+        // 昨天
+        date.setDate(date.getDate() - 1);
+        startDate = date
+        endDate = startDate;
+    } else if (type == 'last_3_days') {
+        // 近三天
+        endDate = new Date();
+        date.setDate(date.getDate() - 2);
+        startDate = date
+    } else if (type == 'this_week') {
+        // 本周
+        const week = date.getDay()
+        //一天的毫秒数
+        const millisecond = 1000 * 60 * 60 * 24
+        //减去的天数
+        const minusDay = week != 0 ? week - 1 : 6
+        //本周 周一
+        startDate = new Date(date.getTime() - minusDay * millisecond)
+        //本周 周日
+        endDate = new Date(date.getTime() + (7-minusDay - 1) * millisecond)
+
+    } else if (type == 'last_week') {
+        // 上周
+        let weekNum = date.getDay()
+        weekNum = weekNum == 0 ? 7 : weekNum
+        endDate = new Date(date.getTime() - weekNum * 24 * 60 * 60 * 1000)
+        startDate = new Date(date.getTime() - (weekNum + 6) * 24 * 60 * 60 * 1000)
+    } else if (type == 'last_7_days') {
+        // 近7天
+        endDate = new Date()
+        date.setDate(date.getDate() - 6);
+        startDate = date
+    } else if (type == 'last_14_days') {
+        // 近14天
+        endDate = new Date()
+        date.setDate(date.getDate() - 13);
+        startDate = date
+    } else if (type == 'last_30_days') {
+        // 近30天
+        endDate = new Date()
+        date.setDate(date.getDate() - 30);
+        startDate = date
+    } else if (type == 'last_365_days') {
+        // 近365
+        endDate = new Date()
+        date.setDate(date.getDate() - 365);
+        startDate = date
+    } else if (type == 'this_month') {
+        // 本月
+        endDate = new Date(date.getFullYear(), date.getMonth() + 1, 0)
+        startDate = new Date(date.getFullYear(), date.getMonth(), 1)
+    } else if (type == 'last_month') {
+        // 上月
+        endDate = new Date(date.getFullYear(), date.getMonth(), 0)
+        startDate = new Date(date.getFullYear(), date.getMonth() - 1, 1)
+
+    } else if (type == 'this_quarter') {
+        // 本季
+        let month = date.getMonth() + 1;//getMonth返回0-11
+        let year = date.getFullYear();
+        if (month >= 1 && month <= 3) {
+            startDate = new Date(year, 0, 1);
+            endDate = new Date(year, 3, 0);
+        } else if (month >= 4 && month <= 6) {
+            startDate = new Date(year, 3, 1);
+            endDate = new Date(year, 6, 0);
+        } else if (month >= 7 && month <= 9) {
+            startDate = new Date(year, 6, 1);
+            endDate = new Date(year, 9, 0);
+        } else {
+            startDate = new Date(year, 9, 1);
+            endDate = new Date(year, 12, 0);
+        }
+    } else if (type == 'last_quarter') {
+        // 上季
+        let month = date.getMonth() + 1;//getMonth返回0-11
+        let year = date.getFullYear();
+        if (month >= 1 && month <= 3) {
+            startDate = new Date(year - 1, 9, 1);
+            endDate = new Date(year - 1, 12, 0);
+        } else if (month >= 4 && month <= 6) {
+            startDate = new Date(year, 0, 1);
+            endDate = new Date(year, 3, 0);
+        } else if (month >= 7 && month <= 9) {
+            startDate = new Date(year, 3, 1);
+            endDate = new Date(year, 6, 0);
+        } else {
+            startDate = new Date(year, 6, 1);
+            endDate = new Date(year, 9, 0);
+        }
+    } else if (type == 'this_year') {
+        // 本年
+        let year = date.getFullYear();
+        startDate = new Date(year, 0, 1);
+        endDate = new Date(year, 12, 0);
+    } else if (type == 'last_year') {
+        // 上年
+        let year = date.getFullYear();
+        startDate = new Date(year - 1, 0, 1);
+        endDate = new Date(year - 1, 12, 0);
+    }
+    return [startDate, endDate]
+}
+
+
+const downLoadFileBold = async (bold, filename, fileType) => {
+    const blob = new Blob([bold])
+    const downloadElement = document.createElement('a');
+    const href = window.URL.createObjectURL(blob); //创建下载的链接
+    downloadElement.href = href;
+    downloadElement.download = filename + '.' + fileType; //下载后文件名
+    document.body.appendChild(downloadElement);
+    await downloadElement.click(); //点击下载
+    document.body.removeChild(downloadElement); //下载完成移除元素
+    window.URL.revokeObjectURL(href); //释放掉blob对象
+}
+
 export {
-    searchFieldSelection, onchangeField,
-    getFileType, loadFormData, dateFtt,
+    searchFieldSelection, onchangeField, getDateTypeValue,
+    getFileType, loadFormData, dateFtt, downLoadFileBold,
     base64ToBlobUrl, loadListData,
     downLoadFile, getFieldOption,
     encodeFileToBase64,

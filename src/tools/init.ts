@@ -257,6 +257,5 @@ export const formatData = function (datas, dataCopy, options): Object {  // æ•°æ
             return false
         }
     }
-    console.log(updated);
     return updated
 }

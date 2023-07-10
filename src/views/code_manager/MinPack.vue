@@ -51,7 +51,7 @@ const params = reactive({
     'if_print',
     'state'
   ],
-  import_fields: ['default_code', 'product_name', 'manufacturer_id', 'produce_number', 'shelf_life', 'date_from',
+  import_fields: ['default_code', 'product_name', 'manufacturer_id', 'shelf_life', 'date_from',
     'amount', 'comment'],
   tables: {}
 })
@@ -132,30 +132,6 @@ const extras = {
   readonly: ['name', 'product_name', 'print_amount', 'name', 'supplier_id', 'produce_number',
     'if_print', 'delivery_order_id', 'shelf_life'],
   required: ['default_code', 'date_from', 'amount', 'min_pack_size', 'produce_number']
-}
-
-
-const loadedCallable = async (init, loading, noInit) => {
-  if (!params.id && params.type === 'form') {
-    noInit();
-    loading.value = true;
-    const res = await callButton({
-      model: params.model,
-      method: 'prepare_create',
-      args: []
-    })
-    if (res.error) {
-      loading.value = false;
-      ElMessage({
-        message: res.error.data.message,
-        type: 'error'
-      });
-      router.back();
-      return false
-    }
-    loading.value = false;
-    init(res.result);
-  }
 }
 
 const customClick = (button, rows, reload) => {

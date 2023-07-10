@@ -20,7 +20,7 @@ const params = reactive({
   domain: [['partner_id', '=', supplier_id]],
   model: 'shortage.product',
   fields:
-      ['name', 'partner_id', 'product_id','product_name', 'need_qty',
+      ['name', 'partner_id', 'product_id', 'product_name', 'need_qty',
         'shortage_qty', 'delivery_qty', 'delivery_day', 'date', 'urgency_date',
         'delete_flag', 'state', 'delivery_state', 'in_stock_qty', 'reply_date',
       ],
@@ -35,16 +35,65 @@ const extras = {
     classify: 'primary',
     needRow: true,
     attributes: {},
-  }
+  },
+    {
+      type: 'export',
+      showType: ['list'],
+      text: '导出',
+      classify: 'primary',
+      needRow: true,
+      attributes: {},
+    }
   ],
+  groupby: ['delivery_state', 'product_id','partner_id'],
   search_fields: {
     delivery_state: {
-      default: ['undone']
+      default: ['undone'],
+      searchType: 'filter',
+      options: ['undone', 'done']
     },
     product_id: {
       noSelect: true
     },
-    date: {},
+    partner_id: {},
+    date: {
+      searchType: 'date',
+      options: [
+        'today',
+        'yesterday',
+        'last_3_days',
+        'this_week',
+        'last_week',
+        'last_7_days',
+        'last_14_days',
+        'last_30_days',
+        'last_365_days',
+        'this_month',
+        'last_month',
+        'this_quarter',
+        'last_quarter',
+        'this_year',
+        'last_year',
+      ],
+    }, urgency_date: {
+      searchType: 'date',
+      options: [
+        'yesterday',
+        'last_30_days',
+        'last_365_days',
+        'last_week',
+        'last_month',
+        'last_quarter',
+      ],
+    }, reply_date: {
+      searchType: 'date',
+      options: [
+        'yesterday',
+        'last_week',
+        'last_month',
+        'last_quarter',
+      ],
+    },
   },
   attributes: {
     need_qty: {

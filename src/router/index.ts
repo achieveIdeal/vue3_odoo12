@@ -3,6 +3,10 @@ import {createRouter, createWebHashHistory, RouteRecordRaw} from "vue-router";
 
 let ycRoutes: Array<RouteRecordRaw> = [
     {
+        name: 'home',
+        path: '/',
+        redirect: '/shortage_product',
+    },    {
         name: 'shortage_product',
         path: '/shortage_product',
         component: () => import("../views/ShortageProduct.vue"),
@@ -44,8 +48,8 @@ let dpRoutes: Array<RouteRecordRaw> = [
 // 2.返回一个 router 实列，为函数，配置 history 模式
 const router = createRouter({
     history: createWebHashHistory(),
-    routes: dpRoutes,
-    // routes: ycRoutes,
+    // routes: dpRoutes,
+    routes: ycRoutes,
 });
 
 // 3.导出路由   去 main.ts 注册 router.ts

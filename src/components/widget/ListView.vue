@@ -8,6 +8,7 @@
             :load="loadGroupDetail"
             :tree-props="{ children: 'children', hasChildren: 'hasChildren' }"
             :row-style="handleRowStyle"
+            :cell-style="handleCellStyle"
             @expand-change="expandChange"
             :summary-method="getSummaries">
     <el-table-column fixed type="selection" width="55" :reserve-selection="true"/>
@@ -53,7 +54,6 @@
   </el-table>
 
   <el-pagination
-      v-if="!params.groupby"
       v-model:current-page="currentPage"
       :page-sizes="[10, 20, 50, 100, 200, 500]"
       v-model:page-size="pageSize"
@@ -98,10 +98,6 @@ const props = defineProps({
   model: {
     type: String
   },
-  groupbyKey: {
-    type: String,
-    default: ''
-  }
 })
 
 const paginationRef = ref({})
@@ -111,7 +107,7 @@ let currentPage = ref(1)
 let height = document.documentElement.clientHeight - 250
 let resolveCopy = {}
 let isLoadedGroupDetail = {};
-let emits = defineEmits(['pageChange', 'editClick', 'selectClick', 'pageSizeChange', 'loadGroupDetail', 'deleteRow'])
+let emits = defineEmits(['pageChange', 'editClick', 'selectClick', 'pageSizeChange', 'loadGroupDetail', 'deleteRow', 'groupbyClick', 'handleCellStyle'])
 
 const handleRowStyle = (row) => {
   const colorMap = {
@@ -126,9 +122,19 @@ const handleRowStyle = (row) => {
       curColor = color;
     }
   }
+  if (!row.row.hasChildren) {
+    return {
+      'background-color': '#fffff !important',
+      color: colorMap[curColor]
+    }
+  }
   return {
     color: colorMap[curColor]
   }
+}
+
+const handleCellStyle = (row)=>{
+  emits('handleCellStyle', row)
 }
 const recoverPageTo1 = () => {
   currentPage.value = 1
@@ -147,7 +153,11 @@ const expandChange = (row, expanded) => {
 const loadGroupDetail = (row, treeNode, resolve) => {
   isLoadedGroupDetail[row.id] = true;
   resolveCopy[row.id] = resolve;
-  emits('loadGroupDetail', row, treeNode, resolve)
+  if (row.__context?.group_by) {
+    emits('groupbyClick', row, treeNode, resolve)
+  } else {
+    emits('loadGroupDetail', row, treeNode, resolve)
+  }
 }
 const handleCurrentChange = () => {
   emits('pageChange', currentPage.value)

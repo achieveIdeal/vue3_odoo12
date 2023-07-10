@@ -53,6 +53,11 @@
             {{ button.text }}
           </el-button>
         </template>
+        <template v-else-if="(disabled || button.show)&&button.type==='export'">
+          <el-button :type="button.classify" @click.prevent="handleExport">
+            导出
+          </el-button>
+        </template>
       </template>
     </template>
   </el-form-item>
@@ -82,7 +87,7 @@ const props = defineProps({
   }
 })
 
-const emits = defineEmits(['editClick', 'saveClick', 'cancelClick',
+const emits = defineEmits(['editClick', 'saveClick', 'cancelClick','exportClick',
   'createClick', 'objectClick', 'importClick', 'downTmpClick', 'customClick'
 ])
 const handleCustom = (button) => {
@@ -93,6 +98,10 @@ const handleEdit = () => {
 }
 const handleSave = function () {
   emits('saveClick');
+}
+
+const handleExport = ()=>{
+  emits("exportClick")
 }
 const handleCancel = function () {
   if (!props.params.id) {

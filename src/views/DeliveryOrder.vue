@@ -24,7 +24,7 @@ import RecordView from '../components/RecordView.vue'
 import {inject, reactive, ref} from "vue";
 import {useRoute} from 'vue-router';
 import router from "../router";
-import {callButton} from "../service/module/call";
+import {callButton, callCreate, callFile} from "../service/module/call";
 import {ElMessage} from "element-plus";
 
 const supplier_id = parseInt(inject('supplier_id') || 0);
@@ -140,12 +140,6 @@ const extras = {
         attributes: {
           invisible: [['state', '!=', 'create']]
         },
-      }, {
-        method: 'match_code',
-        text: '匹配赋码',
-        attributes: {
-          invisible: [['state', '!=', 'create']]
-        },
       }]
     },
     name: {
@@ -159,16 +153,9 @@ const extras = {
   readonly: ['name', 'partner_id', 'expect_date', 'company_id',
     'h_state', 'submit_user_id', 'state'],
   invisible: ['h_state'],
-  listInvisible: ['h_state']
+  listInvisible: ['h_state', 'line_ids']
 }
 
-const resetMatchCodeData = (row) => {
-  const data = (row || lineData.value)
-  const origin_data_ids = data.origin_data_ids;
-  codeDatas.value[origin_data_ids] = [];
-  usedCodeIds[origin_data_ids] = [];
-  data.code_names = '';
-}
 
 const resetMatchPoData = (row) => {
   const data = (row || lineData.value)
@@ -183,11 +170,10 @@ const resetMatchPoData = (row) => {
   }
 }
 
-const customClick = (button, datas, reload, loading) => {
+const customClick = async (button, datas, reload, loading) => {
   if (button.method === 'action_submit') {
     for (const shortage_id of Object.keys(poDatas.value || {})) {
-      if (!lineData.value.purchase_order || !poDatas.value[shortage_id]?.length
-          || !codeDatas.value[shortage_id]?.length) {
+      if (!lineData.value.purchase_order || !poDatas.value[shortage_id]?.length) {
         ElMessage({
           message: '请先匹配数据在提交!',
           type: 'error'
@@ -195,14 +181,39 @@ const customClick = (button, datas, reload, loading) => {
         return false;
       }
     }
-    if (!Object.keys(poDatas.value).length || !Object.keys(codeDatas.value).length) {
-      ElMessage({
-        message: '请先匹配数据在提交!',
-        type: 'error'
-      });
-      return false;
-    }
     loading.value = true;
+    for (const lineData of datas.line_ids) {
+      const codeRes = await callCreate({model: 'srm.coding'}, {
+        default_code: lineData.product_id,
+        produce_number: lineData.produce_number,
+        amount: lineData.delivery_quantity,
+        min_pack_size: lineData.min_pack_size,
+        print_amount: lineData.print_amount,
+        date_from: lineData.date_from,
+      })
+      if (res.error) {
+        ElMessage({
+          message: res.error.data.message,
+          type: 'error'
+        });
+        return false;
+      }
+      const result = await callButton({
+        model: 'srm.coding',
+        method: 'create_code',
+        args: [codeRes.result.id]
+      })
+      const reportResult = result.result;
+      if (!!reportResult.report_file) {  // 如果是文件，请求下载
+        loading.value = true;
+        await callFile({
+          reportname: reportResult.report_file,
+          docids: reportResult?.context?.active_ids || ids,
+          converter: reportResult.report_type,
+          name: reportResult.name
+        }, loading)
+      }
+    }
     callButton({
       model: params.model,
       method: 'action_submit',
@@ -214,7 +225,7 @@ const customClick = (button, datas, reload, loading) => {
           message: res.error.data.message,
           type: 'error'
         });
-        return false
+        return false;
       }
       loading.value = false;
       router.replace({
@@ -260,16 +271,6 @@ const lineButtonClick = (treeField, data, button) => {
   lineData.value = data;
   if (button.method === 'match_po') {
     poDialogVisible.value = true;
-  } else if (button.method === 'match_code') {
-    codeAmountTotal.value = 0;
-    if (!poDatas?.value[lineData.value['origin_data_ids']]?.length) {
-      ElMessage({
-        message: '请先匹配采购订单!',
-        type: 'error'
-      });
-      return false;
-    }
-    codeDialogVisible.value = true;
   }
 }
 
@@ -335,53 +336,14 @@ const poCustomClick = (button, datas) => {
   }
   poDialogVisible.value = false;
 }
-const codeCustomClick = (button, datas) => {
-  const validDatas = (datas.length?datas:[]).filter(r=>!r.hasChildren);
-  if (button.method === 'cancel') {
-    resetMatchCodeData();
-    lineData.value.code_names = ''
-  } else {
-    if (!Object.keys(validDatas || {}).length) {
-      ElMessage({
-        message: '请选择一条记录!',
-        type: 'error'
-      });
-      return false
-    }
-    if (lineData.value.delivery_quantity != codeAmountTotal.value) {
-      ElMessage({
-        message: '赋码数量与交货数量不相等，请重新选择!',
-        type: 'error'
-      });
-      return false
-    }
-    !codeDatas.value[lineData.value['origin_data_ids']] ? codeDatas.value[lineData.value['origin_data_ids']] = [] : null;
-    codeDatas.value[lineData.value['origin_data_ids']].push(validDatas);
-    usedCodeIds[lineData.value['origin_data_ids']] = (validDatas || []).map(r => r.id)
-    lineData.value.code_names = (validDatas || []).map(r => {
-      return r.name
-    }).join(',')
-  }
-  codeDialogVisible.value = false;
-}
+
 
 const deleteLineClick = (field, index, row) => {
   resetMatchCodeData(row);
   resetMatchPoData(row);
-  delete codeDatas.value[row['origin_data_ids']];
   delete poDatas.value[row['origin_data_ids']];
 }
 
-const codeSelectClick = (rows) => {
-  codeAmountTotal.value = 0
-  let ids = []
-  for (const row of rows) {
-    ids.push(row.id)
-    if (!row.hasChildren) {
-      codeAmountTotal.value += row.amount
-    }
-  }
-}
 
 const fieldOnchange = (params, reload) => {
   const field = params.field;

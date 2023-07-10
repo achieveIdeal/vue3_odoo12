@@ -27,6 +27,7 @@ declare module '@vue/runtime-core' {
     ElTabPane: typeof import('element-plus/es')['ElTabPane']
     ElTabs: typeof import('element-plus/es')['ElTabs']
     ElUpload: typeof import('element-plus/es')['ElUpload']
+    Facet: typeof import('./src/components/SearchBarWidget/Facet.vue')['default']
     FormView: typeof import('./src/components/widget/FormView.vue')['default']
     ListView: typeof import('./src/components/widget/ListView.vue')['default']
     Menus: typeof import('./src/components/widget/Menus.vue')['default']
@@ -35,7 +36,10 @@ declare module '@vue/runtime-core' {
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']
     SearchBar: typeof import('./src/components/widget/SearchBar.vue')['default']
+    SearchBarVersion: typeof import('./src/components/widget/SearchBarVersion.vue')['default']
     SearchBarVersion2: typeof import('./src/components/widget/SearchBarVersion2.vue')['default']
+    SearchView: typeof import('./src/components/widget/SearchView.vue')['default']
+    SelectItem: typeof import('./src/components/SearchBarWidget/SelectItem.vue')['default']
     TreeView: typeof import('./src/components/widget/TreeView.vue')['default']
   }
   export interface ComponentCustomProperties {
