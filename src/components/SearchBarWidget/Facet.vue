@@ -47,8 +47,8 @@ const closeClick = (searchFacet) => {
       display: -webkit-flex;
       display: flex;
       position: relative;
-      margin: 1px 3px 0 0;
-
+      margin: 1px;
+      z-index: 5;
 
       .o_searchview_facet_label {
         -webkit-box-flex: 0;
@@ -60,25 +60,27 @@ const closeClick = (searchFacet) => {
         overflow: hidden;
         text-overflow: ellipsis;
         vertical-align: top;
-        padding: 3px;
+        padding: 1px;
+        padding-right: 2px;
         color: white;
         display: -webkit-box;
         display: -webkit-flex;
         display: flex;
         align-items: center;
         background-color: #875A7B;
-        font-size: 15px;
+        font-size: 12px;
       }
 
       .o_facet_values {
         direction: ltr;
-        padding: 4px;
-        font-size: 14px;
+        padding-top: 4.5px;
+        padding-left: 1.5px;
+        font-size: 12px;
       }
 
       .icon-close {
         display: inline-block;
-        padding-top: 7px;
+        padding-top: 4.5px;
         cursor: pointer;
       }
     }

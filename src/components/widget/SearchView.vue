@@ -79,7 +79,8 @@
                   </option>
                 </select>
               </div>
-              <div class="dropdown-item-text filter-item">
+              <div v-if="searcher.searchOptions[curDateRangeField]?.searchType==='range'"
+                   class="dropdown-item-text filter-item">
                 <label for="time_range_selector filter-item">范围</label>
                 <select class="o_input filter-item" v-model="curDateRangeVal">
                   <option style='display: none' value=""></option>
@@ -88,6 +89,12 @@
                     {{ dateSelect.text }}
                   </option>
                 </select>
+              </div>
+              <div v-else class="dropdown-item-text filter-item" role="menuitem">
+                  <span class="o_searchview_extended_prop_value filter-item" style="font-size: 13px;color:#000000;">
+                  从:<input class="o_input filter-item" type="date" v-model="dateStart"> <br>
+                  至:<input class="o_input filter-item" type="date" v-model="dateEnd">
+                </span>
               </div>
               <div class="dropdown-item-text filter-item">
                 <button class="btn filter-item" type="button" accesskey="M" @click="dateRangeClick"
@@ -107,7 +114,7 @@
 </template>
 
 <script lang="ts" setup>
-import {onMounted, ref} from "vue";
+import {onMounted, ref, watch} from "vue";
 import {Search, Check} from "@element-plus/icons-vue";
 import {dateFtt, getDateTypeValue} from "../../tools";
 
@@ -128,6 +135,9 @@ const props = defineProps({
   }
 })
 
+
+const dateStart = ref( dateFtt("yyyy-MM-dd",new Date()))
+const dateEnd = ref( dateFtt("yyyy-MM-dd",new Date()))
 
 const dateRangeSelect = {
   last_3_days: {
@@ -255,7 +265,7 @@ onMounted(() => {
     let hasDefault = false;
     for (const field of fields) {
       const fieldOption = searchOptions[field]
-      if (fieldOption.searchType === 'date') {
+      if (['range', 'customRange'].includes(fieldOption.searchType)) {
         !curDateRangeField.value ? curDateRangeField.value = field : null;
         dateFields.value.push(field);
         for (const dateVal of fieldOption.options) {
@@ -411,6 +421,14 @@ const filterItemClick = (filterOption) => {
 }
 
 
+watch(dateStart, () => {
+  dateEnd.value = dateStart.value;
+})
+watch(curDateRangeField, ()=>{
+    curDateRangeVal.value = '';
+
+})
+
 const groupbyItemClick = (groupbyOption) => {
   const field = groupbyOption.groupby;
   if (checkedGroupItem.value.indexOf(field) === -1) {
@@ -433,19 +451,27 @@ const groupbyItemClick = (groupbyOption) => {
 }
 
 const dateRangeClick = () => {
-  if (!curDateRangeVal.value) return;
+  if (!curDateRangeVal.value && props.searcher.searchOptions[curDateRangeField.value].searchType === 'range') return;
   const dateKey = curDateRangeVal.value;
   const dateSelect = dateRangeSelect[dateKey];
   const existFilter = searchFacets.value.find(r => r.field === curDateRangeField.value);
+  const dateRange = getDateTypeValue(dateKey)
+  const start = new Date(Date.parse(dateStart.value))
+  const end = new Date(Date.parse(dateEnd.value))
+  const text = [dateSelect?.text || [dateFtt("yyyy-MM-dd", start), dateFtt("yyyy-MM-dd", end)].join('~')]
+  if (props.searcher.searchOptions[curDateRangeField.value].searchType !== 'range') {
+    dateRange[0] = start;
+    dateRange[1] = end
+  }
   if (existFilter?.field) {
-    existFilter.value = getDateTypeValue(dateKey)
-    existFilter.text = [dateSelect.text]
+    existFilter.value = dateRange
+    existFilter.text = text
   } else {
     searchFacets.value.push({
       field: curDateRangeField.value,
       string: props.searcher.searchOptions[curDateRangeField.value].string,
-      value: getDateTypeValue(dateKey),
-      text: [dateSelect.text]
+      value: dateRange,
+      text: text
     })
   }
   doSearch()
@@ -617,8 +643,8 @@ defineExpose({
 }
 
 .search-bar {
-  min-width: 600px;
-  max-width: 700px;
+  min-width: 800px;
+  max-width: 1000px;
   margin-top: 10px;
   margin-bottom: 10px;
 
@@ -630,11 +656,11 @@ defineExpose({
 
     .o_searchview_autocomplete {
       position: absolute;
-      top: 42%;
+      top: 70%;
       left: auto;
       bottom: auto;
       right: auto;
-      width: 690px;
+      width: 1000px;
       padding: 5px;
       z-index: 2;
     }

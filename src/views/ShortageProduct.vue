@@ -57,7 +57,7 @@ const extras = {
     },
     partner_id: {},
     date: {
-      searchType: 'date',
+      searchType: 'customRange',
       options: [
         'today',
         'yesterday',
@@ -76,7 +76,7 @@ const extras = {
         'last_year',
       ],
     }, urgency_date: {
-      searchType: 'date',
+      searchType: 'range',
       options: [
         'yesterday',
         'last_30_days',
@@ -86,7 +86,7 @@ const extras = {
         'last_quarter',
       ],
     }, reply_date: {
-      searchType: 'date',
+      searchType: 'range',
       options: [
         'yesterday',
         'last_week',
