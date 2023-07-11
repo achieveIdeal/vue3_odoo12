@@ -22,14 +22,14 @@
           <el-button
               v-if="disabled"
               class="el-button--primary" @click.prevent="handleCreate">
-            {{ button.text || 创建 }}
+            {{ button.text || '创建' }}
           </el-button>
           <template v-if="!disabled && !params.id">
             <el-button class="el-button--primary" @click.prevent="handleSave">
-              保存
+              {{ button.confirmText || '保存' }}
             </el-button>
             <el-button class="info" @click.prevent="handleCancel">
-              取消
+              {{ button.cancelText || '取消' }}
             </el-button>
           </template>
         </template>

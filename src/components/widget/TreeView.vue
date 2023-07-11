@@ -36,7 +36,7 @@
                   {{ options[treeField][field]?.string }}
                 </template>
                 <template #default="scoped">
-                  <el-form-item :prop="['treeData', treeField,scoped.$index, field]" class="table-form-item"
+                  <el-form-item :prop="['treeData', treeField, scoped.$index, field]" class="table-form-item"
                                 :rules="options[treeField][field]?.rules||[{
                       required: options[treeField][field]?.required,
                       message: options[treeField][field]?.string + '不能为空!',
@@ -191,6 +191,7 @@
                                        controls-position="right"
                                        :min="options[treeField][field]?.min"
                                        :max="options[treeField][field]?.max"
+                                       style="width:95%;"
                                        :precision="options[treeField][field]?.precision ||
                         options[treeField][field]?.digits&&
                         options[treeField][field]?.digits?.length&&options[treeField][field]?.digits[1]"
@@ -260,10 +261,11 @@
           </template>
           <template v-if="!(parseDomain(formOptions[treeField]?.readonly, {...formData}) || disabled)"
                     v-for="(button, index) in attributes[treeField]?.buttons|| []" :key="index">
-            <el-table-column :width="button.width|| 130" fixed="right" :label="button.text">
+            <el-table-column :width="button.width|| 130" fixed="right" :label="button.text"
+                             v-if="!parseDomain(button.attributes.invisible,formData)">
               <template #default="scoped">
                 <el-button :type="button.classify || 'primary'"
-                           v-if="parseDomain(!button.invisible,{...formData, [treeField]: scoped.row})"
+                           v-if="!parseDomain(button.attributes.invisible,{...formData, [treeField]: scoped.row})"
                            @click="handleButtonClick(treeField, scoped.row, button)"
                 >{{ button.text }}
                 </el-button>
@@ -317,7 +319,7 @@ import {ElMessage, genFileId, UploadInstance, UploadProps, UploadRawFile, Upload
 import {Edit} from "@element-plus/icons-vue";
 import {useTypeStore} from "../../store";
 import type {FieldOptionType, ModuleDataType, DataType} from "../../types";
-import {onchangeField, searchFieldSelection, downLoadFile, encodeFileToBase64, parseDomain,dateFtt} from "../../tools";
+import {onchangeField, searchFieldSelection, downLoadFile, encodeFileToBase64, parseDomain, dateFtt} from "../../tools";
 import {read, utils} from 'xlsx';
 import {callNames} from "../../service/module/call";
 
@@ -470,7 +472,7 @@ const readExcelFile = async (treeField, file: File, sheetIndex: number) => {
     for (let i = 0; i < importFields.length; i++) {
       importRes[importFields[i]] = res[i]
     }
-    props.params[treeField].count ++;
+    props.params[treeField].count++;
     props.datas[treeField].push(importRes)
   }
 }

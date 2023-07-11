@@ -482,13 +482,13 @@ const saveClick = (formEl: FormInstance | undefined) => {  // 处理保存按钮
       if (Object.keys(savedDatas).length && params.id) {
         emits('saveWriteClick', datas, savedDatas, saveWrite, () => {
           noeSave = true;
-        })
+        }, loading)
         !noeSave && saveWrite(savedDatas)
       } else if (Object.keys(savedDatas).length) {
         let savedDatas = formatData(datas, {formData: {}, treeData: []}, options);
         emits('saveCreateClick', savedDatas, saveCreate, () => {
           noeSave = true;
-        })
+        }, loading)
         !noeSave && saveCreate(savedDatas);
       } else if (!savedDatas) {
         return false;
