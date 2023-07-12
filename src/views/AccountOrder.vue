@@ -123,7 +123,6 @@ const extras = {
     }
   }
   ],
-  search_fields: {},
   attributes: {
     account_lines: {
       unadd: true,
@@ -181,6 +180,7 @@ const extras = {
     price_total_adjust_limit_total:{
       invisible: [['state', 'in', ['', 'draft']]]
     },
+    price_total_adjust_limit_total:{sum:true},
     attachment: {
       filename: 'attachment_name',
       invisible: [['state', 'in', ['', 'draft', 'send']]]

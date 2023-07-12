@@ -20,6 +20,7 @@ export const setFormAttribute = (formData, formFieldsOption, extras) => {
             formFieldsOption[field]['invisible'] = (extras?.invisible || []).indexOf(field) !== -1 || extras?.invisible === '_all_' || formFieldsOption[field]['invisible'];
             formFieldsOption[field]['listInvisible'] = (extras?.listInvisible || []).indexOf(field) !== -1 || extras?.listInvisible === '_all_' || formFieldsOption[field]['listInvisible'];
             formFieldsOption[field]['required'] = (extras?.required || []).indexOf(field) !== -1 || extras?.required === '_all_' || formFieldsOption[field]['required'];
+            formFieldsOption[field]['sort'] = (extras?.sort || []).indexOf(field) !== -1 || extras?.sort === '_all_' || formFieldsOption[field]['sort'];
             let extraOptions = attributes[field];
             for (const attribute of Object.keys(extraOptions || {})) {
                 if (attribute === 'fields') continue;
@@ -107,7 +108,7 @@ export const initTreeData = async (extras, treeData, treeFieldsOption, formData)
                     lineData[field] = value[0];
                 }
                 if (is2Many(treeFieldsOption[treeField][field]?.type)) {
-                    await searchFieldSelection(treeFieldsOption[treeField][field], '', [['id', 'in', lineDatas[field]]], lineDatas[field].length)
+                    await searchFieldSelection(treeFieldsOption[treeField][field], '', [['id', 'in', lineData[field]]], lineData[field].length)
                 }
             }
             if (extras) {
@@ -129,9 +130,9 @@ export const initListData = async (extras, listData, fieldsOption) => {
             let value = lineData[field]
             fieldsOption[field]['listInvisible'] = (extras.listInvisible || []).indexOf(field) !== -1;
             if (isSelection(fieldsOption[field]?.type)) {
-                lineData[field] = fieldsOption[field].selection.find((val) => {
+                lineData[field] = value && fieldsOption[field].selection.find((val) => {
                     return val[0] === value
-                })[1]
+                })[1] || ''
             } else if (isBool(fieldsOption[field]?.type)) {
                 // 跳过
             } else if (is2One(fieldsOption[field]?.type)) {

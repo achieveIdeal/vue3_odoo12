@@ -1,10 +1,10 @@
 <template>
 
   <div aria-autocomplete="list" class="search-bar" role="search">
-    <div class="o_searchview_input_container">
-      <ul v-show="showSelects" class="dropdown-menu o_searchview_autocomplete" role="menu">
+    <div class="searchview_input_container">
+      <ul v-show="showSelects" class="pulldown-menu searchview_autocomplete" role="menu">
         <template v-for="(searchItem, index) of searchItems" :key="index">
-          <li ref="searchItemRef" @click="searchItemClick(searchItem)" class="dropdown-item filter-item"><a
+          <li ref="searchItemRef" @click="searchItemClick(searchItem)" class="pulldown-element filter-item"><a
               href="javascript:void(0)">搜索
             <em>{{ searchItem.string }}</em>为 :
             <strong>{{
@@ -17,28 +17,23 @@
       <Facet :searchFacets="searchFacets" @facetCloseClick="removeSearchItem"/>
       <input @input="searchInputInput" accesskey="Q" aria-haspopup="true" v-model="searchInputValue"
              @keydown="listenDeleteDown"
-             class="o_searchview_input" placeholder="搜索..." role="searchbox"
+             class="searchview_input filter-item" placeholder="搜索..." role="searchbox"
              type="text">
     </div>
-    <div class="o_cp_right">
-      <div class="btn-group o_search_options" role="search">
+    <div class="cp_right">
+      <div class="button-group search_options" role="search">
         <div style="">
-          <div class="btn-group">
-            <button class="btn" type="button" accesskey="M" @click="clearFiltersClick"
-                    aria-keyshortcuts="Alt+Shift+A" style="position: relative;">清除
-            </button>
-          </div>
-          <div class="btn-group o_dropdown">
-            <button aria-expanded="false" data-boundary="viewport" data-flip="false" data-toggle="dropdown"
+          <div class="button-group pulldown" v-if="filterOptions.length">
+            <button aria-expanded="false" data-boundary="viewport" data-flip="false" data-toggle="pulldown"
                     @click="toggleShowFilter"
-                    class="o_dropdown_toggler_btn btn dropdown-toggle filter-item" tabindex="-1">
+                    class="pulldown_toggler_button button-normal pulldown-title filter-item" tabindex="-1">
               筛选
             </button>
-            <div v-show="showFilter" class="dropdown-menu" role="menu">
-              <div class="o_menu_item" data-id="__filter__10" v-for="filterOption of filterOptions"
+            <div v-show="showFilter" class="pulldown-menu" role="menu">
+              <div class="menu_item" data-id="__filter__10" v-for="filterOption of filterOptions"
                    :key="filterOptions.field" @click="filterItemClick(filterOption)">
                 <a href="javascript:void(0)" role="menuitemcheckbox" aria-checked="false"
-                   class="dropdown-item filter-item">
+                   class="pulldown-element filter-item">
                   <Check :class="{hidden: checkedFilterItem.indexOf(filterOption.value) === -1}"
                          class="check-right"/>
                   {{ filterOption.text }}
@@ -46,16 +41,16 @@
               </div>
             </div>
           </div>
-          <div class="btn-group o_dropdown">
-            <button aria-expanded="false" data-boundary="viewport" data-flip="false" data-toggle="dropdown"
-                    class="o_dropdown_toggler_btn btn dropdown-toggle filter-item" tabindex="-1"
+          <div class="button-group pulldown" v-if="groupby.length">
+            <button aria-expanded="false" data-boundary="viewport" data-flip="false" data-toggle="pulldown"
+                    class="pulldown_toggler_button button-normal pulldown-title filter-item" tabindex="-1"
                     @click="toggleShowGroupby"> 分组
             </button>
-            <div v-show="showGroupby" class="dropdown-menu" role="menu">
-              <div class="o_menu_item" data-id="__groupby__7" v-for="groupbyOption of groupbyOptions"
+            <div v-show="showGroupby" class="pulldown-menu" role="menu">
+              <div class="menu_item" data-id="__groupby__7" v-for="groupbyOption of groupbyOptions"
                    :key="groupbyOption.groupby">
                 <a href="javascript:void(0)" role="menuitemcheckbox" aria-checked="false"
-                   class="dropdown-item filter-item"
+                   class="pulldown-element filter-item"
                    @click="groupbyItemClick(groupbyOption)">
                   <Check :class="{hidden: checkedGroupItem.indexOf(groupbyOption.groupby) === -1}"
                          class="check-right"/>
@@ -64,15 +59,15 @@
               </div>
             </div>
           </div>
-          <div class="btn-group o_dropdown filter-item">
-            <button aria-expanded="false" data-toggle="dropdown"
-                    class="o_dropdown_toggler_btn btn dropdown-toggle filter-item"
+          <div class="button-group pulldown filter-item" v-if="curDateRangeField">
+            <button aria-expanded="false" data-toggle="pulldown"
+                    class="pulldown_toggler_button button-normal pulldown-title filter-item"
                     tabindex="-1" @click="toggleShowDateRange"> 时间范围
             </button>
-            <div v-show="showDateRange" class="dropdown-menu filter-item" role="menu">
-              <div class="dropdown-item-text filter-item">
+            <div v-show="showDateRange" class="pulldown-menu filter-item" role="menu">
+              <div class="pulldown-element-text filter-item">
                 <label for="date_field_selector filter-item">基于</label>
-                <select class="o_input filter-item" v-model="curDateRangeField"
+                <select class="input filter-item" v-model="curDateRangeField"
                         @change="dateRangeFieldChange">
                   <option v-for="field of dateFields" :key="field" :value="field" class="filter-item">
                     {{ searcher.searchOptions[field]?.string }}
@@ -80,9 +75,9 @@
                 </select>
               </div>
               <div v-if="searcher.searchOptions[curDateRangeField]?.searchType==='range'"
-                   class="dropdown-item-text filter-item">
+                   class="pulldown-element-text filter-item">
                 <label for="time_range_selector filter-item">范围</label>
-                <select class="o_input filter-item" v-model="curDateRangeVal">
+                <select class="input filter-item" v-model="curDateRangeVal">
                   <option style='display: none' value=""></option>
                   <option v-for="dateSelect of dateOptions[curDateRangeField]" :key="dateSelect.key" class="filter-item"
                           :value="dateSelect.key">
@@ -90,17 +85,17 @@
                   </option>
                 </select>
               </div>
-              <div v-else class="dropdown-item-text filter-item" role="menuitem">
-                  <span class="o_searchview_extended_prop_value filter-item" style="font-size: 13px;color:#000000;">
-                  从:<input class="o_input filter-item" type="date" v-model="dateStart"> <br>
-                  至:<input class="o_input filter-item" type="date" v-model="dateEnd">
+              <div v-else class="pulldown-element-text filter-item" role="menuitem">
+                  <span class="searchview_extended_prop_value filter-item" style="font-size: 13px;color:#000000;">
+                  从:<input class="input filter-item" type="date" v-model="dateStart"> <br>
+                  至:<input class="input filter-item" type="date" v-model="dateEnd">
                 </span>
               </div>
-              <div class="dropdown-item-text filter-item">
-                <button class="btn filter-item" type="button" accesskey="M" @click="dateRangeClick"
+              <div class="pulldown-element-text filter-item">
+                <button class="button filter-item" type="button" accesskey="M" @click="dateRangeClick"
                         aria-keyshortcuts="Alt+Shift+M" style="position: relative;">应用
                 </button>
-                <button class="btn filter-item" type="button" accesskey="M" @click="dateRangeClearClick"
+                <button class="button filter-item" type="button" accesskey="M" @click="dateRangeClearClick"
                         aria-keyshortcuts="Alt+Shift+L" style="position: relative;left: 15px;">清除
                 </button>
               </div>
@@ -109,7 +104,6 @@
         </div>
       </div>
     </div>
-
   </div>
 </template>
 
@@ -136,8 +130,8 @@ const props = defineProps({
 })
 
 
-const dateStart = ref( dateFtt("yyyy-MM-dd",new Date()))
-const dateEnd = ref( dateFtt("yyyy-MM-dd",new Date()))
+const dateStart = ref(dateFtt("yyyy-MM-dd", new Date()))
+const dateEnd = ref(dateFtt("yyyy-MM-dd", new Date()))
 
 const dateRangeSelect = {
   last_3_days: {
@@ -212,21 +206,17 @@ const getDomain = () => {
   let domain = []
   for (let searchFacet of searchFacets.value) {
     if (searchFacet.groupby) continue;
-    let operate = '=';
     let isDate = searchFacet.value[0] instanceof Date;
     let value = searchFacet.value.length === 1 ? searchFacet.value[0] : searchFacet.value;
     const field = searchFacet.field;
+    let operate = 'ilike'
     if (!value || value instanceof Array && !value.length) {
       if (props.searcher?.searchOptions[field]?.type !== 'boolean') {
         continue
       }
     }
-    if (value instanceof Array && !!value.length) {
-      operate = 'in';
-    }
-    if (typeof value === 'string' && !isDate && props.searcher.searchOptions[field].type !== 'selection') {
-      value = value.trim()
-      operate = 'ilike';
+    if (props.searcher?.searchOptions[field]?.type === 'selection') {
+      operate = '=';
     }
     if (isDate) {
       let start = 0;
@@ -242,7 +232,20 @@ const getDomain = () => {
       }
       domain = domain.concat([[field, '>=', start], [field, '<=', end]]);
     } else {
-      domain.push([field, operate, value]);
+      const ilikeDomain = []
+      if (value instanceof Array) {
+        let orCount = 0;
+        for (const val of value) {
+          ilikeDomain.push([field, operate, val]);
+          if ((ilikeDomain.length - orCount * 2) % 2 === 0) {
+            ilikeDomain.unshift('|')
+            orCount += 1
+          }
+        }
+        domain = domain.concat(ilikeDomain);
+      } else {
+        domain.push([field, operate, value]);
+      }
     }
   }
   return domain
@@ -268,7 +271,7 @@ onMounted(() => {
       if (['range', 'customRange'].includes(fieldOption.searchType)) {
         !curDateRangeField.value ? curDateRangeField.value = field : null;
         dateFields.value.push(field);
-        for (const dateVal of fieldOption.options) {
+        for (const dateVal of (fieldOption.options || Object.keys(dateRangeSelect))) {
           !dateOptions.value[field] ? dateOptions.value[field] = [{
             key: dateVal,
             text: dateRangeSelect[dateVal].text,
@@ -283,7 +286,7 @@ onMounted(() => {
         }
       }
       if (fieldOption.searchType === 'filter') {
-        for (const selectVal of fieldOption.options) {
+        for (const selectVal of fieldOption.options || fieldOption.selection.map(r => r[0])) {
           if (fieldOption.type === 'selection') {
             filterOptions.value.push({
               field: field,
@@ -375,16 +378,17 @@ const toggleShowDateRange = () => {
 }
 
 const searchInputInput = () => {
-  hideSearchWidget();
+  const value = searchInputValue.value;
+  showSelects.value === false && hideSearchWidget();
   setTimeout(() => {
-    const value = searchInputValue.value
     for (const searchItem of searchItems.value) {
       if (searchItem.groupby) continue;
       searchItem.value = [value]
       searchItem.text = [value]
     }
     showSelects.value = !!value;
-  }, 500)
+  }, 400)
+
 }
 
 
@@ -424,8 +428,8 @@ const filterItemClick = (filterOption) => {
 watch(dateStart, () => {
   dateEnd.value = dateStart.value;
 })
-watch(curDateRangeField, ()=>{
-    curDateRangeVal.value = '';
+watch(curDateRangeField, () => {
+  curDateRangeVal.value = '';
 
 })
 
@@ -478,7 +482,7 @@ const dateRangeClick = () => {
 }
 const dateRangeClearClick = () => {
   curDateRangeVal.value = '';
-  const dateRangeFilters = searchFacets.value.filter(r => props.searcher?.searchOptions[r.field]?.searchType === 'date');
+  const dateRangeFilters = searchFacets.value.filter(r => ['range', 'customRange'].includes(props.searcher?.searchOptions[r.field]?.searchType));
   for (const dateRangeFilter of dateRangeFilters) {
     searchFacets.value.splice(searchFacets.value.indexOf(dateRangeFilter), 1)
   }
@@ -486,14 +490,6 @@ const dateRangeClearClick = () => {
     doSearch();
   }
 }
-const clearFiltersClick = () => {
-  const canDo = searchFacets.value.length;
-  searchFacets.value = [];
-  checkedFilterItem.value = [];
-  checkedGroupItem.value = [];
-  canDo && doSearch();
-}
-
 const searchItemClick = (searchItem) => {
   showSelects.value = false;
   searchInputValue.value = ''
@@ -543,25 +539,25 @@ defineExpose({
 
 <style lang="less" scoped>
 
-.o_cp_right {
+.cp_right {
   display: -webkit-box;
   display: -webkit-flex;
   display: flex;
   margin-top: 5px;
   float: right;
 
-  .o_search_options {
+  .search_options {
     margin-left: 10px !important;
     display: block;
 
-    .o_dropdown {
+    .pulldown {
       white-space: nowrap;
       display: inline-block;
       cursor: pointer;
       user-select: none;
       margin-right: 15px;
 
-      .o_dropdown_toggler_btn {
+      .pulldown_toggler_button {
         background-color: #fff;
         padding: 0;
         font-size: 1rem;
@@ -577,7 +573,7 @@ defineExpose({
     }
   }
 
-  .dropdown-toggle::after {
+  .pulldown-title::after {
     display: inline-block;
     width: 0;
     height: 0;
@@ -590,11 +586,11 @@ defineExpose({
     border-left: 0.3em solid transparent;
   }
 
-  .btn:not(:disabled):not(.disabled) {
+  .button:not(:disabled):not(.disabled) {
     cursor: pointer;
   }
 
-  .btn-group, .btn-group-vertical {
+  .button-group, .button-group-vertical {
     position: relative;
     display: -webkit-inline-flex;
     display: inline-flex;
@@ -603,18 +599,18 @@ defineExpose({
 
 }
 
-.dropdown-item {
+.pulldown-element {
   padding: 3px 20px;
   font-size: 1rem;
   width: 100%;
   color: #1c2518 !important;
 }
 
-.o_time_range_menu .dropdown-item-text > label, .o_time_range_menu .custom-control-label {
+.time_range_menu .pulldown-element-text > label, .time_range_menu .custom-control-label {
   font-weight: bold;
 }
 
-.o_input {
+.input {
   border: 1px solid #cfcfcf;
   border-top-style: none;
   border-right-style: none;
@@ -632,31 +628,28 @@ defineExpose({
   box-sizing: border-box;
 }
 
-.dropdown-item-text {
+.pulldown-element-text {
   display: block;
   padding: 0.25rem 1.5rem;
   color: #666666;
 }
 
-.o_cp_searchview {
+.cp_searchview {
   width: 50%;
 }
 
 .search-bar {
-  min-width: 800px;
-  max-width: 1000px;
+  max-width: 50%;
   margin-top: 10px;
   margin-bottom: 10px;
 
-  .o_searchview_input_container {
+  .searchview_input_container {
     display: flex;
     flex-wrap: wrap;
-    height: 30px;
-    border-bottom: 1px solid #8f8f8f;
+    border-bottom: 1px solid #ced4da;
 
-    .o_searchview_autocomplete {
+    .searchview_autocomplete {
       position: absolute;
-      top: 70%;
       left: auto;
       bottom: auto;
       right: auto;
@@ -665,10 +658,9 @@ defineExpose({
       z-index: 2;
     }
 
-    .o_searchview_input {
+    .searchview_input {
       width: 100px;
       font-size: 1rem;
-      height: 29px;
       -webkit-box-flex: 1;
       -webkit-flex: 1 0 auto;
       flex: 1 0 auto;
@@ -678,7 +670,7 @@ defineExpose({
   }
 }
 
-.dropdown-menu {
+.pulldown-menu {
   box-shadow: 0 6px 12px -4px rgba(0, 0, 0, 0.25);
   position: absolute;
   top: 100%;
@@ -705,7 +697,7 @@ defineExpose({
   }
 }
 
-li, .o_menu_item {
+li, .menu_item {
   :hover {
     background-color: rgba(0, 0, 0, 0.04);
   }
@@ -715,7 +707,7 @@ li, .o_menu_item {
   display: none;
 }
 
-.btn {
+.button {
   display: inline-block;
   font-weight: 500;
   text-align: center;
@@ -731,11 +723,11 @@ li, .o_menu_item {
 
 }
 
-.btn:hover {
+.button:hover {
   color: #888888;
 }
 
-.btn:active {
+.button:active {
   color: #2a598a;
 }
 

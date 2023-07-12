@@ -21,7 +21,6 @@ const params = reactive({
     'product_id',
     'product_name',
     'amount',
-    'state',
     'min_pack_size',
     'delivery_order_id',
     'min_pack_ids',
@@ -62,7 +61,7 @@ const extras = {
     product_id: {
       domain: [],
       noSelect: true,
-    }
+    },name:{}
   },
   attributes: {
     min_pack_ids: {

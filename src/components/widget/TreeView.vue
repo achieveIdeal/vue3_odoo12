@@ -46,30 +46,30 @@
                           {...formData, [treeField]: scoped.row})|| attributes[treeField]?.fields?.readonly==='_all_'||
                           parseDomain(options[treeField][field]?.readonly,
                           {...formData, [treeField]: scoped.row})) && !isFile(options[treeField][field]?.type)">
-                      <span :style="options[treeField][field].style"
+                      <span :style="options[treeField][field]?.style"
                             v-if="is2One(options[treeField][field]?.type)"> {{
                           (options[treeField][field]?.selection.find(r => r[0] === scoped.row[field]) || [''])[1]
                         }}</span>
-                      <span :style="options[treeField][field].style"
+                      <span :style="options[treeField][field]?.style"
                             v-else-if="isSelection(options[treeField][field]?.type)">{{
                           (options[treeField][field]?.selection.find(r => r[0] === scoped.row[field]) || [''])[1]
                         }}</span>
-                      <span :style="options[treeField][field].style"
+                      <span :style="options[treeField][field]?.style"
                             v-else-if="is2Many(options[treeField][field]?.type)">{{
                           options[treeField][field]?.selection.filter(r => scoped.row[field].includes(r[0])).map(r => r[1]).join(', ')
                         }}</span>
-                      <span :style="options[treeField][field].style" class="form-input alien-left"
+                      <span :style="options[treeField][field]?.style" class="form-input alien-left"
                             v-else-if="isBool(options[treeField][field]?.type)">
                         <input type="checkbox" disabled v-model="scoped.row[field]">
                       </span>
-                      <span :style="options[treeField][field].style"
+                      <span :style="options[treeField][field]?.style"
                             v-else-if="isDigit(options[treeField][field]?.type)">
                          {{
                           (scoped.row[field] || 0).toFixed(options[treeField][field]?.precision ||
                               options[treeField][field]?.digits?.length && options[treeField][field]?.digits[1])
                         }}
                       </span>
-                      <span :style="options[treeField][field].style" v-else>{{ scoped.row[field] }}</span>
+                      <span :style="options[treeField][field]?.style" v-else>{{ scoped.row[field] }}</span>
                     </template>
                     <template v-else-if="is2One(options[treeField][field]?.type)">
                       <el-select
@@ -259,10 +259,9 @@
               </el-table-column>
             </template>
           </template>
-          <template v-if="!(parseDomain(formOptions[treeField]?.readonly, {...formData}) || disabled)"
+          <template v-if="!(parseDomain(formOptions[treeField]?.readonly,formData))"
                     v-for="(button, index) in attributes[treeField]?.buttons|| []" :key="index">
-            <el-table-column :width="button.width|| 130" fixed="right" :label="button.text"
-                             v-if="!parseDomain(button.attributes.invisible,formData)">
+            <el-table-column :width="button.width|| 130" fixed="right" :label="button.text">
               <template #default="scoped">
                 <el-button :type="button.classify || 'primary'"
                            v-if="!parseDomain(button.attributes.invisible,{...formData, [treeField]: scoped.row})"
@@ -500,9 +499,9 @@ const getSummaries = (treeField) => (table) => {
       }
       sums[index] = !sums[index] ? 0 : sums[index];
       if (props.options[treeField][field]?.sum && isDigit(props.options[treeField][field]?.type)) {
-        sums[index] = parseFloat((sums[index] || 0) + parseFloat(data[field] || 0).toFixed(props.options[treeField][field]?.precision ||
+        sums[index] = (parseFloat(sums[index] || 0) + parseFloat(data[field] || 0)).toFixed(props.options[treeField][field]?.precision ||
             props.options[treeField][field]?.digits &&
-            props.options[treeField][field]?.digits?.length && props.options[treeField][field]?.digits[1] || 0));
+            props.options[treeField][field]?.digits?.length && props.options[treeField][field]?.digits[1] || 0);
       } else {
         sums[index] = ''
       }

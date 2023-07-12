@@ -62,7 +62,7 @@ const extras = {
     product_id: {
       domain: [],
       noSelect: true
-    }
+    }, name: {}
   },
   attributes: {
     product_id: {
@@ -75,16 +75,16 @@ const extras = {
     name: {
       width: '200'
     },
-    amount:{
+    amount: {
       min: 0
     },
-outer_pack_size: {
-      min:0
-}
+    outer_pack_size: {
+      min: 0
+    }
   },
   invisible: ['state', 'if_print', 'delivery_order_id'],
   readonly: ['name', 'product_name', 'name'],
-  required: ['product_id', 'amount','outer_pack_ids'],
+  required: ['product_id', 'amount', 'outer_pack_ids'],
   listInvisible: ['if_print']
 }
 

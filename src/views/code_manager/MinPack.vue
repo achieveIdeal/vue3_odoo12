@@ -103,7 +103,7 @@ const extras = {
     default_code: {
       domain: [],
       noSelect: true,
-    }
+    }, name: {}
   },
   attributes: {
     default_code: {
@@ -131,7 +131,7 @@ const extras = {
     'produce_number', 'comment',],
   readonly: ['name', 'product_name', 'print_amount', 'name', 'supplier_id', 'produce_number',
     'if_print', 'delivery_order_id', 'shelf_life'],
-  required: ['default_code', 'date_from', 'amount', 'min_pack_size', 'produce_number']
+  required: ['default_code', 'date_from', 'amount', 'min_pack_size']
 }
 
 const customClick = (button, rows, reload) => {
@@ -148,6 +148,29 @@ const customClick = (button, rows, reload) => {
     reload: reload
   };
   dialogVisible.value = true;
+}
+
+const loadedCallable =async (init, loading, noInit)=>{
+  if (!params.id && params.type==='form') {
+    noInit();
+    loading.value = true;
+    const res = await callButton({
+      model: params.model,
+      method: 'prepare_create',
+      args: []
+    })
+    if (res.error) {
+      loading.value = false;
+      ElMessage({
+        message: res.error.data.message,
+        type: 'error'
+      });
+      router.back();
+      return false
+    }
+    loading.value = false;
+    init(res.result);
+  }
 }
 
 const saveDateFrom = () => {

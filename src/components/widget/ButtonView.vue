@@ -55,7 +55,7 @@
         </template>
         <template v-else-if="(disabled || button.show)&&button.type==='export'">
           <el-button :type="button.classify" @click.prevent="handleExport">
-            导出
+            {{ button.text ||'导出'}}
           </el-button>
         </template>
       </template>

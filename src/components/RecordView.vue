@@ -76,6 +76,7 @@
         @selectClick="selectClick"
         @pageSizeChange="pageSizeChange"
         @loadGroupDetail="loadGroupDetail"
+        @sortByClick="sortByClick"
         ref="listViewRef"/>
   </template>
 </template>
@@ -156,7 +157,7 @@ const getListViewExpose = () => {
 };
 
 const emits = defineEmits(['objectClick', 'saveClick', 'customClick', 'pageSizeChange', 'loadGroupDetail', 'deleteRow',
-  'lineButtonClick', 'loadedCallable', 'selectClick', 'deleteLineClick', 'fieldOnchange', 'saveWriteClick',
+  'lineButtonClick', 'loadedCallable', 'selectClick', 'deleteLineClick', 'fieldOnchange', 'saveWriteClick', 'sortByClick',
   'saveCreateClick']);
 
 const initForm = async (result) => {
@@ -199,7 +200,7 @@ const initList = async (result, domain) => {
 }
 
 const hasDefaultSearch = () => {
-  let hasDefault = params.groupby && extras.groupby.length;
+  let hasDefault = (params.groupby && params.groupby.length) && extras.groupby.length;
   const search_fields = extras.search_fields || {};
   for (const field of Object.keys(search_fields)) {
     if (search_fields[field].default) {
@@ -211,15 +212,16 @@ const hasDefaultSearch = () => {
 
 const initialize = async () => {
   let fieldsOption;
-  if (!Object.keys(options.formFieldsOption).length) {
-    fieldsOption = await getFieldOption(params);
-  }
   datas.formData = {};
   datas.treeData = {};
   datas.listData = [];
+  datas.groupby = [];
   params.limit = params.limit || 20;
   params.offset = 0;
   params.domain = params.domain || [];
+  if (!Object.keys(options.formFieldsOption).length) {
+    fieldsOption = await getFieldOption(params);
+  }
   options.formFieldsOption = (fieldsOption || options).formFieldsOption;
   options.treeFieldsOption = (fieldsOption || options).treeFieldsOption;
 }
@@ -306,8 +308,8 @@ const groupbyClick = (row, treeNode, resolve) => {
     const groupbyOptions = options.formFieldsOption[groupby];
     for (const groupbyDetail of groupbyData) {
       groupbyDetail['hasChildren'] = true;
-      groupbyDetail['id'] = row.id ? row.id + groupbyDetail[groupby] : groupbyDetail[groupby];
-      const value = groupbyDetail[groupby];
+      const value = groupbyDetail[groupby] || '未定义';
+      groupbyDetail['id'] = row.id ? row.id + value : value;
       if (groupbyOptions?.type === 'selection') {
         groupbyDetail[params.fields[0]] = groupbyOptions.selection.find(r => r[0] === value)[1];
       } else if (groupbyOptions?.type === 'many2one') {
@@ -319,9 +321,10 @@ const groupbyClick = (row, treeNode, resolve) => {
         groupbyDetail[groupby] = options.formFieldsOption[groupby].selection.find(r => r[0] === groupbyDetail[groupby])[1]
       }
       if (['many2one', 'many2many'].indexOf(options.formFieldsOption[groupby]?.type) !== -1) {
-        groupbyDetail[groupby] = groupbyDetail[groupby][1]
-      } if (!childGroupby){
-         groupbyDetail['children'] = await getGroupChildren(groupbyDetail);
+        groupbyDetail[groupby] = value instanceof Array ? value[1] : value
+      }
+      if (!childGroupby) {
+        groupbyDetail['children'] = await getGroupChildren(groupbyDetail);
       }
       groupbyDetail[groupby] = (groupbyDetail[groupby] || '未定义') + '(' + groupbyDetail[groupby + '_count'] + ')'
     }
@@ -341,6 +344,13 @@ const groupbyClick = (row, treeNode, resolve) => {
   })
 }
 
+const sortByClick = (hasSort, field, sort) => {
+  if (hasSort) {
+    params.sort = field + ' ' + sort;
+    searchClick();
+  }
+  emits('sortByClick', field, sort);
+}
 
 const loadGroupDetail = async (row, treeNode, resolve) => {
   const children = await getGroupChildren(row)
@@ -394,7 +404,7 @@ const pageChange = async (currentPage: number, treeField: string) => {  // 列�
   loading.value = false;
 }
 const pageSizeChange = async (size, currentSize) => {
-  if (params.count < size && params.count < currentSize) {
+  if (params.count <= size && params.count <= currentSize) {
     return
   }
   const domain = searchViewRef.value?.getDomain() || [];
@@ -523,8 +533,8 @@ const exportClick = () => {
   const exportFields = [];
   const headers = [];
   const datas = [];
-  for (const field of params.listFields || params.fields) {
-    if (!parseDomain(options.formFieldsOption[field]?.invisible, datas.formData)) {
+  for (const field of params.exportFields || params.listFields || params.fields) {
+    if (params.exportFields?.length || !parseDomain(options.formFieldsOption[field]?.invisible, datas.formData)) {
       headers.push(options.formFieldsOption[field]?.string);
       exportFields.push(field);
     }
@@ -538,7 +548,7 @@ const exportClick = () => {
   }
   loading.value = true;
   Request.get({
-    url: 'http://127.0.0.1:8070/web/export/xls_view',
+    url: 'http://127.0.0.1:8070/front/export/xls_view',
     params: {
       data: JSON.stringify({
         model: model,

@@ -15,27 +15,27 @@
           v-if="noLoadFields.indexOf(field) === -1 && !parseDomain(options[field]?.invisible, datas)"
       >
         <template v-if="(disabled || parseDomain(options[field]?.readonly,datas)) && !isFile(options[field]?.type)">
-          <span class="disabled-form-item" :style="options[field].style" v-if="is2One(options[field]?.type)">
+          <span class="disabled-form-item" :style="options[field]?.style" v-if="is2One(options[field]?.type)">
             {{ (options[field]?.selection.find(r => r[0] === datas[field]) || [''])[1] || '　' }}
           </span>
-          <span class="disabled-form-item" :style="options[field].style" v-else-if="isSelection(options[field]?.type)">
+          <span class="disabled-form-item" :style="options[field]?.style" v-else-if="isSelection(options[field]?.type)">
             {{ (options[field]?.selection.find(r => r[0] === datas[field]) || [''])[1] || '　' }}
           </span>
-          <span class="disabled-form-item to-many-disabled" :style="options[field].style"
+          <span class="disabled-form-item to-many-disabled" :style="options[field]?.style"
                 v-else-if="is2Many(options[field]?.type)">
             {{ options[field]?.selection.filter(r => datas[field].includes(r[0])).map(r => r[1]).join(', ') }}
           </span>
-          <span :style="options[field].style" class="form-input alien-left" v-else-if="isBool(options[field]?.type)">
+          <span :style="options[field]?.style" class="form-input alien-left" v-else-if="isBool(options[field]?.type)">
             <input type="checkbox" disabled v-model="datas[field]">
           </span>
-          <span class="disabled-form-item" :style="options[field].style"
+          <span class="disabled-form-item" :style="options[field]?.style"
                 v-else-if="isDigit(options[field]?.type)">
           {{
               (datas[field] || 0).toFixed(options[field]?.precision ||
                   options[field]?.digits?.length && options[field]?.digits[1])
             }}
           </span>
-          <span class="disabled-form-item" :style="options[field].style" v-else>{{ datas[field] || '　' }}</span>
+          <span class="disabled-form-item" :style="options[field]?.style" v-else>{{ datas[field] || '　' }}</span>
         </template>
         <template v-else-if="is2One(options[field]?.type)">
           <el-select class="form-input alien-left"

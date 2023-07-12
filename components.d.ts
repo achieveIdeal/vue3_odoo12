@@ -10,6 +10,7 @@ export {}
 declare module '@vue/runtime-core' {
   export interface GlobalComponents {
     ButtonView: typeof import('./src/components/widget/ButtonView.vue')['default']
+    ControllerPanel: typeof import('./src/components/widget/ControllerPanel.vue')['default']
     ElButton: typeof import('element-plus/es')['ElButton']
     ElCheckbox: typeof import('element-plus/es')['ElCheckbox']
     ElDialog: typeof import('element-plus/es')['ElDialog']
@@ -36,10 +37,7 @@ declare module '@vue/runtime-core' {
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']
     SearchBar: typeof import('./src/components/widget/SearchBar.vue')['default']
-    SearchBarVersion: typeof import('./src/components/widget/SearchBarVersion.vue')['default']
-    SearchBarVersion2: typeof import('./src/components/widget/SearchBarVersion2.vue')['default']
     SearchView: typeof import('./src/components/widget/SearchView.vue')['default']
-    SelectItem: typeof import('./src/components/SearchBarWidget/SelectItem.vue')['default']
     TreeView: typeof import('./src/components/widget/TreeView.vue')['default']
   }
   export interface ComponentCustomProperties {

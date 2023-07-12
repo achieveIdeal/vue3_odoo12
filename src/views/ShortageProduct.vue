@@ -14,8 +14,7 @@ import {ElMessage} from "element-plus";
 const supplier_id = parseInt(inject('supplier_id') || 0);
 const params = reactive({
   title: '物料欠料表',
-  width: '30%',
-  left: '3%',
+  height: 'calc(100vh - 280px)',
   name: 'shortage_product',
   domain: [['partner_id', '=', supplier_id]],
   model: 'shortage.product',
@@ -35,18 +34,16 @@ const extras = {
     classify: 'primary',
     needRow: true,
     attributes: {},
-  },
-    {
-      type: 'export',
-      showType: ['list'],
-      text: '导出',
-      classify: 'primary',
-      needRow: true,
-      attributes: {},
-    }
+  }, {
+    type: 'export',
+    showType: ['list'],
+    classify: 'success',
+    needRow: true,
+    attributes: {},
+  }
   ],
-  groupby: ['delivery_state', 'product_id','partner_id'],
   search_fields: {
+    name: {},
     delivery_state: {
       default: ['undone'],
       searchType: 'filter',
@@ -55,51 +52,18 @@ const extras = {
     product_id: {
       noSelect: true
     },
-    partner_id: {},
     date: {
       searchType: 'customRange',
-      options: [
-        'today',
-        'yesterday',
-        'last_3_days',
-        'this_week',
-        'last_week',
-        'last_7_days',
-        'last_14_days',
-        'last_30_days',
-        'last_365_days',
-        'this_month',
-        'last_month',
-        'this_quarter',
-        'last_quarter',
-        'this_year',
-        'last_year',
-      ],
-    }, urgency_date: {
-      searchType: 'range',
-      options: [
-        'yesterday',
-        'last_30_days',
-        'last_365_days',
-        'last_week',
-        'last_month',
-        'last_quarter',
-      ],
-    }, reply_date: {
-      searchType: 'range',
-      options: [
-        'yesterday',
-        'last_week',
-        'last_month',
-        'last_quarter',
-      ],
-    },
+    }
   },
   attributes: {
     need_qty: {
       precision: 3
-    }
+    },
+    shortage_qty: {sum: !0},
+    delivery_qty: {sum: !0}
   },
+  sort: ['date', 'name'],
   invisible: ['urgency_date', 'delivery_state', 'delete_flag', 'state', 'partner_id'],
   listInvisible: ['urgency_date', 'delete_flag', 'state', 'partner_id', 'in_stock_qty']
 }

@@ -20,6 +20,11 @@
             :label="options[field]?.string"
             :min-width="options[field]?.minWidth"
             :width="options[field]?.width">
+          <template #header>
+            <span
+                :class="{'pulldown': options[field]?.sort && sortArrow[field]==='desc' && showArrow[field], 'pullup':  options[field]?.sort && sortArrow[field]==='asc' && showArrow[field]}"
+                @click="sortByClick(field, options[field]?.sort)">{{ options[field]?.string }}</span>
+          </template>
           <template #default="scoped">
             <span v-if="options[field]?.type==='boolean'">
               <input type="checkbox" :checked="scoped.row[field]" disabled style="height: 17px;">
@@ -34,7 +39,8 @@
         </el-table-column>
       </template>
     </template>
-    <el-table-column v-if="!params.hideDetail && !params.groupby" fixed="right" label="操作" width="120">
+    <el-table-column v-if="!params.hideDetail && !(params.groupby && params.groupby.length)" fixed="right" label="操作"
+                     width="120">
       <template #default="scoped">
         <el-button link
                    size="small"
@@ -55,7 +61,7 @@
 
   <el-pagination
       v-model:current-page="currentPage"
-      :page-sizes="[10, 20, 50, 100, 200, 500]"
+      :page-sizes="[10, 20, 50, 100, 200, 500,1000]"
       v-model:page-size="pageSize"
       @size-change="handleSizeChange"
       class="list-pagination"
@@ -107,7 +113,9 @@ let currentPage = ref(1)
 let height = document.documentElement.clientHeight - 250
 let resolveCopy = {}
 let isLoadedGroupDetail = {};
-let emits = defineEmits(['pageChange', 'editClick', 'selectClick', 'pageSizeChange', 'loadGroupDetail', 'deleteRow', 'groupbyClick', 'handleCellStyle'])
+let emits = defineEmits(['pageChange', 'editClick', 'selectClick', 'pageSizeChange', 'loadGroupDetail', 'deleteRow', 'groupbyClick', 'handleCellStyle', 'sortByClick'])
+const sortArrow = ref({})
+const showArrow = ref({});
 
 const handleRowStyle = (row) => {
   const colorMap = {
@@ -133,7 +141,7 @@ const handleRowStyle = (row) => {
   }
 }
 
-const handleCellStyle = (row)=>{
+const handleCellStyle = (row) => {
   emits('handleCellStyle', row)
 }
 const recoverPageTo1 = () => {
@@ -198,14 +206,17 @@ const handleSizeChange = (size) => {
 const getSummaries = (table) => {
   const sums = [];
   for (const data of table.data) {
-    let index = 0;
+    let index = 1;
     for (const field of props.params?.fields) {
-      if (field === 'id' || parseDomain(props.options[field]?.invisible, data)) {
+      if (field === 'id' || parseDomain(props.options[field]?.listInvisible, data)) {
         continue
+      }
+      if(field==='partner_id'){
+        console.log(parseDomain(props.options[field]?.listInvisible, data));
       }
       sums[index] = !sums[index] ? 0 : sums[index];
       if (props.options[field]?.sum) {
-        sums[index] = (parseFloat(sums[index] || 0) + parseFloat(data[field] || 0)).toFixed(props.options[field]?.precision ||
+        sums[index] = (parseFloat(parseFloat(sums[index]) || 0) + parseFloat(data[field] || 0)).toFixed(props.options[field]?.precision ||
             props.options[field]?.digits?.length && props.options[field]?.digits[1] || 0);
       } else {
         sums[index] = ''
@@ -213,6 +224,7 @@ const getSummaries = (table) => {
       index++;
     }
   }
+  sums[1] = '合计:'
   return sums
 }
 
@@ -224,6 +236,25 @@ const defaultCheckedLine = (datas) => {
   }
 }
 
+let timer;
+const sortByClick = (field, hasSort) => {
+  if (hasSort) {
+    timer ? clearTimeout(timer) : null;
+    showArrow.value[field] = true;
+    !sortArrow.value[field] ? sortArrow.value[field] = 'desc' : null;
+    if (sortArrow.value[field] === 'desc') {
+      sortArrow.value[field] = 'asc';
+    } else if (sortArrow.value[field] === 'asc') {
+      sortArrow.value[field] = 'desc';
+    }
+    timer = setTimeout(() => {
+      showArrow.value[field] = false;
+    }, 1000)
+  }
+
+  emits('sortByClick', hasSort,field, sortArrow.value[field]);
+}
+
 defineExpose({
   listTable, pageSize, recoverPageTo1, defaultCheckedLine
 })
@@ -233,6 +264,36 @@ defineExpose({
 .list-pagination {
   margin-top: 20px;
   float: right;
+}
+
+.pulldown, .pullup {
+  cursor: pointer;
+}
+
+.pulldown::after {
+  display: inline-block;
+  width: 0;
+  height: 0;
+  margin-left: 0.255em;
+  vertical-align: 0.255em;
+  content: "";
+  border-top: 0.3em solid;
+  border-right: 0.3em solid transparent;
+  border-bottom: 0;
+  border-left: 0.3em solid transparent;
+}
+
+.pullup::after {
+  display: inline-block;
+  width: 0;
+  height: 0;
+  margin-left: 0.255em;
+  vertical-align: 0.255em;
+  content: "";
+  border-top: 0;
+  border-right: 0.3em solid transparent;
+  border-bottom: 0.3em solid;
+  border-left: 0.3em solid transparent;
 }
 
 </style>
