@@ -650,6 +650,7 @@ defineExpose({
 
     .searchview_autocomplete {
       position: absolute;
+      top:70%;
       left: auto;
       bottom: auto;
       right: auto;
