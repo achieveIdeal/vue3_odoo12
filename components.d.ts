@@ -20,7 +20,6 @@ declare module 'vue' {
     ElInput: typeof import('element-plus/es')['ElInput']
     ElInputNumber: typeof import('element-plus/es')['ElInputNumber']
     ElMain: typeof import('element-plus/es')['ElMain']
-    ElMenu: typeof import('element-plus/es')['ElMenu']
     ElOption: typeof import('element-plus/es')['ElOption']
     ElPageHeader: typeof import('element-plus/es')['ElPageHeader']
     ElPagination: typeof import('element-plus/es')['ElPagination']
@@ -53,7 +52,6 @@ declare module 'vue' {
     SheetWidget: typeof import('./src/components/base/widgets/SheetWidget.vue')['default']
     TableView: typeof import('./src/components/views/TableView.vue')['default']
     ToMany: typeof import('./src/components/base/fields/ToMany.vue')['default']
-    Widgets: typeof import('./src/components/base/widgets.vue')['default']
   }
   export interface ComponentCustomProperties {
     vLoading: typeof import('element-plus/es')['ElLoadingDirective']

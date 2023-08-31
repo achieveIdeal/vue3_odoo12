@@ -2,6 +2,15 @@
   <el-input v-if="!(readonly|| disabled)" v-model="data[field]" :type="option.type"
             class="form-input"
             clearable
+            @change="fieldOnchange({
+              field: field,
+              datas: data,
+              attributes: attrs,
+              model: model,
+              options: viewFields,
+              treeOptions: treeViewFields,
+              treeData: treeData
+            })"
             :maxlength="option.maxlength"/>
   <span :style="option.style" :class="{'item-text': viewType==='form'}" v-else>{{ data[field] }}</span>
   <slot></slot>
@@ -11,8 +20,11 @@
 
 <script lang="ts" setup>
 
-import {defineProps, ref} from "vue";
+import {defineProps} from "vue";
+import {onchangeField} from "../../../tools";
+import {defineEmits} from "vue/dist/vue";
 
+const emits = defineEmits(['fieldOnchange']);
 const props = defineProps({
   field: {
     default: ''
@@ -27,8 +39,14 @@ const props = defineProps({
   }, attrs: {
     type: Object,
     default: {}
+  },viewFields: {
+    type: Object,
+    default: {}
   },
   option: {
+    type: Object,
+    default: {}
+  }, treeViewFields: {
     type: Object,
     default: {}
   },
@@ -43,8 +61,19 @@ const props = defineProps({
   disabled: {
     type: Boolean,
     default: true
+  },
+  loading: {
+    type: Boolean,
+    default: true
   }
 })
+const fieldOnchange = (params) => {
+  let noChange = false;
+  emits('fieldOnchange', params, () => {
+    noChange = true
+  });
+  !noChange && onchangeField(params)
+}
 </script>
 
 <style lang="less" scoped>

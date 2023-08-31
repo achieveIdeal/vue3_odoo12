@@ -11,13 +11,15 @@
              remote
              @change="fieldOnchange({
               field: field,
-              attributes: attributes,
-              datas: datas,
-              treeOptions: treeOptions,
-              model: params.model,
-              options: options,
+              attributes: attrs,
+              datas: data,
+              treeOptions: treeViewFields,
+              model: model,
+              options: viewFields,
               treeData: treeData
             })"
+             @focus="preSearchSelect(options)"
+             @blur="()=>{}"
              :remote-method="searchSelection(option)"
   >
     <el-checkbox
@@ -28,7 +30,7 @@
     />
     <label :for="'check-all-box' + field">全选</label>
     <el-option
-        v-for="item in options.selection"
+        v-for="item in option.selection"
         :key="item[0]"
         :label="item[1]"
         :value="item[0]"
@@ -43,8 +45,10 @@
 </template>
 
 <script lang="ts" setup>
-import {searchFieldSelection} from "../../tools";
+import {onchangeField, searchFieldSelection} from "../../../tools";
+import {defineEmits, ref} from "vue";
 
+const checkAll = ref(false);
 const props = defineProps({
   field: {
     default: ''
@@ -63,6 +67,12 @@ const props = defineProps({
   option: {
     type: Object,
     default: {}
+  }, viewFields: {
+    type: Object,
+    default: {}
+  }, treeViewFields: {
+    type: Object,
+    default: {}
   },
   readonly: {
     type: Boolean,
@@ -75,9 +85,36 @@ const props = defineProps({
   disabled: {
     type: Boolean,
     default: true
+  },
+  loading: {
+    type: Boolean,
+    default: true
   }
 })
 
+const emits = defineEmits(['fieldOnchange']);
+const loading = ref(false)
+const searchSelection = (option) => (query: string) => {
+  loading.value = true;
+  checkAll.value = false;
+  searchFieldSelection(props.field, option, query, [], 100).then(r => {
+    loading.value = false;
+  }, props.data);
+}
+const preSearchSelect = async (option) => {
+  loading.value = true;
+  checkAll.value = false;
+  searchFieldSelection(props.field, option, '', [], 100).then(r => {
+    loading.value = false;
+  });
+}
+const fieldOnchange = (params) => {
+  let noChange = false;
+  emits('fieldOnchange', params, () => {
+    noChange = true
+  });
+  !noChange && onchangeField(params)
+}
 </script>
 
 <style lang="less" scoped>

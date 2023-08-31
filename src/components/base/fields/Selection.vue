@@ -1,6 +1,6 @@
 <template>
   <el-select v-if="!(readonly|| disabled)" class="form-input"
-             v-model="datas[field]"
+             v-model="data[field]"
              placeholder="请选择"
              clearable
              collapse-tags
@@ -8,18 +8,18 @@
              filterable
              @change="fieldOnchange({
               field: field,
-              datas: datas,
-              attributes: attributes,
-              treeOptions: treeOptions,
-              model: params.model,
-              options: options,
+              datas: data,
+              attributes: attrs,
+              treeOptions: treeViewFields,
+              model: model,
+              options: viewFields,
               treeData: treeData
             })"
   >
     <el-option
         v-for="item in option.selection"
         :key="item[0]"
-        :disabled="parseDomain(option.readonly, datas)  || disabled"
+        :disabled="readonly  || disabled"
         :label="item[1]"
         :value="item[0]"/>
   </el-select>
@@ -28,11 +28,15 @@
         v-else>{{
       !data[field + '_count'] ? ((option.selection || []).find(r => r[0] === data[field]) || [''])[1] : data[field]
     }}</span>
-    <slot></slot>
+  <slot></slot>
 </template>
 
 <script lang="ts" setup>
 
+import {onchangeField} from "../../../tools";
+import {defineEmits} from "vue/dist/vue";
+
+const emits = defineEmits(['fieldOnchange']);
 const props = defineProps({
   field: {
     default: ''
@@ -47,8 +51,14 @@ const props = defineProps({
   }, attrs: {
     type: Object,
     default: {}
+  }, viewFields: {
+    type: Object,
+    default: {}
   },
   option: {
+    type: Object,
+    default: {}
+  }, treeViewFields: {
     type: Object,
     default: {}
   },
@@ -63,8 +73,20 @@ const props = defineProps({
   disabled: {
     type: Boolean,
     default: true
+  },
+  loading: {
+    type: Boolean,
+    default: true
   }
 })
+
+const fieldOnchange = (params) => {
+  let noChange = false;
+  emits('fieldOnchange', params, () => {
+    noChange = true
+  });
+  !noChange && onchangeField(params)
+}
 </script>
 
 <style lang="less" scoped>
@@ -72,6 +94,6 @@ const props = defineProps({
   overflow: hidden;
   width: 100%;
   text-overflow: ellipsis;
-    text-align: left;
+  text-align: left;
 }
 </style>

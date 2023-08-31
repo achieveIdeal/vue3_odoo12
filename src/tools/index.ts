@@ -7,14 +7,6 @@ import axios from "axios";
 const appElement = document.getElementById('app');
 const supplier_id = parseInt(appElement.dataset['supplier_id'] || 0)
 
-const getRequestParams = (params) => {
-    let id = params.id instanceof Array && params.id || [params.id];
-    return {
-        model: params.model,
-        args: [id, params.fields.concat(Object.keys(params.tables || {}))]
-    }
-}
-
 
 const buildOnchangeSpecs = function (fieldsInfo, treeOption, fields) {
     var specs = {};
@@ -37,7 +29,7 @@ const buildOnchangeSpecs = function (fieldsInfo, treeOption, fields) {
     return specs;
 }
 
-const onchangeField = async (params, checkAll) => {
+const onchangeField = async (params) => {
     let options = params.options;
     let attributes = params.attributes
     let treeOptions = params.treeOptions;
@@ -65,7 +57,7 @@ const onchangeField = async (params, checkAll) => {
         }
         onchange = buildOnchangeSpecs(options, treeOptions, Object.keys(options || {}))
         const model = params.model;
-        const res = await callOnchange({
+        const result = await callOnchange({
             model: model,
             method: 'onchange',
             args: [[datas.id || 0], changedData, field, onchange, {
@@ -77,14 +69,6 @@ const onchangeField = async (params, checkAll) => {
             }],
             path: model + '/onchange'
         })
-        if (res.error) {
-            ElMessage({
-                message: res.error.data.message,
-                type: 'error'
-            });
-            return false
-        }
-        const result = res.result;
         const domain = result.domain;
         const value = result.value;
         if (result.warning) {
@@ -99,7 +83,6 @@ const onchangeField = async (params, checkAll) => {
             options[changedField].selection = [];
             if (datas[changedField] instanceof Array) {
                 datas[changedField] = [];
-                checkAll.value = false;
                 continue
             }
             datas[changedField] = '';
@@ -137,141 +120,42 @@ const onchangeField = async (params, checkAll) => {
     }
 }
 
-const getFieldOption = async (params) => {
-    let requestParams = getRequestParams(params)
-    const res = await callFields(requestParams);
-    if (res.error) {
-        ElMessage({
-            message: res.error.data.message,
-            type: 'error'
-        });
-        return false
-    }
-    let formFieldsOption = res.result;
-    let treeFieldsOption = {};
-    for (let line of Object.keys(params.tables || {})) {
-        const result = await callFields(getRequestParams(params.tables[line]));
-        treeFieldsOption[line] = result.result;
-    }
-
-    return {
-        formFieldsOption,
-        treeFieldsOption
-    }
-}
-
-const loadFormData = async (params) => {
-    let requestParams = getRequestParams(params);
-    let treeData = {};
-    let tableDataCountMap = {};
-    let formData = {};
-    if (!params.id) {
-        return {
-            formData,
-            treeData,
-            tableDataCountMap,
+const selectionMap = {}
+const searchFieldSelection = async (field, option: FieldOptionType, query: string, domain = [], limit, datas) => {
+    const domains = JSON.parse(JSON.stringify(option?.domain))
+    for (const domain of domains || []) {
+        if (typeof domain[2] === 'string') {
+            let self_value = domain[2].split('.');
+            if (self_value.length < 2) continue;
+            for (const valField of self_value) {
+                if (valField === 'self') {
+                    domain[2] = datas
+                } else {
+                    domain[2] = domain[2] ? domain[2][valField] || false : false
+                }
+            }
         }
     }
-    const dataRes = await callRead(requestParams);
-    if (dataRes.error) {
-        ElMessage({
-            message: dataRes.error.data.message,
-            type: 'error'
-        });
-        return false
+    const searchDomain = domain.length ? domain : domains.concat(domain) || []
+    const searchUnique = field + query + searchDomain;
+    if (selectionMap[searchUnique]?.length) {
+        option.selection = selectionMap[searchUnique];
+        return
     }
-
-    formData = dataRes.result[0];
-    for (let line of Object.keys(params.tables || {})) {
-        let lineParams = params.tables[line] || {};
-        lineParams.id = dataRes.result?.length && dataRes.result[0][line] || 0;
-        let dataResult
-        if (lineParams.domain && lineParams.domain.length) {
-            let requestData = {
-                model: lineParams.model,
-                fields: lineParams.fields,
-                domain: lineParams.domain.concat([['id', 'in', lineParams.id]]),
-                offset: 0,
-                limit: false,
-                sort: lineParams.sort || 'id desc'
-            }
-            const result = await callSearchRead(requestData)
-            if (result.error) {
-                ElMessage({
-                    message: result.error.data.message,
-                    type: 'error'
-                });
-                return false
-            }
-            dataResult = result.result.records
-        } else {
-            const result = await callRead(getRequestParams(params.tables[line]));
-            if (result.error) {
-                ElMessage({
-                    message: result.error.data.message,
-                    type: 'error'
-                });
-                return false
-            }
-            dataResult = result.result;
-        }
-        treeData[line] = JSON.parse(JSON.stringify(dataResult || {}));
-        tableDataCountMap[line] = treeData[line].length || 0
-    }
-    if (!Object.keys(formData || {}).length) {
-        for (let field of Object.keys(formFieldsOption || {})) {   // 设置空数据
-            formData[field] = ''
-        }
-    }
-    return {
-        formData,
-        treeData,
-        tableDataCountMap,
-    }
-}
-const loadListData = async (params) => {
-    let requestData = {
-        model: params.model,
-        fields: params.fields,
-        offset: params.offset || 0,
-        limit: params.limit || 20,
-        domain: params.domain,
-        sort: params.sort || 'id desc'
-    }
-    let dataRes = {}
-    if (!params.groupby) {
-        dataRes = await callSearchRead(requestData);
-    }
-    if (dataRes.error) {
-        ElMessage({
-            message: dataRes.error.data.message,
-            type: 'error'
-        });
-        return false
-    }
-    let listData = JSON.parse(JSON.stringify(dataRes?.result?.records || []));
-    const count = dataRes?.result?.length || 0;
-    return {
-        listData,
-        count
-    }
-}
-const searchFieldSelection = async (option, query, domain = [], limit) => {
-    const res = await callNames({
+    const result = await callNames({
         model: option.relation,
         args: [],
         kwargs: {
             'name': query.trim(),
-            'args': domain.length ? domain : option.domain.concat(domain) || [],
+            'args': searchDomain,
             'operator': 'ilike',
             'limit': limit || 10,
-            'context': {'lang': 'zh_CN', 'tz': false, 'uid': 2, 'front': true, 'is_cus_code': true}
         }
     })
-    if (option.selection?.length) {
-        const sameSelectId = []
-        const sameSelect = []
-        for (const select of option.selection.concat(res.result || [])) {
+    if (option.selection?.length && ['many2many', 'one2many'].includes(option.type)) {
+        const sameSelectId = [];
+        const sameSelect = [];
+        for (const select of (result || []).concat(option.selection)) {
             if (!sameSelectId.includes(select[0])) {
                 sameSelectId.push(select[0])
                 sameSelect.push(select)
@@ -279,8 +163,9 @@ const searchFieldSelection = async (option, query, domain = [], limit) => {
         }
         option.selection = sameSelect
     } else {
-        option.selection = res.result || [];
+        option.selection = result || [];
     }
+    selectionMap[searchUnique] = option.selection;
     return true;
 }
 

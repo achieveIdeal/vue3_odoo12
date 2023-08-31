@@ -26,6 +26,7 @@
                        viewType="tree"
                        :viewFields="viewFields"
                        :disabled="disabled"
+                       :loading="loading"
           />
         </el-form-item>
       </template>
@@ -95,6 +96,9 @@ const props = defineProps({
     default: true
   },
   readonly: {
+    type: Boolean,
+    default: true
+  },  loading: {
     type: Boolean,
     default: true
   },

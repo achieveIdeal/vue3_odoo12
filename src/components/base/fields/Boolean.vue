@@ -1,13 +1,13 @@
 <template>
-  <input type="checkbox" v-model="datas[field]"
+  <input type="checkbox" v-model="data[field]"
          v-if="!(readonly || disabled)"
          @change="fieldOnchange({
               field: field,
-              datas: datas,
-              attributes: attributes,
-              model: params.model,
-              treeOptions: treeOptions,
-              options: options,
+              datas: data,
+              attributes: attrs,
+              model: model,
+              options: viewFields,
+              treeOptions: treeViewFields,
               treeData: treeData
             })"/>
 
@@ -18,8 +18,10 @@
 
 <script lang="ts" setup>
 
-import {defineProps} from "vue/dist/vue";
+import {defineEmits, defineProps} from "vue/dist/vue";
+import {onchangeField} from "../../../tools";
 
+const emits = defineEmits(['fieldOnchange']);
 const props = defineProps({
   field: {
     default: ''
@@ -38,6 +40,12 @@ const props = defineProps({
   option: {
     type: Object,
     default: {}
+  },   viewFields: {
+    type: Object,
+    default: {}
+  }, treeViewFields: {
+    type: Object,
+    default: {}
   },
   readonly: {
     type: Boolean,
@@ -50,8 +58,19 @@ const props = defineProps({
   disabled: {
     type: Boolean,
     default: true
+  },
+  loading: {
+    type: Boolean,
+    default: true
   }
 })
+const fieldOnchange = (params) => {
+  let noChange = false;
+  emits('fieldOnchange', params, () => {
+    noChange = true
+  });
+  !noChange && onchangeField(params)
+}
 </script>
 
 <style lang="less" scoped>

@@ -1,7 +1,7 @@
 <template>
   <div class="file-content form-input">
     <el-upload
-        :class="{'upload-file-edit':parseDomain(option.readonly, datas) || disabled}"
+        :class="{'upload-file-edit':readonly || disabled}"
         ref="upload"
         :data-index="field"
         action="#"
@@ -13,10 +13,10 @@
         :on-exceed="handleExceed(field)"
         :auto-upload="false"
         :on-preview="downLoadFile(datas[field], datas[option.filename])"
-        :disabled="parseDomain(option.readonly, datas)  || disabled"
+        :disabled="readonly  || disabled"
     >
       <template #trigger>
-        <el-button v-if="!(parseDomain(option.readonly, datas) || disabled)" type="primary">选择文件
+        <el-button v-if="!(readonly || disabled)" type="primary">选择文件
         </el-button>
       </template>
     </el-upload>
@@ -25,8 +25,9 @@
 
 <script lang="ts" setup>
 
-import {defineProps} from "vue/dist/vue";
-
+import {defineEmits, defineProps} from "vue/dist/vue";
+import {onchangeField} from "../../../tools";
+const emits= defineEmits(['fieldOnchange']);
 const props = defineProps({
   field: {
     default: ''
@@ -45,6 +46,9 @@ const props = defineProps({
   option: {
     type: Object,
     default: {}
+  }, treeViewFields: {
+    type: Object,
+    default: {}
   },
   readonly: {
     type: Boolean,
@@ -57,8 +61,20 @@ const props = defineProps({
   disabled: {
     type: Boolean,
     default: true
+  },
+  loading: {
+    type: Boolean,
+    default: true
   }
 })
+
+const fieldOnchange = (params) => {
+  let noChange = false;
+  emits('fieldOnchange', params, () => {
+    noChange = true
+  });
+  !noChange && onchangeField(params)
+}
 </script>
 
 <style lang="less" scoped>

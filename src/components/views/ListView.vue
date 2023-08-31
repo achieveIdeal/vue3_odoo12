@@ -17,6 +17,7 @@
         :viewFields="viewFields"
         :formViewInfo="fromViewInfo"
         :disabled="disabled"
+        :loading="loading"
         @getDetailClick="getDetailClick"
     />
   </el-form>
@@ -53,6 +54,9 @@ const props = defineProps({
     type: Boolean,
     default: true
   }, isDialog: {
+    type: Boolean,
+    default: true
+  },loading: {
     type: Boolean,
     default: true
   }

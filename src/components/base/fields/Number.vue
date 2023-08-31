@@ -1,7 +1,7 @@
 <template>
   <el-input-number
       v-if="!(readonly  || disabled)"
-      v-model="datas[field]"
+      v-model="data[field]"
       class="form-input"
       :precision="option.precision"
       controls-position="right"
@@ -9,11 +9,11 @@
       :max="option.max"
       @change="fieldOnchange({
               field: field,
-              datas: datas,
-              attributes: attributes,
-              model: params.model,
-              options: options,
-              treeOptions: treeOptions,
+              datas: data,
+              attributes: attrs,
+              model: model,
+              options: viewFields,
+              treeOptions: treeViewFields,
               treeData: treeData
             })"
   />
@@ -27,6 +27,9 @@
 
 <script lang="ts" setup>
 
+import {onchangeField} from "../../../tools";
+import {defineEmits} from "vue/dist/vue";
+const emits= defineEmits(['fieldOnchange']);
 const props = defineProps({
   field: {
     default: ''
@@ -41,8 +44,14 @@ const props = defineProps({
   }, attrs: {
     type: Object,
     default: {}
+  }, viewFields: {
+    type: Object,
+    default: {}
   },
   option: {
+    type: Object,
+    default: {}
+  }, treeViewFields: {
     type: Object,
     default: {}
   },
@@ -57,8 +66,20 @@ const props = defineProps({
   disabled: {
     type: Boolean,
     default: true
+  },
+  loading: {
+    type: Boolean,
+    default: true
   }
 })
+
+const fieldOnchange = (params) => {
+  let noChange = false;
+  emits('fieldOnchange', params, () => {
+    noChange = true
+  });
+  !noChange && onchangeField(params)
+}
 </script>
 
 <style lang="less" scoped>

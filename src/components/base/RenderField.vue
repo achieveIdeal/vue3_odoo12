@@ -17,16 +17,20 @@
                :model="model"
                :attrs="children.attrs"
                :viewType="viewType"
+               :treeViewFields="treeViewFields"
+               :viewFields="viewFields"
                :field="children.attrs?.name"
                :option="viewFields[children.attrs?.name]"
                :readonly="parseDomain(children.attrs.readonly, data) || viewFields[children.attrs?.name]?.readonly"
                :disabled="disabled"
+               :loading="loading"
     >
       <template v-if="((children.children || []))?.length" v-for="subChildren in (children.children || [])">
         <RenderField
             :children="subChildren"
             :parent="children"
             :viewType="viewType"
+            :treeViewFields="treeViewFields"
             :activeTab="activeTab"
             :data="data"
             :field="subChildren.attrs?.name"
@@ -44,8 +48,10 @@
              viewType="form"
              :field="children.attrs?.name"
              :option="viewFields[children.attrs?.name]"
+             :treeViewFields="treeViewFields"
              :readonly="parseDomain(children.attrs.readonly, data)"
              :disabled="disabled"
+             :loading="loading"
              :arch="children"
              :viewFields="viewFields[children.attrs?.name].props.option.views?.form.fields"
   >
@@ -54,6 +60,7 @@
           :children="subChildren"
           :parent="children"
           :activeTab="activeTab"
+          :treeViewFields="treeViewFields"
           :data="data"
           :viewType="viewType"
           :field="subChildren.attrs?.name"
@@ -71,6 +78,7 @@
              :option="viewFields[children.field]"
              :readonly="parseDomain(children.attrs.readonly, data)"
              :disabled="disabled"
+             :loading="loading"
              :arch="children"
              :action="{res_model:viewFields[children.field].relation, limit:1000,domain:['|',['id', 'in', data[children.field] ||[]],
               [viewFields[children.field].relation_field, '=', data['id']]]}"
@@ -85,6 +93,7 @@
       <RenderField
           :children="subChildren"
           :parent="children"
+          :treeViewFields="treeViewFields"
           :activeTab="activeTab"
           :data="data"
           :viewType="viewType"
@@ -125,6 +134,7 @@
             :parent="children"
             :activeTab="activeTab"
             :data="data"
+            :treeViewFields="treeViewFields"
             :viewType="viewType"
             :field="subChildren.attrs?.name"
             :option="viewFields[subChildren.attrs?.name]"
@@ -163,7 +173,7 @@ const props = defineProps({
   }, activeTab: {
     type: String,
     default: ''
-  },model: {
+  }, model: {
     type: String,
     default: ''
   },
@@ -172,6 +182,10 @@ const props = defineProps({
     default: {}
   },
   viewFields: {
+    type: Object,
+    default: {}
+  },
+  treeViewFields: {
     type: Object,
     default: {}
   },
@@ -184,6 +198,10 @@ const props = defineProps({
     default: {}
   },
   disabled: {
+    type: Boolean,
+    default: true
+  },
+  loading: {
     type: Boolean,
     default: true
   }

@@ -10,17 +10,19 @@
               field: field,
               datas: data,
               attributes: attrs,
-              treeOptions: treeOptions,
+              treeOptions: treeViewFields,
               model: model,
-              options: option,
+              options: viewFields,
               treeData: treeData
             })"
+             @focus="preSearchSelect(option)"
+             @blur="()=>{}"
              :remote-method="searchSelection(option)"
   >
     <el-option
         v-for="item in option.selection"
         :key="item[0]"
-        :disabled="parseDomain(option.readonly, datas)  || disabled"
+        :disabled="readonly  || disabled"
         :label="item[1]"
         :value="item[0]"/>
   </el-select>
@@ -35,7 +37,9 @@
 
 <script lang="ts" setup>
 import {onchangeField, searchFieldSelection} from "../../../tools";
+import {ref} from "vue";
 
+const emits = defineEmits(['fieldOnchange']);
 const props = defineProps({
   field: {
     default: ''
@@ -54,6 +58,12 @@ const props = defineProps({
   option: {
     type: Object,
     default: {}
+  }, viewFields: {
+    type: Object,
+    default: {}
+  }, treeViewFields: {
+    type: Object,
+    default: {}
   },
   readonly: {
     type: Boolean,
@@ -66,22 +76,31 @@ const props = defineProps({
   disabled: {
     type: Boolean,
     default: true
+  },
+  loading: {
+    type: Boolean,
+    default: true
   }
 })
-
-const searchSelection = (field, option: FieldOptionType, datas) => (query: string, w) => {
+const loading = ref(false);
+const searchSelection = (option) => (query: string) => {
   loading.value = true;
-  checkAll.value = false;
-  searchFieldSelection(field, option, query, [], option.limit).then(r => {
+  searchFieldSelection(props.field, option, query, [], 100).then(r => {
     loading.value = false;
-  }, datas);
+  }, props.data);
+}
+const preSearchSelect = async (option) => {
+  loading.value = true;
+  searchFieldSelection(props.field, option, '', [], 100).then(r => {
+    loading.value = false;
+  });
 }
 const fieldOnchange = (params) => {
   let noChange = false;
   emits('fieldOnchange', params, () => {
     noChange = true
   });
-  !noChange && onchangeField(params, checkAll)
+  !noChange && onchangeField(params)
 }
 
 </script>

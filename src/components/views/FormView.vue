@@ -15,7 +15,9 @@
                    :activeTab="activeTab"
                    viewType="form"
                    :disabled="disabled"
+                   :loading="loading"
                    :viewFields="viewFields"
+                   :treeOption="treeOption"
                    @handleButtonClick="buttonClick"
                    @getLineDetailClick="getLineDetailClick"
       />
@@ -56,6 +58,9 @@ const props = defineProps({
   }, isDialog: {
     type: Boolean,
     default: true
+  }, loading: {
+    type: Boolean,
+    default: true
   }
 })
 
@@ -69,6 +74,17 @@ const activeTab = computed(
       }
     }
 )
+
+const treeOption = computed(() => {
+  const viewFields = props.viewFields;
+  const treeOption = {};
+  for (const field of Object.keys(viewFields)) {
+    if (Object.keys(viewFields[field]?.views || {}).length) {
+      treeOption[field] = viewFields[field]?.views?.tree?.fields
+    }
+  }
+  return treeOption
+})
 
 const datas = ref({})
 if (!props.isDialog && !props.data) {
