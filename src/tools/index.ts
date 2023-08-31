@@ -1,20 +1,17 @@
 import {callNames, callOnchange, callFields, callRead, callSearchRead} from "../service/module/call";
-import {
-    RequestParamsType,
-    ModuleDataType,
-    FieldOptionType,
-    OnchangeParamsType,
-    Multiple
-} from "../types";
-
 import {ElMessage} from "element-plus";
 import {initTreeData} from "./init";
+import axios from "axios";
 // 请求数据
-const getRequestParams = (params: ModuleDataType): RequestParamsType => {
+
+const appElement = document.getElementById('app');
+const supplier_id = parseInt(appElement.dataset['supplier_id'] || 0)
+
+const getRequestParams = (params) => {
     let id = params.id instanceof Array && params.id || [params.id];
     return {
         model: params.model,
-        args: [id, params.fields]
+        args: [id, params.fields.concat(Object.keys(params.tables || {}))]
     }
 }
 
@@ -31,7 +28,6 @@ const buildOnchangeSpecs = function (fieldsInfo, treeOption, fields) {
             var field = fieldsInfo[name];
             var key = prefix + name;
             specs[key] = (field.onchange) || "";
-
             if ((treeOption || {})[name]) {
                 generateSpecs(treeOption[name], Object.keys(treeOption[name] || {}), key + '.');
             }
@@ -41,7 +37,7 @@ const buildOnchangeSpecs = function (fieldsInfo, treeOption, fields) {
     return specs;
 }
 
-const onchangeField = async (params: OnchangeParamsType, checkAll) => {
+const onchangeField = async (params, checkAll) => {
     let options = params.options;
     let attributes = params.attributes
     let treeOptions = params.treeOptions;
@@ -52,33 +48,35 @@ const onchangeField = async (params: OnchangeParamsType, checkAll) => {
     for (const treeField of Object.keys(treeData || {})) {
         paramsDatas[treeField] = []
         for (const data of treeData[treeField]) {
-            if (data.id) {
-                paramsDatas[treeField].push([1, data.id, data])
+            const dataId = data.id;
+            if (dataId) {
+                delete data['id'];
+                paramsDatas[treeField].push([1, dataId, data])
             } else {
                 paramsDatas[treeField].push([0, 0, data])
             }
         }
     }
-    if (options[field]?.onchange) {
-        let onchange: { [prop: string]: '' | '1' } = {};
-        let changedData: { [prop: string]: Multiple } = {}
+    if (option[field].onchange) {
+        let onchange;
+        let changedData = {}
         for (let field of Object.keys(paramsDatas || {})) {
             changedData[field] = paramsDatas[field];
         }
         onchange = buildOnchangeSpecs(options, treeOptions, Object.keys(options || {}))
         const model = params.model;
-        let request: RequestParamsType = {
+        const res = await callOnchange({
             model: model,
             method: 'onchange',
             args: [[datas.id || 0], changedData, field, onchange, {
                 'lang': 'zh_CN',
                 'tz': false,
                 'uid': 1,
-                front: true
+                front: true,
+                supplier_id
             }],
             path: model + '/onchange'
-        }
-        const res = await callOnchange(request)
+        })
         if (res.error) {
             ElMessage({
                 message: res.error.data.message,
@@ -88,7 +86,7 @@ const onchangeField = async (params: OnchangeParamsType, checkAll) => {
         }
         const result = res.result;
         const domain = result.domain;
-        const value = result.value
+        const value = result.value;
         if (result.warning) {
             ElMessage({
                 message: result.warning.message,
@@ -104,40 +102,42 @@ const onchangeField = async (params: OnchangeParamsType, checkAll) => {
                 checkAll.value = false;
                 continue
             }
-            datas[changedField] = ''
+            datas[changedField] = '';
         }
         for (let changedField of Object.keys(value || {})) {
             const isChangeLine = value[changedField][0] instanceof Array && value[changedField][0][0] === 5
             if (value[changedField] instanceof Array && !isChangeLine) {
-                options[changedField].selection.push(value[changedField])
-                datas[changedField] = value[changedField][0]
+                options[changedField].selection.push(value[changedField]);
+                datas[changedField] = value[changedField][0];
                 continue
             }
             if (value[changedField] === false && options[changedField].type !== 'boolean') {
-                datas[changedField] = ''
+                datas[changedField] = '';
                 if (['float', 'integer'].indexOf(options[changedField].type) !== -1) {
-                    datas[changedField] = 0
+                    datas[changedField] = 0;
                 }
                 continue
             }
             if (!!Object.keys(treeData || {}).length && Object.keys(treeData || {}).indexOf(changedField) !== -1) {
-                const changeLines = []
-                const originLength = treeData[changedField].length
-                for (let index = 1; index < value[changedField].length; index++) {
-                    changeLines.push(value[changedField][index][2])
+                const changeLines = [];
+                const newLines = value[changedField];
+                datas[changedField] = [];
+                for (let index = 1; index < newLines.length; index++) {
+                    changeLines.push(newLines[index][2]);
                 }
-                treeData[changedField] = changeLines.slice(originLength)
-                initTreeData(null, treeData, treeOptions)
+                treeData[changedField] = changeLines;
+                initTreeData({}, treeData, treeOptions, datas);
                 continue
             }
-            datas[changedField] = value[changedField]
+            datas[changedField] = value[changedField];
         }
     }
     if (params.form?.datas) {
         onchangeField(params.form);
     }
 }
-const loadFormDatas = async (params: ModuleDataType) => {
+
+const getFieldOption = async (params) => {
     let requestParams = getRequestParams(params)
     const res = await callFields(requestParams);
     if (res.error) {
@@ -148,12 +148,31 @@ const loadFormDatas = async (params: ModuleDataType) => {
         return false
     }
     let formFieldsOption = res.result;
-    let treeFieldsOption = {}
+    let treeFieldsOption = {};
     for (let line of Object.keys(params.tables || {})) {
         const result = await callFields(getRequestParams(params.tables[line]));
         treeFieldsOption[line] = result.result;
     }
-    const dataRes = !params.id ? {id: null, result: []} : await callRead(requestParams);
+
+    return {
+        formFieldsOption,
+        treeFieldsOption
+    }
+}
+
+const loadFormData = async (params) => {
+    let requestParams = getRequestParams(params);
+    let treeData = {};
+    let tableDataCountMap = {};
+    let formData = {};
+    if (!params.id) {
+        return {
+            formData,
+            treeData,
+            tableDataCountMap,
+        }
+    }
+    const dataRes = await callRead(requestParams);
     if (dataRes.error) {
         ElMessage({
             message: dataRes.error.data.message,
@@ -161,20 +180,20 @@ const loadFormDatas = async (params: ModuleDataType) => {
         });
         return false
     }
-    let treeData = {}
-    let tableDataCountMap = {}
+
+    formData = dataRes.result[0];
     for (let line of Object.keys(params.tables || {})) {
         let lineParams = params.tables[line] || {};
-        lineParams.id = dataRes.result?.length && dataRes.result[0][line];
+        lineParams.id = dataRes.result?.length && dataRes.result[0][line] || 0;
         let dataResult
         if (lineParams.domain && lineParams.domain.length) {
-            let requestData: RequestParamsType = {
+            let requestData = {
                 model: lineParams.model,
                 fields: lineParams.fields,
                 domain: lineParams.domain.concat([['id', 'in', lineParams.id]]),
                 offset: 0,
                 limit: false,
-                sort: lineParams.sort
+                sort: lineParams.sort || 'id desc'
             }
             const result = await callSearchRead(requestData)
             if (result.error) {
@@ -199,39 +218,25 @@ const loadFormDatas = async (params: ModuleDataType) => {
         treeData[line] = JSON.parse(JSON.stringify(dataResult || {}));
         tableDataCountMap[line] = treeData[line].length || 0
     }
-    let formData = dataRes?.result?.length && JSON.parse(JSON.stringify(dataRes.result[0])) || {};
     if (!Object.keys(formData || {}).length) {
         for (let field of Object.keys(formFieldsOption || {})) {   // 设置空数据
             formData[field] = ''
         }
     }
     return {
-        formFieldsOption,
-        treeFieldsOption,
         formData,
         treeData,
         tableDataCountMap,
     }
 }
-const loadListData = async (params: ModuleDataType) => {
-    let requestParams = getRequestParams(params)
-    const res = await callFields(requestParams);
-    if (res.error) {
-        ElMessage({
-            message: res.error.data.message,
-            type: 'error'
-        });
-        return false
-    }
-    let treeFieldsOption = res.result;
-
-    let requestData: RequestParamsType = {
+const loadListData = async (params) => {
+    let requestData = {
         model: params.model,
         fields: params.fields,
         offset: params.offset || 0,
-        limit: params.limit,
+        limit: params.limit || 20,
         domain: params.domain,
-        sort: params.sort
+        sort: params.sort || 'id desc'
     }
     let dataRes = {}
     if (!params.groupby) {
@@ -247,24 +252,35 @@ const loadListData = async (params: ModuleDataType) => {
     let listData = JSON.parse(JSON.stringify(dataRes?.result?.records || []));
     const count = dataRes?.result?.length || 0;
     return {
-        treeFieldsOption,
         listData,
         count
     }
 }
-const searchFieldSelection = async (option: FieldOptionType, query: string, domain = [], limit) => {
+const searchFieldSelection = async (option, query, domain = [], limit) => {
     const res = await callNames({
         model: option.relation,
         args: [],
         kwargs: {
             'name': query.trim(),
-            'args': option.domain.concat(domain) || [],
+            'args': domain.length ? domain : option.domain.concat(domain) || [],
             'operator': 'ilike',
             'limit': limit || 10,
             'context': {'lang': 'zh_CN', 'tz': false, 'uid': 2, 'front': true, 'is_cus_code': true}
         }
     })
-    option.selection = res.result || [];
+    if (option.selection?.length) {
+        const sameSelectId = []
+        const sameSelect = []
+        for (const select of option.selection.concat(res.result || [])) {
+            if (!sameSelectId.includes(select[0])) {
+                sameSelectId.push(select[0])
+                sameSelect.push(select)
+            }
+        }
+        option.selection = sameSelect
+    } else {
+        option.selection = res.result || [];
+    }
     return true;
 }
 
@@ -291,6 +307,7 @@ const contentTypeMap: Map<string, string> = new Map([
     ['.cab', 'application/vnd.ms-cab-compressed'],
     ['.ttf', 'font/ttf'],
     ['.otf', 'font/otf'],
+    ['.doc', 'application/msword'],
     ['.xls', 'application/vnd.ms-excel'],
     ['.xlsx', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'],
 ]);
@@ -364,7 +381,10 @@ const getDomainVal = (domains, data) => {
             if (field.includes('.')) {
                 const fields = field.split('.');
                 let value = data
-                for (const field of fields) {
+                for (let field of fields) {
+                    if (!isNaN(field)) {
+                        field = parseInt(field)
+                    }
                     value = value[field];
                 }
                 fieldVal = value;
@@ -415,7 +435,7 @@ const parseDomain = (domains, data) => {
     for (let index = length - 1; index >= 0; index--) {
         let domain = domainStack[index];
         if (domain === '|') {
-            if (domainStack[index + 1] !== 'undefined' && domainStack[index + 2] !== 'undefined') {
+            if (typeof domainStack[index + 1] !== 'undefined' && typeof domainStack[index + 2] !== 'undefined') {
                 domain = domainStack[index + 1] || domainStack[index + 2];
                 domainStack.splice(index + 1, 1);
                 domainStack.splice(index + 1, 1);
@@ -426,7 +446,7 @@ const parseDomain = (domains, data) => {
             }
         }
         if (domain === '&') {
-            if (domainStack[index + 1] !== 'undefined' && domainStack[index + 2] !== 'undefined') {
+            if (typeof domainStack[index + 1] !== 'undefined' && typeof domainStack[index + 2] !== 'undefined') {
                 domain = domainStack[index + 1] && domainStack[index + 2];
                 domainStack.splice(index + 1, 1);
                 domainStack.splice(index + 1, 1);
@@ -439,13 +459,280 @@ const parseDomain = (domains, data) => {
     return domainStack.every(item => Boolean(item));
 }
 
+
+const dateFtt = (fmt, date) => {
+    var o = {
+        "M+": date.getMonth() + 1, //月份
+        "d+": date.getDate(), //日
+        "h+": date.getHours(), //小时
+        "m+": date.getMinutes(), //分
+        "s+": date.getSeconds(), //秒
+        "q+": Math.floor((date.getMonth() + 3) / 3), //季度
+        S: date.getMilliseconds(), //毫秒
+    };
+    if (/(y+)/.test(fmt))
+        fmt = fmt.replace(
+            RegExp.$1,
+            (date.getFullYear() + "").substr(4 - RegExp.$1.length)
+        );
+    for (var k in o)
+        if (new RegExp("(" + k + ")").test(fmt))
+            fmt = fmt.replace(
+                RegExp.$1,
+                RegExp.$1.length == 1
+                    ? o[k]
+                    : ("00" + o[k]).substr(("" + o[k]).length)
+            );
+    return fmt;
+}
+
+
+const getDateTypeValue = (type) => {
+    let date = new Date();
+    let startDate = ''
+    let endDate = ''
+    // 今天
+    if (type == 'today') {
+        startDate = date
+        endDate = startDate;
+    } else if (type == 'yesterday') {
+        // 昨天
+        date.setDate(date.getDate() - 1);
+        startDate = date
+        endDate = startDate;
+    } else if (type == 'last_3_days') {
+        // 近三天
+        endDate = new Date();
+        date.setDate(date.getDate() - 2);
+        startDate = date
+    } else if (type == 'this_week') {
+        // 本周
+        const week = date.getDay()
+        //一天的毫秒数
+        const millisecond = 1000 * 60 * 60 * 24
+        //减去的天数
+        const minusDay = week != 0 ? week - 1 : 6
+        //本周 周一
+        startDate = new Date(date.getTime() - minusDay * millisecond)
+        //本周 周日
+        endDate = new Date(date.getTime() + (7 - minusDay - 1) * millisecond)
+
+    } else if (type == 'last_week') {
+        // 上周
+        let weekNum = date.getDay()
+        weekNum = weekNum == 0 ? 7 : weekNum
+        endDate = new Date(date.getTime() - weekNum * 24 * 60 * 60 * 1000)
+        startDate = new Date(date.getTime() - (weekNum + 6) * 24 * 60 * 60 * 1000)
+    } else if (type == 'last_7_days') {
+        // 近7天
+        endDate = new Date()
+        date.setDate(date.getDate() - 6);
+        startDate = date
+    } else if (type == 'last_14_days') {
+        // 近14天
+        endDate = new Date()
+        date.setDate(date.getDate() - 13);
+        startDate = date
+    } else if (type == 'last_30_days') {
+        // 近30天
+        endDate = new Date()
+        date.setDate(date.getDate() - 30);
+        startDate = date
+    } else if (type == 'last_365_days') {
+        // 近365
+        endDate = new Date()
+        date.setDate(date.getDate() - 365);
+        startDate = date
+    } else if (type == 'this_month') {
+        // 本月
+        endDate = new Date(date.getFullYear(), date.getMonth() + 1, 0)
+        startDate = new Date(date.getFullYear(), date.getMonth(), 1)
+    } else if (type == 'last_month') {
+        // 上月
+        endDate = new Date(date.getFullYear(), date.getMonth(), 0)
+        startDate = new Date(date.getFullYear(), date.getMonth() - 1, 1)
+
+    } else if (type == 'this_quarter') {
+        // 本季
+        let month = date.getMonth() + 1;//getMonth返回0-11
+        let year = date.getFullYear();
+        if (month >= 1 && month <= 3) {
+            startDate = new Date(year, 0, 1);
+            endDate = new Date(year, 3, 0);
+        } else if (month >= 4 && month <= 6) {
+            startDate = new Date(year, 3, 1);
+            endDate = new Date(year, 6, 0);
+        } else if (month >= 7 && month <= 9) {
+            startDate = new Date(year, 6, 1);
+            endDate = new Date(year, 9, 0);
+        } else {
+            startDate = new Date(year, 9, 1);
+            endDate = new Date(year, 12, 0);
+        }
+    } else if (type == 'last_quarter') {
+        // 上季
+        let month = date.getMonth() + 1;//getMonth返回0-11
+        let year = date.getFullYear();
+        if (month >= 1 && month <= 3) {
+            startDate = new Date(year - 1, 9, 1);
+            endDate = new Date(year - 1, 12, 0);
+        } else if (month >= 4 && month <= 6) {
+            startDate = new Date(year, 0, 1);
+            endDate = new Date(year, 3, 0);
+        } else if (month >= 7 && month <= 9) {
+            startDate = new Date(year, 3, 1);
+            endDate = new Date(year, 6, 0);
+        } else {
+            startDate = new Date(year, 6, 1);
+            endDate = new Date(year, 9, 0);
+        }
+    } else if (type == 'this_year') {
+        // 本年
+        let year = date.getFullYear();
+        startDate = new Date(year, 0, 1);
+        endDate = new Date(year, 12, 0);
+    } else if (type == 'last_year') {
+        // 上年
+        let year = date.getFullYear();
+        startDate = new Date(year - 1, 0, 1);
+        endDate = new Date(year - 1, 12, 0);
+    }
+    return [startDate, endDate]
+}
+
+
+const downLoadFileBold = async (bold, filename, fileType) => {
+    const blob = new Blob([bold])
+    const downloadElement = document.createElement('a');
+    const href = window.URL.createObjectURL(blob); //创建下载的链接
+    downloadElement.href = href;
+    downloadElement.download = filename + '.' + fileType; //下载后文件名
+    document.body.appendChild(downloadElement);
+    await downloadElement.click(); //点击下载
+    document.body.removeChild(downloadElement); //下载完成移除元素
+    window.URL.revokeObjectURL(href); //释放掉blob对象
+}
+
+const loadActiveAction = (menu) => {
+    if (!!menu.action) {
+        const action = menu.action.split(',');
+        return action[1];
+    } else if (menu.children.length) {
+        loadActiveAction(menu.children[0]);
+    }
+}
+
+const jsonifyStr = (str) => {
+    if (!str) {
+        return 'false'
+    }
+    return str.replaceAll("'", '"').replaceAll("(", '[').replaceAll(")", ']').replaceAll("False", 'false').replaceAll("True", 'true');
+}
+
+const parseElementToJSON = (element) => {
+    const obj = {};
+    // 处理元素节点
+    if (element.nodeType === Node.ELEMENT_NODE) {
+        obj.tag = element.nodeName;
+        obj.attrs = {};
+
+        // 处理属性节点
+        if (element.hasAttributes()) {
+            for (let i = 0; i < element.attributes.length; i++) {
+                const attribute = element.attributes[i];
+                if (attribute.nodeName === 'name') {
+                    obj.name = attribute.nodeValue;
+                } else if (attribute.nodeName === 'model') {
+                    obj.model = attribute.nodeValue;
+                } else if (attribute.nodeName === 'attrs') {
+                    const attrsObj = JSON.parse(jsonifyStr(attribute.nodeValue));
+                    obj.attrs = {...obj.attrs, ...attrsObj};
+                } else {
+                    obj.attrs[attribute.nodeName] = attribute.nodeValue;
+                }
+            }
+        }
+
+        // 处理子节点
+        obj.children = [];
+        if (element.hasChildNodes()) {
+            for (let childNode of element.childNodes) {
+                if (childNode.nodeType === Node.ELEMENT_NODE) {
+                    const childElement = parseElementToJSON(childNode);
+                    obj.children.push(childElement);
+                } else if (childNode.nodeType === Node.TEXT_NODE) {
+                    const text = childNode.nodeValue.trim();
+                    if (text.length) {
+                        obj.text = childNode.nodeValue.trim();
+                    }
+                }
+            }
+        }
+    }
+    return obj;
+}
+
+const readFile = async (filePath) => {
+    const doc = await axios.get('src/xml_views/' + filePath)
+    var parsedXML = new DOMParser().parseFromString(doc.data, "text/xml");
+    const jsonXml = parseElementToJSON(parsedXML.documentElement);
+    return jsonXml.children.map(child => {
+        if (child.tag === "record") {
+            const {children: recordChildren} = child;
+            const nameField = recordChildren.find(c => c.name === "name");
+            const modelField = recordChildren.find(c => c.name === "model");
+            const archField = recordChildren.find(c => c.name === "arch");
+            const res_modelField = recordChildren.find(c => c.name === "res_model");
+            const view_modeField = recordChildren.find(c => c.name === "view_mode");
+            const contextField = recordChildren.find(c => c.name === "context");
+            const domainField = recordChildren.find(c => c.name === "domain");
+            child.model = modelField?.text || res_modelField?.text.trim();
+            child.name = nameField?.text || '';
+            child.children = archField?.children || [];
+            child.view_mode = view_modeField?.text.trim() || 'list,form';
+            child.context = JSON.parse(jsonifyStr(contextField?.text.trim())) || {};
+            child.domain = JSON.parse(jsonifyStr(domainField?.text.trim())) || [];
+            child.view_type = child.children[0]?.tag || 'action';
+        }
+        return child;
+    });
+}
+
+const formatArch = (archRoot) => {
+    if (archRoot.attrs?.modifiers) {
+        archRoot.attrs = {
+            ...archRoot.attrs,
+            ...JSON.parse(archRoot.attrs.modifiers),
+            name: archRoot.attrs.name || archRoot.name,
+        }
+        archRoot.attrs.create = JSON.parse(archRoot.attrs.create || 'true');
+        archRoot.attrs.create = JSON.parse(archRoot.attrs.edit || 'true');
+        archRoot.attrs.create = JSON.parse(archRoot.attrs.delete || 'true');
+        archRoot.attrs.create = JSON.parse(archRoot.attrs.import || 'true');
+        delete archRoot.attrs.modifiers
+        delete archRoot.attrs.attrs
+    }
+    if (archRoot.children?.length) {
+        for (const children of archRoot.children) {
+            formatArch(children)
+        }
+    }
+}
+const parseXMlToJson = (xml_data) => {
+    var parsedXML = new DOMParser().parseFromString(xml_data, "text/xml");
+    const arch = parseElementToJSON(parsedXML.documentElement);
+    formatArch(arch)
+    return arch;
+}
+
+
 export {
-    searchFieldSelection, onchangeField,
-    getFileType, loadFormDatas,
-    base64ToBlobUrl, loadListData,
-    downLoadFile,
+    searchFieldSelection, onchangeField, getDateTypeValue,
+    getFileType, loadFormData, dateFtt, downLoadFileBold,
+    base64ToBlobUrl, loadListData, readFile, parseXMlToJson,
+    downLoadFile, getFieldOption, formatArch,
     encodeFileToBase64,
-    parseDomain
+    parseDomain, loadActiveAction
 }
 
 

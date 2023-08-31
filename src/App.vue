@@ -1,21 +1,26 @@
 <template>
-  <router-view/>
+  <ElConfigProvider :locale="zhCn">
+    <router-view/>
+  </ElConfigProvider>
 </template>
 
 <script setup lang="ts">
 import {provide} from "vue";
 
-provide('supplier_id', parseInt(document.getElementById('app').attributes['data-id']?.value))
+import zhCn from "element-plus/es/locale/lang/zh-cn";
+import {ElConfigProvider} from "element-plus";
 
+const appElement = document.getElementById('app');
+for (const field of Object.keys(appElement.dataset)) {
+  provide(field, appElement.dataset[field]);
+}
 </script>
 
-<style scoped>
+<style>
 * {
   margin: 0;
   padding: 0;
 }
 
-input:disabled {
-  background-color: #fff;
-}
+
 </style>

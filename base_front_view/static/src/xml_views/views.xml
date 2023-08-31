@@ -1,0 +1,149 @@
+<data>
+    <record model="ir.ui.view" id="e2yun_dpsrm_coding_management_tree">
+        <field name="name">赋码单</field>
+        <field name="model">srm.coding</field>
+        <field name="arch" type="xml">
+            <tree delete="0" duplicate="0" default_order="id desc">
+                <field name="id" groups="base.group_no_one"/>
+                <field name="name"/>
+                <field name="code"/>
+                <field name="default_code"/>
+                <field name="product_name"/>
+                <field name="product_uom"/>
+                <field name="if_print"/>
+                <field name="date_from"/>
+                <field name="date_to"/>
+                <field name="produce_code"/>
+                <!-- <field name="remark"/> -->
+                <field name="factory_id"/>
+                <field name="supplier_id"/>
+                <field name="manufacturer_id"/>
+                <field name="expiration_date"/>
+                <field name="package_type" invisible="1"/>
+                <field name="amount"/>
+                <field name="print_amount"/>
+                <field name="amount_per"/>
+                <field name="amount_current"/>
+                <field name="write_date"/>
+            </tree>
+        </field>
+    </record>
+
+    <record model="ir.ui.view" id="e2yun_dpsrm_coding_management_form">
+        <field name="name">赋码单</field>
+        <field name="model">srm.coding</field>
+        <field name="arch" type="xml">
+            <form delete="0" duplicate="0" ext_edit="if_print == False and active == True">
+                <header>
+                    <button name="create_code" string="生成托盘码" class="oe_highlight" type="object"
+                            attrs="{'invisible': ['|', ('if_print', '=', True), ('active', '=', False)]}"/>
+                    <button name="code_print" string="打印" class="oe_highlight" type="object"
+                            attrs="{'invisible': ['|', ('active', '=', False), ('name', '=', False)]}"/>
+                    <button name="old_data_computing" string="旧数据补全" type="object" groups="base.group_no_one"/>
+                    <!--                        <button name="test_qrcode" string="test_qrcode" type="object" groups="base.group_no_one"/>-->
+                </header>
+                <sheet>
+                    <div class="oe_title">
+                        <label for="name" string="单据编号"/>
+                        <h1>
+                            <field name="name" readonly="1" force_save="1"/>
+                        </h1>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="default_code" required="1"/>
+                            <field name="product_name" required="1" force_save="1"/>
+                            <field name="product_uom" required="1"/>
+                            <field name="date_from" required="1"/>
+                            <field name="date_to" required="1"/>
+                            <field name="produce_code" required="1"/>
+                            <field name="code" readonly="1" force_save="1"/>
+                            <field name="remark"/>
+                        </group>
+                        <group>
+                            <field name="factory_id" required="1"/>
+                            <field name="supplier_id" required="1"
+                                   domain="[['supplier', '=' , True],['parent_id', '=', False]]"/>
+                            <field name="manufacturer_id" required="1"/>
+                            <field name="expiration_date" required="1"/>
+                            <field name="amount" required="1"/>
+                            <field name="amount_per" required="1"/>
+                            <field name="amount_current" help="单张标签所覆盖的货物总数" readonly="1" force_save="1"/>
+                            <field name="print_amount" readonly="1" force_save="1"/>
+                            <field name="package_type" invisible="1"/>
+                            <field name="active" invisible='1'/>
+                            <field name="if_print" readonly="1" force_save="1"/>
+                        </group>
+
+                        <!-- <label for="remark" string="备注"/> -->
+                        <!-- <field name="remark"/> -->
+                    </group>
+                    <group>
+                        <group>
+                            <field name="qr_code" widget="image" groups="base.group_no_one"/>
+                            <field name="label_bar_code" widget="image" groups="base.group_no_one"/>
+                        </group>
+                    </group>
+
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record model="ir.ui.view" id="e2yun_dpsrm_coding_management_search">
+        <field name="name">赋码单search</field>
+        <field name="model">srm.coding</field>
+        <field name="arch" type="xml">
+            <search string="e2yun_dpsrm_coding_management_search">
+                <field name="name"/>
+                <field name="default_code"/>
+                <field name="produce_code"/>
+                <field name="factory_id"/>
+                <field name="supplier_id"/>
+                <separator/>
+                <filter string="已归档数据" name="inactive" domain="[('active','=',False)]"/>
+                <filter string="无编码或未打印" name="without_code_or_print"
+                        domain="['|', ('if_print', '=', False), ('name', '=', False)]"/>
+                <group expand="1" string="Group by">
+                    <filter string="供应商" name="group_by_supplier_id" context="{'group_by': 'supplier_id'}"/>
+                    <filter string="单据编号" name="group_by_name" context="{'group_by': 'name'}"/>
+                    <filter string="料号" name="group_by_default_code" context="{'group_by': 'default_code'}"/>
+                    <filter string="基地" name="group_by_factory_id" context="{'group_by': 'factory_id'}"/>
+                    <filter string="是否已打印" name="group_by_if_print" context="{'group_by': 'if_print'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record model="ir.actions.act_window" id="e2yun_dpsrm_coding_management_action">
+        <field name="name">赋码单action</field>
+        <field name="res_model">srm.coding</field>
+        <field name="view_mode">tree,form</field>
+        <field name="context">{'search_default_without_code_or_print': 1, 'search_default_group_by_supplier_id': 1,
+            'search_default_group_by_name': 1}
+        </field>
+    </record>
+
+    <menuitem name="赋码管理" id="e2yun_dpsrm_coding_management_menu"/>
+
+    <menuitem name="赋码单1" id="e2yun_dpsrm_coding_management_menu_1"
+              parent="e2yun_dpsrm_coding_management_menu"
+              action="e2yun_dpsrm_coding_management_action"/>
+
+    <menuitem name="赋码单3" id="e2yun_dpsrm_coding_management_menu_3"
+              parent="e2yun_dpsrm_coding_management_menu_4"
+              action="e2yun_dpsrm_coding_management_action"/>
+    <menuitem name="赋码单4" id="e2yun_dpsrm_coding_management_menu_4"
+              parent="e2yun_dpsrm_coding_management_menu_1"
+              action="e2yun_dpsrm_coding_management_action"/>
+
+    <menuitem name="赋码单2" id="e2yun_dpsrm_coding_management_menu_2"
+              parent="e2yun_dpsrm_coding_management_menu_3"
+              action="e2yun_dpsrm_coding_management_action"/>
+
+    <menuitem name="赋码单5" id="e2yun_dpsrm_coding_management_menu_5"
+              parent="e2yun_dpsrm_coding_management_menu_4"
+              action="e2yun_dpsrm_coding_management_action"/>
+
+
+</data>

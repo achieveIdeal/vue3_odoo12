@@ -1,7 +1,10 @@
 import Request from "../index";
-import {RequestParamsType} from "../../types/index";
 
-export function callButton(data: RequestParamsType) {
+
+const appElement = document.getElementById('app');
+const supplier_id = parseInt(appElement.dataset['supplier_id'] || 0)
+
+export function callButton(data) {
     data.args.push({'front': true})
     return Request.post({
         url: '/front/dataset/call_button',
@@ -18,7 +21,7 @@ export function callButton(data: RequestParamsType) {
 }
 
 
-export function callFields(data: RequestParamsType) {
+export function callFields(data) {
     return Request.post({
         url: '/front/dataset/fields_get',
         data: {
@@ -28,13 +31,17 @@ export function callFields(data: RequestParamsType) {
                 model: data.model,
                 method: 'fields_get',
                 args: data.args,
-                kwargs: data.kwargs || {'context': {'lang': 'zh_CN', 'tz': false, 'uid': 2, 'front': true}}
+                kwargs: data.kwargs || {'context': {'lang': 'zh_CN', 'tz': false, 'uid': 2, 'front': true, supplier_id}}
             }
         }
     })
 }
 
-export function callKw(data: RequestParamsType) {
+export function callKw(data) {
+    data.kwargs = {
+        ...data.kwargs,
+        'context': {'lang': 'zh_CN', 'tz': false, 'uid': 2, 'front': true, supplier_id, ...data.kwargs.context}
+    }
     return Request.post({
         url: '/front/dataset/call_kw/',
         data: {
@@ -44,23 +51,23 @@ export function callKw(data: RequestParamsType) {
                 model: data.model,
                 method: data.method,
                 args: data.args,
-                kwargs: data.kwargs || {'context': {'lang': 'zh_CN', 'tz': false, 'uid': 2, 'front': true}}
+                kwargs: data.kwargs
             }
         }
     })
 }
 
 
-export function callNames(data: RequestParamsType) {
+export function callNames(data) {
     return callKw({
         model: data.model,
         method: 'name_search',
         args: data.args,
-        kwargs: data.kwargs || {'context': {'lang': 'zh_CN', 'tz': false, 'uid': 2, 'front': true}}
+        kwargs: data.kwargs || {'context': {'lang': 'zh_CN', 'tz': false, 'uid': 2, 'front': true, supplier_id}}
     })
 }
 
-export function callOnchange(data: RequestParamsType) {
+export function callOnchange(data) {
     return callKw({
         model: data.model,
         method: 'onchange',
@@ -70,17 +77,17 @@ export function callOnchange(data: RequestParamsType) {
 }
 
 
-export function callRead(data: RequestParamsType) {
+export function callRead(data) {
     return callKw({
         model: data.model,
         method: 'read',
         args: data.args,
-        kwargs: data.kwargs || {'context': {'lang': 'zh_CN', 'tz': false, 'uid': 2, 'front': true}}
+        kwargs: data.kwargs || {'context': {'lang': 'zh_CN', 'tz': false, 'uid': 2, 'front': true, supplier_id}}
     })
 }
 
 
-export function callSearchRead(data: RequestParamsType) {
+export function callSearchRead(data) {
     return Request.post({
         url: '/front/dataset/search_read/',
         data: {
@@ -104,8 +111,8 @@ export function callReadGroup(data) {
         method: 'read_group',
         args: [],
         kwargs: {
-            'context':
-                {'lang': 'zh_CN', 'tz': false, 'uid': 2, 'front': true},
+            context:
+                {'lang': 'zh_CN', 'tz': false, 'uid': 2, 'front': true, supplier_id},
             domain: data.domain,
             fields: data.fields,
             groupby: data.groupby,
@@ -115,21 +122,13 @@ export function callReadGroup(data) {
     })
 }
 
-export function callFile(data: RequestParamsType, loading) {
+export function callFile(data, loading) {
     const fileType = data.converter.split('-')[1];
-    Request.get({
+    return Request.get({
         url: '/front/report/' + data.converter.split('-')[1] + '/' + data.reportname + '/' + data.docids,
         responseType: 'blob'
     }).then(async res => {  // 请求成功后处理流
-        const blob = new Blob([res])
-        const downloadElement = document.createElement('a');
-        const href = window.URL.createObjectURL(blob); //创建下载的链接
-        downloadElement.href = href;
-        downloadElement.download = data.name + '.' + fileType; //下载后文件名
-        document.body.appendChild(downloadElement);
-        await downloadElement.click(); //点击下载
-        document.body.removeChild(downloadElement); //下载完成移除元素
-        window.URL.revokeObjectURL(href); //释放掉blob对象
+        downLoadFileBold(res, data.name, fileType)
         loading.value = false;
     })
 }
@@ -147,5 +146,112 @@ export function callCreate(params, data) {
         model: params.model,
         method: 'create',
         args: [data]
+    })
+}
+
+const compact = (array) => {
+    var index = -1,
+        length = array == null ? 0 : array.length,
+        resIndex = 0,
+        result = [];
+
+    while (++index < length) {
+        var value = array[index];
+        if (value) {
+            result[resIndex++] = value;
+        }
+    }
+    return result;
+}
+
+const xml_to_json = (node, strip_whitespace) => {
+    switch (node.nodeType) {
+        case 9:
+            return xml_to_json(node.documentElement, strip_whitespace);
+        case 3:
+        case 4:
+            return (strip_whitespace && node.data.trim() === '') ? undefined : node.data;
+        case 1:
+            var attrs = {};
+
+            var attributes = node.attributes;
+            for (var i = 0, l = attributes.length; i < l; i++) {
+                var attr = attributes.item(i);
+                attrs[attr.name] = attr.value;
+            }
+
+            for (const key of ['domain', 'filter_domain', 'context', 'default_get']) {
+                if (attrs[key]) {
+                    try {
+                        attrs[key] = JSON.parse(attrs[key]);
+                    } catch (e) {
+                    }
+                }
+            }
+            const nodeArray = [];
+            for (let i = 0; i < node.childNodes.length; i++) {
+                nodeArray[i] = xml_to_json(node.childNodes[i], strip_whitespace);
+            }
+            return {
+                tag: node.tagName.toLowerCase(),
+                attrs: attrs,
+                children: compact(nodeArray),
+            };
+    }
+}
+
+export const callViews = (model, views) => {
+    return callKw({
+        model: model,
+        method: 'load_views',
+        kwargs: {
+            options: {
+                toolbar: true,
+                load_filters: true
+            },
+            views: views,
+            context: {}
+        },
+        args: []
+    }).then(result => {
+        const fvs = [];
+        const fieldsViews = result.fields_views;
+        for (const fieldsViewName of Object.keys(fieldsViews)) {
+            const fieldsView = fieldsViews[fieldsViewName];
+            var fv = {...fieldsView};
+            var parsedXML = new DOMParser().parseFromString(fieldsView.arch, "text/xml");
+            var doc = parsedXML.documentElement
+            var stripWhitespaces = doc.nodeName.toLowerCase() !== 'kanban';
+            fv.arch = xml_to_json(doc, stripWhitespaces);
+            fv.viewFields = {...fv.viewFields, ...fv.fields};
+            fvs.push(fv)
+        }
+        return fvs
+    })
+}
+
+export const callAction = (action_id) => {
+    return Request.post({
+        url: '/front/action/load',
+        data: {
+            'jsonrpc': "2.0",
+            'method': 'call',
+            'params': {
+                action_id: action_id,
+            }
+        }
+    })
+}
+
+export const loadMenus = (parent_id) => {
+    return callKw({
+        model: 'ir.ui.menu',
+        method: 'load_menus',
+        args: [parent_id || false],
+        kwargs: {
+            context: {
+                front: true
+            }
+        }
     })
 }
