@@ -1,4 +1,4 @@
-# Logs
+ # Logs
 logs
 *.log
 npm-debug.log*
@@ -9,6 +9,7 @@ lerna-debug.log*
 
 node_modules
 dist
+base_front_view
 dist-ssr
 *.local
 
