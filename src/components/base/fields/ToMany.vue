@@ -1,15 +1,17 @@
 <template>
-  <el-select v-if="!(readonly || disabled)" class="form-input"
-             v-model="data[field]"
-             placeholder="请选择"
-             multiple
-             collapse-tags
-             :loading="loading"
-             collapse-tags-tooltip
-             clearable
-             filterable
-             remote
-             @change="fieldOnchange({
+  <template v-if="!Object.keys(treeViewFields).includes(field)">
+
+    <el-select v-if="!(readonly || disabled)" class="form-input"
+               v-model="data[field]"
+               placeholder="请选择"
+               multiple
+               collapse-tags
+               :loading="loading"
+               collapse-tags-tooltip
+               clearable
+               filterable
+               remote
+               @change="fieldOnchange({
               field: field,
               attributes: attrs,
               datas: data,
@@ -18,29 +20,30 @@
               options: viewFields,
               treeData: treeData
             })"
-             @focus="preSearchSelect(options)"
-             @blur="()=>{}"
-             :remote-method="searchSelection(option)"
-  >
-    <el-checkbox
-        class="check-all-box"
-        :id="'check-all-box' + field"
-        v-model="checkAll"
-        @change="handleCheckAllChange(field)"
-    />
-    <label :for="'check-all-box' + field">全选</label>
-    <el-option
-        v-for="item in option.selection"
-        :key="item[0]"
-        :label="item[1]"
-        :value="item[0]"
-    ></el-option>
-  </el-select>
-  <span :style="option.style"
-        :class="{'item-text': viewType==='form'}"
-        v-else>{{
-      (option.selection || []).filter(r => (data[field] || []).includes(r[0])).map(r => r[1]).join(', ')
-    }}</span>
+               @focus="preSearchSelect(options)"
+               @blur="()=>{}"
+               :remote-method="searchSelection(option)"
+    >
+      <el-checkbox
+          class="check-all-box"
+          :id="'check-all-box' + field"
+          v-model="checkAll"
+          @change="handleCheckAllChange(field)"
+      />
+      <label :for="'check-all-box' + field">全选</label>
+      <el-option
+          v-for="item in option.selection"
+          :key="item[0]"
+          :label="item[1]"
+          :value="item[0]"
+      ></el-option>
+    </el-select>
+    <span :style="option.style"
+          :class="{'item-text': viewType==='form'}"
+          v-else>{{
+        (option.selection || []).filter(r => (data[field] || []).includes(r[0])).map(r => r[1]).join(', ')
+      }}</span>
+  </template>
   <slot></slot>
 </template>
 
@@ -58,6 +61,10 @@ const props = defineProps({
     default: 'form'
   },
   data: {
+    type: Object,
+    default: {}
+  },
+  treeData: {
     type: Object,
     default: {}
   }, attrs: {

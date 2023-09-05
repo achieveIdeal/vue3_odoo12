@@ -26,7 +26,7 @@
 
   <span :style="option.style" :class="{'item-text': viewType==='form'}"
         v-else>{{
-      !data[field + '_count'] ? ((option.selection || []).find(r => r[0] === data[field]) || [''])[1] : data[field]
+      ((option.selection || []).find(r => r[0] === data[field]) || ['　'])[1]
     }}</span>
   <slot></slot>
 </template>
@@ -46,6 +46,9 @@ const props = defineProps({
     default: 'form'
   },
   data: {
+    type: Object,
+    default: {}
+  }, treeData: {
     type: Object,
     default: {}
   }, attrs: {
@@ -79,7 +82,6 @@ const props = defineProps({
     default: true
   }
 })
-
 const fieldOnchange = (params) => {
   let noChange = false;
   emits('fieldOnchange', params, () => {

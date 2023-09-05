@@ -1,33 +1,34 @@
 <template>
-  <el-table :data="datas" ref="listTable" stripe
+  <el-table :data="treeData[treeField]" ref="listTable" stripe
             lazy
             fit
-            :height="'calc(100vh - 150px)'"
+            @selection-change="selectClick"
             row-key="id">
     <el-table-column fixed type="selection" width="55" :reserve-selection="true"/>
     <el-table-column
         v-for="children in arch.children"
         :key="children.attrs.name"
         show-overflow-tooltip
-        :label="viewFields[children.attrs.name || children.name]?.string">
+        :label="viewFields[children.attrs.name]?.string">
       <template #header>
-        <span>{{ viewFields[children.attrs.name || children.name]?.string }}</span>
+        <span>{{ viewFields[children.attrs.name]?.string }}</span>
       </template>
       <template #default="scoped">
         <el-form-item :prop="[scoped.$index, children.attrs.name]" class="table-form-item"
-                      style="width: 100%;"
+                      style="position:relative;"
                       :rules="viewFields[children.attrs.name]?.rules||[{
                       required: parseDomain(viewFields[children.attrs.name]?.required, scoped.row),
                       message: viewFields[children.attrs.name]?.string + '不能为空!',
-                      trigger: 'blur',
+                      trigger: 'blur'
                     }]">
-          <RenderField :children="children"
-                       :data="scoped.row"
-                       viewType="tree"
-                       :viewFields="viewFields"
-                       :disabled="disabled"
-                       :loading="loading"
-          />
+            <RenderField :children="children"
+                         :model="model"
+                         :data="scoped.row"
+                         viewType="tree"
+                         :viewFields="viewFields"
+                         :disabled="disabled"
+                         :loading="loading"
+            />
         </el-form-item>
       </template>
     </el-table-column>
@@ -37,12 +38,18 @@
         <el-button link
                    size="small"
                    type="primary"
-                   @click="getDetail(scoped.row, scoped.$index, {form: ''})"
+                   @click="getDetail(scoped.row, scoped.$index, formViewInfo)"
         >查看详情
         </el-button>
       </template>
     </el-table-column>
   </el-table>
+  <el-button
+      class="mt-4"
+      style="width: 100%"
+      @click="onAddItem(treeField)"
+  >添加一行
+  </el-button>
   <el-pagination
       hide-on-single-page
       v-model:current-page="currentPage"
@@ -64,21 +71,18 @@
 import RenderField from '../base/RenderField.vue'
 import {defineEmits, defineExpose, defineProps, ref} from "vue";
 import {parseDomain} from "../../tools";
-import {callSearchRead} from "../../service/module/call";
-import {initListData} from "../../tools/init";
 
 const props = defineProps({
   action: {
     type: Object,
     default: {},
   },
-  from_data: {
+  fromData: {
     type: Object,
     default: {},
-  },
-  res_datas: {
-    type: Array,
-    default: []
+  }, treeData: {
+    type: Object,
+    default: {},
   },
   arch: {
     type: Object || String,
@@ -98,13 +102,16 @@ const props = defineProps({
   readonly: {
     type: Boolean,
     default: true
-  },  loading: {
+  }, loading: {
     type: Boolean,
     default: true
   },
-  field: {
+  treeField: {
     type: String,
-    default: '',
+    default: 'self',
+  }, field: {
+    type: String,
+    default: 'self',
   },
   model: {
     type: String,
@@ -115,27 +122,15 @@ const props = defineProps({
     default: {}
   }
 })
-const datas = ref(props.res_datas)
 const currentPage = ref(1);
 const pageSize = ref(props.action.limit);
 const dataLimit = ref(props.action.limit);
-const dataCount = ref(0);
+const dataCount = ref((props.treeData[props.treeField] || []).length);
 
-!datas.value.length && callSearchRead({
-  model: props.model,
-  fields: Object.keys(props.viewFields),
-  offset: 0,
-  limit: props.action.limit,
-  domain: props.action.domain || [],
-}).then(async res => {
-  dataCount.value = res.length || 0;
-  datas.value = await initListData(res.records, props.viewFields);
-})
+const emits = defineEmits(['getDetailClick', 'selectClick'])
 
-const emits = defineEmits(['getDetailClick'])
-
-const getDetail = async (data, index) => {
-  emits('getDetailClick', data, index, props.formViewInfo)
+const getDetail = async (data, index,formViewInfo) => {
+  emits('getDetailClick', data, index, formViewInfo)
 }
 
 const handleSizeChange = () => {
@@ -144,12 +139,27 @@ const handleSizeChange = () => {
 const handleCurrentChange = () => {
 
 }
+const onAddItem = (treeField) => {
 
-defineExpose({
-  // 选中行
-})
+}
+
+const selectClick = (rows) => {
+  emits('selectClick', rows)
+}
+
+defineExpose({})
 </script>
 
 <style lang="less" scoped>
+.el-table{
+  width: 100%;
+
+}
+.el-table__header-wrapper table,.el-table__body-wrapper table{
+  width: 100% !important;
+}
+.el-table__body, .el-table__footer, .el-table__header{
+  table-layout: auto;
+}
 
 </style>

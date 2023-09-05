@@ -40,7 +40,7 @@ export function callFields(data) {
 export function callKw(data) {
     data.kwargs = {
         ...data.kwargs,
-        'context': {'lang': 'zh_CN', 'tz': false, 'uid': 2, 'front': true, supplier_id, ...data.kwargs.context}
+        'context': {'lang': 'zh_CN', 'tz': false, 'uid': 2, 'front': true, supplier_id, ...data.kwargs?.context}
     }
     return Request.post({
         url: '/front/dataset/call_kw/',

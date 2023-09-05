@@ -49,7 +49,7 @@ const onchangeField = async (params) => {
             }
         }
     }
-    if (option[field].onchange) {
+    if (options[field].onchange) {
         let onchange;
         let changedData = {}
         for (let field of Object.keys(paramsDatas || {})) {

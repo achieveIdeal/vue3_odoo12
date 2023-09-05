@@ -3,38 +3,12 @@
   <PagerHeader :title="action.name" v-if="!isDialog"/>
   <el-header class="controller-panel">
     <!--    <MenuView v-if="hasMenus" :menus="menus" @menuClick="menuClick"/>-->
-    <div>
-      <el-button v-if="disabled && parseDomain(arch.attrs.edit, data)" type="primary"
-                 @click="(e)=> editClick(e,data)">
-        创建
-      </el-button>
-      <el-button v-if="disabled && parseDomain(arch.attrs.edit, data)" type="primary"
-                 @click="(e)=> createClick(e,data)">
-        编辑
-      </el-button>
-      <el-button v-if="disabled && parseDomain(arch.attrs.edit, data)" type="success"
-                 @click="(e)=> importClick(e,data)">
-        导入
-      </el-button>
-      <el-button v-if="disabled && parseDomain(arch.attrs.edit, data)" type="danger"
-                 @click="(e)=> deleteClick(e,data)">
-        删除
-      </el-button>
-      <template v-if="!disabled">
-        <el-button type="primary" @click.prevent="handleSave">
-          保存
-        </el-button>
-        <el-button @click.prevent="handleCancel">
-          取消
-        </el-button>
-      </template>
-    </div>
   </el-header>
   <el-container>
     <el-main>
       <FormView ref="formview_ref" v-if="curViewType==='form' &&Object.keys(arch).length"
                 :arch="arch"
-                :data="data"
+                :data="res_data"
                 :isDialog="isDialog"
                 :disabled="disabled"
                 :loading="loading"
@@ -42,10 +16,10 @@
                 :viewFields="fieldViewInfo.viewFields"
                 @buttonClick="buttonClick"
                 @getLineDetailClick="getLineDetailClick"
+                @dataLoadedCallback="dataLoadedCallback"
       />
       <ListView ref="listview_ref" v-if="curViewType==='tree' && Object.keys(arch).length" :action="action"
                 :arch="arch"
-                :data="data"
                 :disabled="disabled"
                 :loading="loading"
                 :model="fieldViewInfo.base_model"
@@ -53,6 +27,8 @@
                 :formViewInfo="formViewInfo"
                 :viewFields="fieldViewInfo.viewFields"
                 @getDetailClick="getDetailClick"
+                @selectClick="selectClick"
+                @dataLoadedCallback="dataLoadedCallback"
       />
     </el-main>
   </el-container>
@@ -77,7 +53,7 @@ const props = defineProps({
   }, action: {
     type: Object,
     default: {}
-  }, data: {
+  }, res_data: {
     type: Object,
   },
   curViewType: {
@@ -98,15 +74,14 @@ const props = defineProps({
     default: false
   },
 })
-const attrs = props.arch.attrs;
 
-attrs['create'] = JSON.parse(attrs['create'] || 'true');
-attrs['edit'] = JSON.parse(attrs['edit'] || 'true');
-attrs['delete'] = JSON.parse(attrs['delete'] || 'true');
-attrs['import'] = JSON.parse(attrs['import'] || 'true');
+const data = ref('')
+const attrs = ref(props.arch.attrs);
+const dataLoadedCallback = (datas) => {
+  props.curViewType === 'form' ? data.value = datas : null;
+}
 
-
-const emits = defineEmits(['buttonClick', 'getDetailClick', 'getLineDetailClick'])
+const emits = defineEmits(['buttonClick', 'getDetailClick', 'getLineDetailClick', 'selectClick'])
 
 const buttonClick = (button, model, datas) => {
   emits('buttonClick', button, model, datas)
@@ -139,9 +114,20 @@ const handleSave = () => {
 const handleCancel = () => {
   disabled.value = true
 }
+const selectClick = (rows) => {
+  const dataVal = {};
+  for (const row of rows) {
+    for (const field of Object.keys(row)) {
+      !dataVal[field] ? dataVal[field] = [] : '';
+      dataVal[field].push(row[field])
+    }
+  }
+  data.value = dataVal;
+  emits('selectClick', rows)
+}
 
 defineExpose({
-  formview_ref, listview_ref
+  formview_ref, listview_ref, data
 })
 </script>
 

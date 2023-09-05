@@ -12,7 +12,7 @@
               treeData: treeData
             })"
             :maxlength="option.maxlength"/>
-  <span :style="option.style" :class="{'item-text': viewType==='form'}" v-else>{{ data[field] }}</span>
+  <span :style="option.style" :class="{'item-text': viewType==='form'}" v-else>{{ data[field] || '　' }}</span>
   <slot></slot>
 
 </template>
@@ -34,6 +34,9 @@ const props = defineProps({
     default: 'form'
   },
   data: {
+    type: Object,
+    default: {}
+  },  treeData: {
     type: Object,
     default: {}
   }, attrs: {

@@ -1,22 +1,15 @@
 <template>
-  <el-form-item v-if="children.tag==='field'" style="width: 100%" :prop="children.attrs?.name"
-                :label="viewType==='form' && props.activeTab !== children.attrs?.name? viewFields[children.attrs?.name]?.string:''">
-    <template v-if="Object.keys(viewFields[children.attrs?.name]?.views|| {}).length">
-    <span style="display: none;">   {{
-        children.children = [{
-          ...parseXMlToJson(viewFields[children.attrs?.name]?.views?.tree?.arch),
-          form: parseXMlToJson(viewFields[children.attrs?.name]?.views?.form?.arch),
-          field: children.attrs?.name,
-          string: viewFields[children.attrs?.name]?.string
-        }]
-      }}</span>
-    </template>
+  <el-form-item v-if="children.tag==='field'"
+                :style="{width: !Object.keys(treeViewFields).includes(children.attrs?.name)?'30%':'100%'}"
+                :prop="children.attrs?.name"
+                :label="viewType==='form' && !Object.keys(treeViewFields).includes(children.attrs?.name)? viewFields[children.attrs?.name]?.string:''">
     <component :is="FIELD_VIEW_MAP[viewFields[children.attrs?.name]?.type]"
                v-if="!(parseDomain(children.attrs?.invisible, data) ||  viewFields[children.attrs?.name]?.invisible)"
                :data="data"
                :model="model"
                :attrs="children.attrs"
                :viewType="viewType"
+               :treeData="treeData"
                :treeViewFields="treeViewFields"
                :viewFields="viewFields"
                :field="children.attrs?.name"
@@ -33,6 +26,8 @@
             :treeViewFields="treeViewFields"
             :activeTab="activeTab"
             :data="data"
+            :model="model"
+            :treeData="treeData"
             :field="subChildren.attrs?.name"
             :option="viewFields[subChildren.attrs?.name]"
             :readonly="parseDomain(subChildren.attrs?.readonly, data)"
@@ -45,7 +40,9 @@
   </el-form-item>
   <component v-else-if="children.tag==='form'" :is="FormView"
              :data="data"
+             :treeData="treeData"
              viewType="form"
+             :model="model"
              :field="children.attrs?.name"
              :option="viewFields[children.attrs?.name]"
              :treeViewFields="treeViewFields"
@@ -62,6 +59,8 @@
           :activeTab="activeTab"
           :treeViewFields="treeViewFields"
           :data="data"
+          :model="model"
+          :treeData="treeData"
           :viewType="viewType"
           :field="subChildren.attrs?.name"
           :option="viewFields[subChildren.attrs?.name]"
@@ -72,20 +71,22 @@
     </template>
   </component>
   <component v-else-if="children.tag==='tree'" :is="TableView"
-             :from_data="data"
-             :field="children.field"
+             :fromData="data"
+             :treeField="children.field"
              :model="viewFields[children.field].relation"
              :option="viewFields[children.field]"
              :readonly="parseDomain(children.attrs.readonly, data)"
              :disabled="disabled"
              :loading="loading"
+             :treeData="treeData"
              :arch="children"
              :action="{res_model:viewFields[children.field].relation, limit:1000,domain:['|',['id', 'in', data[children.field] ||[]],
               [viewFields[children.field].relation_field, '=', data['id']]]}"
              :viewFields="viewFields[children.field]?.views?.tree?.fields"
              :formViewInfo="{
-               arch: children.form,
-               viewFields: viewFields[children.field]?.views?.form?.fields
+                arch:children.formViewInfo.arch,
+                base_model: viewFields[children.field].relation,
+                viewFields:children.formViewInfo?.fields
              }"
              @getDetailClick="getLineDetailClick"
   >
@@ -96,6 +97,8 @@
           :treeViewFields="treeViewFields"
           :activeTab="activeTab"
           :data="data"
+          :model="model"
+          :treeData="treeData"
           :viewType="viewType"
           :field="subChildren.attrs?.name"
           :option="viewFields[subChildren.attrs?.name]"
@@ -119,11 +122,13 @@
       <template v-if="(children.children || []).filter(r=>r.tag!=='button')?.length"
                 v-for="subChildren in (children.children || []).filter(r=>r.tag!=='button')">
         <el-steps v-if="subChildren.attrs?.name==='state'"
-                  :active="viewFields['state'].selection.map(r=>r[0]).indexOf(data['state'])" align-right
+                  :active="viewFields['state'].selection.map(r=>r[0]).indexOf(data['state'])" align-center
                   class="state-bar"
                   simple>
-          <el-step class="state-bar-item" v-for="state in viewFields[subChildren.attrs?.name].selection" simple
-                   :title="state[1]"/>
+          <el-step class="state-bar-item" v-for="state in viewFields[subChildren.attrs?.name].selection"
+                   :title="state[1]">
+            <template #icon></template>
+          </el-step>
         </el-steps>
         <template v-else-if="!subChildren.tag">
           {{ subChildren }}
@@ -133,7 +138,9 @@
             :children="subChildren"
             :parent="children"
             :activeTab="activeTab"
+            :model="model"
             :data="data"
+            :treeData="treeData"
             :treeViewFields="treeViewFields"
             :viewType="viewType"
             :field="subChildren.attrs?.name"
@@ -156,7 +163,6 @@ import TableView from '../views/TableView.vue'
 import FormView from '../views/FormView.vue'
 import {parseDomain} from "../../tools";
 import {useRoute} from "vue-router";
-import {parseXMlToJson} from '../../tools'
 import {ElTabPane} from "element-plus";
 
 
@@ -178,6 +184,9 @@ const props = defineProps({
     default: ''
   },
   parent: {
+    type: Object,
+    default: {}
+  }, treeData: {
     type: Object,
     default: {}
   },
@@ -218,15 +227,11 @@ const createComponent = (arch, parent) => {
         newProps.style = {
           ...newProps.style,
           textAlign: 'left',
-          display: 'flex',
-          justifyContent: 'space-around'
         };
       }
       if (tag === 'group' && parent.children?.length) {
         newProps.style = {
           ...newProps.style,
-          textAlign: 'left',
-          display: 'flex',
           flexDirection: 'column',
           padding: '10px',
         };
@@ -234,9 +239,8 @@ const createComponent = (arch, parent) => {
       if (tag === 'header') {
         newProps.style = {
           ...newProps.style,
-          textAlign: 'left',
           display: 'flex',
-          borderBottom: '1px solid #343434',
+          borderBottom: '1px solid #ced4da',
           alignItems: 'center',
           justifyContent: 'space-between'
         };
@@ -252,6 +256,11 @@ const createComponent = (arch, parent) => {
         );
       }
       if (tag === 'page') {
+        newProps.style = {
+          ...newProps.style,
+          position: 'relative',
+          width: '100%'
+        };
         return () => createVNode(
             ElTabPane,
             {...newProps, label: arch.attrs.string, name: arch.children[0].attrs.name},
@@ -289,8 +298,17 @@ const getLineDetailClick = (data, index, formViewInfo) => {
   background-color: #fff;
 }
 
+.state-bar :deep(.el-step__title) {
+  font-size: 12px;
+}
+
 .btn-group {
   margin-left: 10px;
+}
+
+.group-container {
+  display: flex;
+  justify-content: space-around;
 }
 
 .el-tab-pane {

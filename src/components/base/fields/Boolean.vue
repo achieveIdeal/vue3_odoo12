@@ -33,6 +33,9 @@ const props = defineProps({
   data: {
     type: Object,
     default: {}
+  },   treeData: {
+    type: Object,
+    default: {}
   }, attrs: {
     type: Object,
     default: {}

@@ -4,4 +4,13 @@
     margin: 0 auto;
     text-align: center;
 }
+/* el-table 宽度自适应 */
+.elTable{width: 100%;}
+.elTable/deep/ .el-table__header-wrapper table,
+.elTable/deep/ .el-table__body-wrapper table {width: 100% !important;}
+.elTable /deep/ .el-table__body,
+.elTable /deep/ .el-table__footer,
+.elTable /deep/ .el-table__header {table-layout: auto;}
+.elTable /deep/ .el-table__empty-block,
+.elTable/deep/ .el-table__body { width: 100% !important; }
 

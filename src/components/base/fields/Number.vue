@@ -29,7 +29,8 @@
 
 import {onchangeField} from "../../../tools";
 import {defineEmits} from "vue/dist/vue";
-const emits= defineEmits(['fieldOnchange']);
+
+const emits = defineEmits(['fieldOnchange']);
 const props = defineProps({
   field: {
     default: ''
@@ -39,6 +40,9 @@ const props = defineProps({
     default: 'form'
   },
   data: {
+    type: Object,
+    default: {}
+  }, treeData: {
     type: Object,
     default: {}
   }, attrs: {
@@ -87,6 +91,6 @@ const fieldOnchange = (params) => {
   overflow: hidden;
   width: 100%;
   text-overflow: ellipsis;
-    text-align: left;
+  text-align: left;
 }
 </style>
