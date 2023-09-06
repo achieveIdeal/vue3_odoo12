@@ -70,7 +70,7 @@
                 <select class="input filter-item" v-model="curDateRangeField"
                         @change="dateRangeFieldChange">
                   <option v-for="field of dateFields" :key="field" :value="field" class="filter-item">
-                    {{ searcher.searchoption[field].string }}
+                    {{ searcher.searchOptions[field]?.string }}
                   </option>
                 </select>
               </div>
@@ -113,15 +113,18 @@ import {Search, Check} from "@element-plus/icons-vue";
 import {dateFtt, getDateTypeValue} from "../../tools";
 
 const props = defineProps({
-  searcher: {
+  searchViewInfo: {
     type: Object,
     default: {
-      searchOptions: {}
     }
   },
-  groupby: {
-    type: Object,
-    default: []
+  isDialog: {
+    type: Boolean,
+    default: false
+  },
+  model: {
+    type: String,
+    default: ''
   },
   groupbyDefault: {
     type: Object,
@@ -129,6 +132,8 @@ const props = defineProps({
   }
 })
 
+const searcher = {}
+const groupby = []
 
 const dateStart = ref(dateFtt("yyyy-MM-dd", new Date()))
 const dateEnd = ref(dateFtt("yyyy-MM-dd", new Date()))
@@ -202,6 +207,26 @@ const checkedGroupItem = ref([]);
 const curDateRangeField = ref('')
 const curDateRangeVal = ref('')
 
+const searchFields = [];
+
+const parseSearchViewInfo = (searcher)=>{
+  const arch = searcher.arch;
+  const searchFields = [];
+  const filterFields = [];
+  const fieldsInfo = searcher.viewFields;
+  for(const child of arch.children){
+    const field = child.attrs.name
+    if(child.tag==='field'){
+      searchFields.push(fieldsInfo[field])
+    }
+    if(child.tag==='filter'){
+      console.log(child);
+    }
+  }
+}
+
+parseSearchViewInfo(props.searchViewInfo)
+
 const getDomain = () => {
   let domain = []
   for (let searchFacet of searchFacets.value) {
@@ -211,11 +236,11 @@ const getDomain = () => {
     const field = searchFacet.field;
     let operate = 'ilike'
     if (!value || value instanceof Array && !value.length) {
-      if (props.searcher?.searchoption[field].type !== 'boolean') {
+      if (props.searcher?.searchOptions[field]?.type !== 'boolean') {
         continue
       }
     }
-    if (props.searcher?.searchoption[field].type === 'selection') {
+    if (props.searcher?.searchOptions[field]?.type === 'selection') {
       operate = '=';
     }
     if (isDate) {
@@ -252,6 +277,7 @@ const getDomain = () => {
 }
 
 const doSearch = () => {
+  sessionStorage.setItem(props.model + 'searchFacets', JSON.stringify(searchFacets.value));
   const groupbys = searchFacets.value.filter(r => r.groupby).map(r => r.groupby);
   if (groupbys?.length) {
     emits('groupbyClick', groupbys)
@@ -262,7 +288,7 @@ const doSearch = () => {
 
 
 onMounted(() => {
-  const searchOptions = props.searcher.searchOptions || [];
+  const searchOptions = props.searchViewInfo.viewFields || [];
   const fields = Object.keys(searchOptions);
   if (fields.length) {
     let hasDefault = false;
@@ -304,7 +330,7 @@ onMounted(() => {
           }
         }
       }
-      if (props.groupby.indexOf(field) !== -1) {
+      if (groupby.indexOf(field) !== -1) {
         groupbyOptions.value.push({
           groupby: field,
           text: fieldOption.string,
@@ -315,24 +341,24 @@ onMounted(() => {
       if (!fieldOption.searchType) {
         const searchItem = {
           field: field,
-          text: [searchoption[field].default],
-          string: searchoption[field].string,
-          value: [searchoption[field].default],
+          text: [searchOptions[field]?.default],
+          string: searchOptions[field]?.string,
+          value: [searchOptions[field]?.default],
         }
         searchItems.value.push(searchItem)
       }
-      if (searchoption[field].default) {  // 默认值必须是数组
-        checkedFilterItem.value = checkedFilterItem.value.concat(searchoption[field].default)
+      if (searchOptions[field]?.default) {  // 默认值必须是数组
+        checkedFilterItem.value = checkedFilterItem.value.concat(searchOptions[field]?.default)
         hasDefault = true;
-        let text = searchoption[field].default;
+        let text = searchOptions[field]?.default;
         if (fieldOption.type === 'selection') {
           text = fieldOption.selection.filter(r => text.indexOf(r[0]) !== -1).map(r => r[1]);
 
         }
         searchFacets.value.push({
           field: field,
-          string: searchoption[field].string,
-          value: searchoption[field].default,
+          string: searchOptions[field]?.string,
+          value: searchOptions[field]?.default,
           text: text
         })
       }
@@ -496,6 +522,7 @@ const searchItemClick = (searchItem) => {
   if (!existItem?.field) {
     searchFacets.value.push({...searchItem});
   } else {
+    console.log(existItem.value);
     existItem.value = existItem.value.concat(searchItem.value);
     existItem.text = existItem.text.concat(searchItem.text);
   }
@@ -534,6 +561,13 @@ document.onclick = e => {
 defineExpose({
   getDomain, searchFacets
 })
+
+let store_searchFacets = JSON.parse(sessionStorage.getItem(props.model + 'searchFacets'));
+console.log(store_searchFacets);
+if (!props.isDialog && store_searchFacets) {
+  searchFacets.value = store_searchFacets;
+}
+
 </script>
 
 <style lang="less" scoped>
@@ -649,11 +683,11 @@ defineExpose({
 
     .searchview_autocomplete {
       position: absolute;
-      top:70%;
+      top: 70%;
       left: auto;
       bottom: auto;
       right: auto;
-      width:50%;
+      width: 50%;
       padding: 5px;
       z-index: 2;
     }

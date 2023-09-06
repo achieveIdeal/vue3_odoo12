@@ -1,5 +1,5 @@
 <template>
-  <el-dialog v-model="dialogVisible" :title="actionDialog.name || ''"
+  <el-dialog v-model="dialogVisible" :title="actionDialog.name || ''" draggable
              @close="(e)=>closeDialog(e, index)">
     <RecordView
         :isDialog="true"

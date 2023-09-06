@@ -102,7 +102,7 @@ const formatArch = async (arch) => {
         formView.arch = typeof formArch === "string" ? parseXMlToJson(props.viewFields[children.attrs?.name]?.views?.form?.arch) : treeArch;
         formView.base_model = model
       } else {
-        const res = await callKw({
+        const res = await callKw({   // 若为定义form,请求后端获取form
           model: model,
           method: 'load_views',
           args: [[[false, 'form']]]
@@ -118,7 +118,7 @@ const formatArch = async (arch) => {
         treeView.arch = typeof treeArch === "string" ? parseXMlToJson(props.viewFields[children.attrs?.name]?.views?.tree?.arch) : treeArch;
         treeView.base_model = model
       } else {
-        const res = await callKw({
+        const res = await callKw({  // 若为定义tree,请求后端获取tree
           model: model,
           method: 'load_views',
           args: [[[false, 'tree']]]
@@ -141,15 +141,14 @@ const formatArch = async (arch) => {
   }
 }
 
+formatArch(props.arch)
 
-onMounted(async () => {
-  formatArch(props.arch)
-})
 
-const datas = ref({});
-const treeData = ref({})
+const datas = ref({});  // 抬头数据
+const treeData = ref({})  // 表格数据
+
 const emits = defineEmits(['buttonClick', 'getLineDetailClick', 'dataLoadedCallback']);
-if (!props.data) {
+if (!props.data) {   // 加载详情时，不需要请求后端获取抬头数据
   callRead({
     model: props.model,
     args: [parseInt(id), Object.keys(props.viewFields || {})],
@@ -201,9 +200,6 @@ defineExpose({
 </script>
 
 <style lang="less">
-.item-text {
-  border-bottom: 1px solid #eef1fa;
-}
 
 .el-form-item__content {
   min-width: 220px;

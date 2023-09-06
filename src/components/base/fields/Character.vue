@@ -12,7 +12,8 @@
               treeData: treeData
             })"
             :maxlength="option.maxlength"/>
-  <span :style="option.style" :class="{'item-text': viewType==='form'}" v-else>{{ data[field] || '　' }}</span>
+  <span :style="option.style" class="item-text" :class="{'border-bottom':  viewType==='form'}"
+        v-else>{{ data[field] || '　' }}</span>
   <slot></slot>
 
 </template>
@@ -36,13 +37,13 @@ const props = defineProps({
   data: {
     type: Object,
     default: {}
-  },  treeData: {
+  }, treeData: {
     type: Object,
     default: {}
   }, attrs: {
     type: Object,
     default: {}
-  },viewFields: {
+  }, viewFields: {
     type: Object,
     default: {}
   },
@@ -85,5 +86,9 @@ const fieldOnchange = (params) => {
   width: 100%;
   text-overflow: ellipsis;
   text-align: left;
+}
+
+.border-bottom {
+  border-bottom: 1px solid #eef1fa;
 }
 </style>

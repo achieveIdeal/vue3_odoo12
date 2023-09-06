@@ -25,6 +25,7 @@
       :curViewType="curViewType"
       :fieldViewInfo="fieldViewInfo"
       :formViewInfo="formViewInfo"
+      :searchViewInfo="searchViewInfo"
       @getDetailClick="getDetailClick"
       @getLineDetailClick="getLineDetailClick"
       @buttonClick="buttonClick"
@@ -67,7 +68,7 @@ const dialogVisible = ref(false);
 const loadAction = async (action_id, is_button) => {
   const action = await callAction(action_id);
   if (action.res_model) {
-    const views = await callViews(action.res_model, action.views)
+    const views = await callViews(action.res_model, action.views.concat([[false, 'search']]))
     let viewType = curViewType;
     if (is_button) {
       viewType = action.view_mode;
@@ -78,6 +79,7 @@ const loadAction = async (action_id, is_button) => {
     const treeViewInfo = views.find(r => r.type === 'tree' || r.type === 'list');
     const arch = fieldViewInfo.arch
     formatArch(arch)
+    console.log(searchViewInfo);
     return {
       action,
       viewType,

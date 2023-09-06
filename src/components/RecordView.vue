@@ -3,6 +3,8 @@
   <PagerHeader :title="action.name" v-if="!isDialog"/>
   <el-header class="controller-panel">
     <!--    <MenuView v-if="hasMenus" :menus="menus" @menuClick="menuClick"/>-->
+    <ButtonView/>
+    <SearchView v-if="curViewType==='tree'" :searchViewInfo="searchViewInfo"/>
   </el-header>
   <el-container>
     <el-main>
@@ -37,10 +39,11 @@
 
 <script lang="ts" setup>
 import PagerHeader from '../components/views/PageHeader.vue'
-import {defineEmits, defineExpose, defineProps, onMounted, ref} from "vue";
+import {defineEmits, defineExpose, defineProps, ref} from "vue";
 import ListView from "./views/ListView.vue";
 import FormView from "./views/FormView.vue";
-import {parseDomain} from "../tools";
+import SearchView from '../components/views/SearchView.vue'
+import ButtonView from "./views/ButtonView.vue";
 
 const loading = ref(false);
 const listview_ref = ref('');
@@ -75,6 +78,7 @@ const props = defineProps({
   },
 })
 
+console.log(props.fieldViewInfo);
 const data = ref('')
 const attrs = ref(props.arch.attrs);
 const dataLoadedCallback = (datas) => {

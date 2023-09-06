@@ -14,7 +14,7 @@
         :model="model"
         :arch="arch"
         :viewFields="viewFields"
-        :formViewInfo="fromViewInfo"
+        :formViewInfo="formViewInfo"
         :disabled="disabled"
         :loading="loading"
         @getDetailClick="getDetailClick"
@@ -44,7 +44,7 @@ const props = defineProps({
   viewFields: {
     type: Object,
     default: {}
-  }, fromViewInfo: {
+  }, formViewInfo: {
     type: Object,
     default: {}
   },

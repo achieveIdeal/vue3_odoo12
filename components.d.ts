@@ -9,6 +9,7 @@ declare module 'vue' {
   export interface GlobalComponents {
     Attachment: typeof import('./src/components/base/fields/Attachment.vue')['default']
     Boolean: typeof import('./src/components/base/fields/Boolean.vue')['default']
+    ButtonView: typeof import('./src/components/views/ButtonView.vue')['default']
     Character: typeof import('./src/components/base/fields/Character.vue')['default']
     DialogView: typeof import('./src/components/views/DialogView.vue')['default']
     ElButton: typeof import('element-plus/es')['ElButton']
@@ -18,6 +19,7 @@ declare module 'vue' {
     ElForm: typeof import('element-plus/es')['ElForm']
     ElFormItem: typeof import('element-plus/es')['ElFormItem']
     ElHeader: typeof import('element-plus/es')['ElHeader']
+    ElIcon: typeof import('element-plus/es')['ElIcon']
     ElInput: typeof import('element-plus/es')['ElInput']
     ElInputNumber: typeof import('element-plus/es')['ElInputNumber']
     ElMain: typeof import('element-plus/es')['ElMain']

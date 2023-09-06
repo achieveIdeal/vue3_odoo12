@@ -24,7 +24,7 @@
         :value="item[0]"/>
   </el-select>
 
-  <span :style="option.style" :class="{'item-text': viewType==='form'}"
+  <span :style="option.style"  class="item-text" :class="{'border-bottom':  viewType==='form'}"
         v-else>{{
       ((option.selection || []).find(r => r[0] === data[field]) || ['　'])[1]
     }}</span>
@@ -97,5 +97,8 @@ const fieldOnchange = (params) => {
   width: 100%;
   text-overflow: ellipsis;
   text-align: left;
+}
+.border-bottom {
+    border-bottom: 1px solid #eef1fa;
 }
 </style>

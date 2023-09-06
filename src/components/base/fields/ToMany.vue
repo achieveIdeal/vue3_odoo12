@@ -39,7 +39,7 @@
       ></el-option>
     </el-select>
     <span :style="option.style"
-          :class="{'item-text': viewType==='form'}"
+          class="item-text" :class="{'border-bottom':  viewType==='form'}"
           v-else>{{
         (option.selection || []).filter(r => (data[field] || []).includes(r[0])).map(r => r[1]).join(', ')
       }}</span>
@@ -130,5 +130,8 @@ const fieldOnchange = (params) => {
   width: 100%;
   text-overflow: ellipsis;
   text-align: left;
+}
+.border-bottom {
+    border-bottom: 1px solid #eef1fa;
 }
 </style>

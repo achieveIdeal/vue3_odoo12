@@ -18,7 +18,7 @@
             })"
   />
 
-  <span :style="option.style" :class="{'item-text': viewType==='form'}"
+  <span :style="option.style"  class="item-text" :class="{'border-bottom':  viewType==='form'}"
         v-else>{{
       (data[field] || 0).toFixed(option.precision)
     }}
@@ -92,5 +92,8 @@ const fieldOnchange = (params) => {
   width: 100%;
   text-overflow: ellipsis;
   text-align: left;
+}
+.border-bottom {
+    border-bottom: 1px solid #eef1fa;
 }
 </style>
