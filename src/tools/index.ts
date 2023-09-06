@@ -610,7 +610,6 @@ const parseXMlToJson = (xml_data) => {
     return arch;
 }
 
-
 export {
     searchFieldSelection, onchangeField, getDateTypeValue,
     getFileType, loadFormData, dateFtt, downLoadFileBold,

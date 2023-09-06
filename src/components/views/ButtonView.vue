@@ -2,7 +2,7 @@
   <el-form-item class="btn-container">
     <template v-for="button in buttons.buttonOptions" :key="button">
       <template v-if="(button.showType || []).indexOf(params.type) !== -1
-     && !parseDomain(button.attributes?.invisible, params.type === 'form'?formData:listData.length && listData[0]||{} ) && !button.attributes?.noRowInvisible">
+     && !parseDomain(button.attributes?.invisible,data) && !button.attributes?.noRowInvisible">
         <template v-if="button.type==='edit'">
           <template v-if="disabled">
             <el-button class="el-button--primary" @click.prevent="handleEdit">
@@ -92,12 +92,9 @@ const props = defineProps({
     type: Object,
     default: {}
   },
-  formData: {
+  data: {
     type: Object,
     default: {}
-  }, listData: {
-    type: Array,
-    default: []
   }
 })
 
@@ -128,7 +125,7 @@ const handleObject = function (name) {
 }
 const handleCreate = function () {
   router.push({
-    name: props.params.name,
+    path: props.params.name,
     query: {
       id: 0
     }
@@ -143,7 +140,7 @@ const handleDownTemplate = (template) => {
   if (template) {
     location.href = template
   } else {
-   ElMessage({
+    ElMessage({
       message: '请指定模板资源路径!',
       type: 'error'
     })

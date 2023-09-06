@@ -1,47 +1,14 @@
 <template>
-  <MainView :action="'e2yun_xw_account_order.srm_account_order_action'"/>
+  <MainView :action="'e2yun_xw_account_order.srm_account_order_action'" :extras="extras"/>
 </template>
 
 <script lang="ts" setup>
 import MainView from "../components/MainView.vue";
-
+import {inject, ref, reactive} from "vue";
+import {dateFtt} from "../tools";
 
 const supplier_id = parseInt(inject('supplier_id') || 0);
-const supplier_name = inject('supplier_name');
-const cancelDialogVisible = ref(false);
 const loading = ref(false);
-const params = reactive({
-  title: '对账单',
-  name: 'account_order',
-  width: '30%',
-  domain: [['partner_id', '=', supplier_id]],
-  model: 'srm.account.order',
-  fields:
-      ['name', 'company_id', 'partner_id', 'purchase_organize_id', 'stock_warehouse_id',
-        'account_tax_id', 'currency_id', 'invoice_type', 'date_from',
-        'date_end', 'attachment_name', 'attachment', 'account_lines', 'state',
-        'invoice_lines', 'price_total_adjust_limit_total'
-      ],
-  tables: {
-    account_lines: {
-      totalTitle: '总计(扣减前):',
-      title: '对账明细',
-      fields: ['id','product_id', 'product_name', 'product_uom', 'price_unit', 'price_unit_tax', 'voucher_qty', 'price_uom',
-        'purchase_id', 'purchase_line_id', 'bedat', 'price_total', 'price_total_tax_adjust', 'price_total_tax', 'tax_rate',
-        'date_done', 'voucher_code', 'voucher_item', 'voucher_year', 'factory_id', 'can_delete', 'vouchers_synchronize_data_id'
-      ],
-      model: 'srm.account.order.line'
-    },
-    invoice_lines: {
-      totalTitle: '发票合计:',
-      limit: 500,
-      import_fields: ['name', 'price_tax', 'tax_amount', 'invoice_date'],
-      title: '开票行',
-      model: 'srm.account.invoice.line',
-      fields: ['name', 'price_tax', 'tax_amount', 'invoice_date'],
-    }
-  }
-})
 
 const extras = {
   buttons: [{
@@ -94,9 +61,7 @@ const extras = {
   attributes: {
     account_lines: {
       unadd: true,
-      // undel: [['account_lines.can_delete', '!=', true]],
       readonly: [['state', 'not in', ['', 'draft']]],
-      uniqueField: 'voucher_code',
       fields: {
         invisible: ['can_delete', 'vouchers_synchronize_data_id'],
         readonly: '_all_',
@@ -116,7 +81,8 @@ const extras = {
           sum: true
         },
         price_total: {
-          sum: true
+          sum: true,
+          precision: 2
         },
         price_unit: {
           precision: 2
@@ -145,9 +111,9 @@ const extras = {
         }
       }
     },
-    price_total_adjust_limit_total:{
+    price_total_adjust_limit_total: {
       invisible: [['state', 'in', ['', 'draft']]],
-      sum:true
+      sum: true
     },
     attachment: {
       filename: 'attachment_name',
@@ -180,11 +146,8 @@ const extras = {
     date_end: {
       readonly: [['state', 'not in', ['', 'draft']]],
     },
-    name: {
-    },
-    partner_id: {
-      default: [supplier_id, supplier_name]
-    }
+    name: {},
+    partner_id: {}
   },
   search_fields: {
     name: {},

@@ -14,6 +14,7 @@
                    :data="datas"
                    :treeData="treeData"
                    :model="model"
+                   :fields="fields"
                    :activeTab="activeTab"
                    viewType="form"
                    :disabled="disabled"
@@ -36,7 +37,7 @@ import RenderField from '../../components/base/RenderField.vue'
 
 import {useRoute} from "vue-router";
 import {parseXMlToJson} from "../../tools";
-import {initListData} from "../../tools/init";
+import {initListData, setFormAttribute, setTreeAttribute} from "../../tools/init";
 
 
 const route = useRoute();
@@ -50,6 +51,8 @@ const props = defineProps({
     type: Object,
     default: {}
   }, data: {
+    type: Object,
+  }, extras: {
     type: Object,
   },
   viewFields: {
@@ -68,6 +71,7 @@ const props = defineProps({
   }
 })
 
+const fields = ref([]);
 const activeTab = computed(
     () => {
       const viewFields = props.viewFields
@@ -93,6 +97,7 @@ const treeViewFields = computed(() => {
 const formatArch = async (arch) => {
   for (const children of arch.children) {
     if (Object.keys(props.viewFields[children.attrs?.name]?.views || {}).length) {
+      console.log(props.viewFields[children.attrs?.name]?.views);
       let formView = props.viewFields[children.attrs?.name]?.views?.form;
       let treeView = props.viewFields[children.attrs?.name]?.views?.tree;
       const model = props.viewFields[children.attrs?.name].relation;
@@ -101,7 +106,8 @@ const formatArch = async (arch) => {
       if (formArch) {
         formView.arch = typeof formArch === "string" ? parseXMlToJson(props.viewFields[children.attrs?.name]?.views?.form?.arch) : treeArch;
         formView.base_model = model
-      } else {
+      }
+      else {
         const res = await callKw({   // 若为定义form,请求后端获取form
           model: model,
           method: 'load_views',
@@ -124,9 +130,9 @@ const formatArch = async (arch) => {
           args: [[[false, 'tree']]]
         })
         treeView = {
-          ...res,
+          ...res.fields_views.tree,
           base_model: model,
-          arch: parseXMlToJson(res.arch)
+          arch: parseXMlToJson(res.fields_views.tree.arch)
         }
         props.viewFields[children.attrs.name].views.tree = treeView
       }
@@ -137,16 +143,41 @@ const formatArch = async (arch) => {
         string: props.viewFields[children.attrs?.name]?.string
       }]
     }
-    children.children && formatArch(children)
+    children.children && await formatArch(children)
   }
 }
 
-formatArch(props.arch)
+onMounted(async () => {
+  fields.value = await getFields();
+})
+const getFields = async () => {
+  const arch = props.arch;
+  await formatArch(arch)
+  const fields = {self: []};
+  const recursion = (arch, parent) => {
+    const treeFields = []
+    for (const children of arch.children) {
+      if (arch.tag === 'tree') {
+        treeFields.push(children.attrs.name)
+      } else if (children.tag === 'field') {
+        fields.self.push(children.attrs.name)
+      }
+      recursion(children, arch)
+    }
+    if (arch.tag === 'tree') {
+      fields[parent.attrs.name] = treeFields
+    }
+  }
+  recursion(arch)
+  return fields
+}
 
 
 const datas = ref({});  // 抬头数据
 const treeData = ref({})  // 表格数据
-
+if (props.extras) {
+  setFormAttribute(props.extras, props.viewFields);
+}
 const emits = defineEmits(['buttonClick', 'getLineDetailClick', 'dataLoadedCallback']);
 if (!props.data) {   // 加载详情时，不需要请求后端获取抬头数据
   callRead({
@@ -155,6 +186,7 @@ if (!props.data) {   // 加载详情时，不需要请求后端获取抬头数�
   }).then(async res => {
     datas.value = res[0];
     for (const treeField of Object.keys(treeViewFields.value || {})) {
+      setTreeAttribute(treeField, props.extras, treeViewFields.value);
       callSearchRead({
         model: props.viewFields[treeField].relation,
         fields: Object.keys(treeViewFields.value[treeField]),
@@ -171,6 +203,7 @@ if (!props.data) {   // 加载详情时，不需要请求后端获取抬头数�
 } else {
   datas.value = props.data;
   for (const treeField of Object.keys(treeViewFields.value || {})) {
+    setTreeAttribute(treeField, props.extras, treeViewFields.value);
     callSearchRead({
       model: props.viewFields[treeField].relation,
       fields: Object.keys(treeViewFields.value[treeField]),

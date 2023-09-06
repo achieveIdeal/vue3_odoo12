@@ -12,6 +12,7 @@
         :action="action"
         :treeData="treeData"
         :model="model"
+        :fields="fields['self']"
         :arch="arch"
         :viewFields="viewFields"
         :formViewInfo="formViewInfo"
@@ -24,10 +25,11 @@
 </template>
 
 <script lang="ts" setup>
-import {defineEmits, defineExpose, defineProps, onMounted, ref} from "vue";
-import {callRead, callSearchRead} from "../../service/module/call";
-import {initListData} from "../../tools/init";
+import {defineEmits, defineExpose, defineProps, computed, ref} from "vue";
+import {callSearchRead} from "../../service/module/call";
+import {initListData, setFormAttribute} from "../../tools/init";
 import TableView from './TableView.vue'
+import {formatArch} from "../../tools";
 
 const props = defineProps({
   model: {
@@ -36,6 +38,8 @@ const props = defineProps({
   }, action: {
     type: Object,
     default: {},
+  }, extras: {
+    type: Object,
   },
   arch: {
     type: Object || String,
@@ -59,11 +63,34 @@ const props = defineProps({
     default: true
   }
 })
-const emits = defineEmits(['getDetailClick', 'selectClick','dataLoadedCallback'])
+const emits = defineEmits(['getDetailClick', 'selectClick', 'dataLoadedCallback'])
 
 const tableview_ref = ref('')
 const dataCount = ref(0);
 const treeData = ref({})
+
+const fields = computed(() => {
+  const arch = props.arch;
+  const fields = {self: []};
+  const recursion = (arch) => {
+    for (const children of arch.children) {
+      if (children.tag === 'field') {
+        fields.self.push(children.attrs.name)
+      }
+      if (children.children.length) {
+        recursion(children)
+      }
+    }
+  }
+  recursion(arch)
+  return fields
+})
+fields.value.then(res => {
+  console.log(res);
+});
+if (props.extras) {
+  setFormAttribute(props.extras, props.viewFields)
+}
 callSearchRead({
   model: props.model,
   fields: Object.keys(props.viewFields),

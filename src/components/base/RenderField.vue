@@ -1,45 +1,45 @@
 <template>
-  <span v-if="children.tag==='field'">
-    <el-form-item
-        v-if="!(parseDomain(children.attrs?.invisible, data) ||  viewFields[children.attrs?.name]?.invisible) "
-        :style="{width: !Object.keys(treeViewFields).includes(children.attrs?.name)?'30%':'100%'}"
-        :prop="children.attrs?.name"
-        :label="viewType==='form' && !Object.keys(treeViewFields).includes(children.attrs?.name)? viewFields[children.attrs?.name]?.string:''">
-      <component :is="FIELD_VIEW_MAP[viewFields[children.attrs?.name]?.type]"
-                 :data="data"
-                 :model="model"
-                 :attrs="children.attrs"
-                 :viewType="viewType"
-                 :treeData="treeData"
-                 :treeViewFields="treeViewFields"
-                 :viewFields="viewFields"
-                 :field="children.attrs?.name"
-                 :option="viewFields[children.attrs?.name]"
-                 :readonly="parseDomain(children.attrs.readonly, data) || viewFields[children.attrs?.name]?.readonly"
-                 :disabled="disabled"
-                 :loading="loading"
-      >
-        <template v-if="((children.children || []))?.length" v-for="subChildren in (children.children || [])">
-          <RenderField
-              :children="subChildren"
-              :parent="children"
-              :viewType="viewType"
-              :treeViewFields="treeViewFields"
-              :activeTab="activeTab"
-              :data="data"
-              :model="model"
-              :treeData="treeData"
-              :field="subChildren.attrs?.name"
-              :option="viewFields[subChildren.attrs?.name]"
-              :readonly="parseDomain(subChildren.attrs?.readonly, data)"
-              :disabled="disabled"
-              :viewFields="viewFields"
-              @getLineDetailClick="getLineDetailClick"
-          />
-        </template>
-      </component>
-    </el-form-item>
-  </span>
+  <el-form-item
+      v-if="
+      !(parseDomain(viewFields[children.attrs?.name]?.invisible || children.attrs?.invisible, data)||children.attrs?.invisible) && children.tag==='field'"
+      :style="{width: !Object.keys(treeViewFields).includes(children.attrs?.name)?'30%':'100%'}"
+      :prop="children.attrs?.name"
+      :label="viewType==='form' && !Object.keys(treeViewFields).includes(children.attrs?.name)? viewFields[children.attrs?.name]?.string:''">
+    <component :is="FIELD_VIEW_MAP[viewFields[children.attrs?.name]?.type]"
+               :data="data"
+               :model="model"
+               :attrs="children.attrs"
+               :viewType="viewType"
+               :treeData="treeData"
+               :treeViewFields="treeViewFields"
+               :viewFields="viewFields"
+               :field="children.attrs?.name"
+               :option="viewFields[children.attrs?.name]"
+               :readonly="parseDomain(viewFields[children.attrs?.name]?.readonly||children.attrs.readonly, data)"
+               :disabled="disabled"
+               :loading="loading"
+    >
+      <template v-if="((children.children || []))?.length" v-for="subChildren in (children.children || [])">
+        <RenderField
+            :children="subChildren"
+            :parent="children"
+            :viewType="viewType"
+            :treeViewFields="treeViewFields"
+            :activeTab="activeTab"
+            :data="data"
+            :model="model"
+            :fields="fields"
+            :treeData="treeData"
+            :field="subChildren.attrs?.name"
+            :option="viewFields[subChildren.attrs?.name]"
+            :readonly="parseDomain(subChildren.attrs?.readonly, data)"
+            :disabled="disabled"
+            :viewFields="viewFields"
+            @getLineDetailClick="getLineDetailClick"
+        />
+      </template>
+    </component>
+  </el-form-item>
   <component v-else-if="children.tag==='form'" :is="FormView"
              :data="data"
              :treeData="treeData"
@@ -62,6 +62,7 @@
           :treeViewFields="treeViewFields"
           :data="data"
           :model="model"
+          :fields="fields"
           :treeData="treeData"
           :viewType="viewType"
           :field="subChildren.attrs?.name"
@@ -73,7 +74,8 @@
     </template>
   </component>
   <component v-else-if="children.tag==='tree'" :is="TableView"
-             :fromData="data"
+             :formData="data"
+             :fields="fields[children.field]"
              :treeField="children.field"
              :model="viewFields[children.field].relation"
              :option="viewFields[children.field]"
@@ -100,6 +102,7 @@
           :activeTab="activeTab"
           :data="data"
           :model="model"
+          :fields="fields"
           :treeData="treeData"
           :viewType="viewType"
           :field="subChildren.attrs?.name"
@@ -110,7 +113,7 @@
       />
     </template>
   </component>
-  <component v-else :is="createComponent(children, parent)">
+  <component v-else-if="!(['field', 'form', 'tree'].includes(children.tag))" :is="createComponent(children, parent)">
     <template v-if="!parseDomain(children.attrs?.invisible, data)">
       <div v-if="(children.children || []).filter(r=>r.tag==='button')?.length">
         <template v-for="subChildren in (children.children || []).filter(r=>r.tag==='button')">
@@ -142,6 +145,7 @@
             :activeTab="activeTab"
             :model="model"
             :data="data"
+            :fields="fields"
             :treeData="treeData"
             :treeViewFields="treeViewFields"
             :viewType="viewType"
@@ -207,6 +211,9 @@ const props = defineProps({
   attrs: {
     type: Object,
     default: {}
+  }, fields: {
+    type: Object,
+    default: []
   },
   disabled: {
     type: Boolean,
@@ -222,9 +229,9 @@ if (props.activeTab) {
 }
 const createComponent = (arch, parent) => {
   return defineComponent({
-    setup(props, {slots, emit}) {
+    setup(compProps, {slots, emit}) {
       let tag = arch.tag;
-      const newProps = {...props}
+      const newProps = {...compProps}
       if (tag === 'sheet') {
         newProps.style = {
           ...newProps.style,
@@ -238,12 +245,12 @@ const createComponent = (arch, parent) => {
       //     flexDirection: 'row',
       //   };
       // }
-      // if (tag === 'group' && parent.children?.length) {
-      //   newProps.style = {
-      //     ...newProps.style,
-      //     flex: 1,
-      //   };
-      // }
+      if (tag === 'group' && parent.children?.length) {
+        newProps.style = {
+          ...newProps.style,
+          textAlign: 'left',
+        };
+      }
       // if ((arch.children[0] || {}).tag === 'field' && tag === 'group') {
       //   newProps.style = {
       //     ...newProps.style,
@@ -264,7 +271,7 @@ const createComponent = (arch, parent) => {
         };
       }
       if (['group'].includes(tag)) {
-        tag = 'span'
+        tag = 'div'
       }
       if (tag === 'notebook') {
         return () => createVNode(
@@ -279,11 +286,15 @@ const createComponent = (arch, parent) => {
           position: 'relative',
           width: '100%'
         };
-        return () => createVNode(
-            ElTabPane,
-            {...newProps, label: arch.attrs.string, name: arch.children[0].attrs.name},
-            () => slots.default && slots.default()
-        );
+        if (!(parseDomain(props.viewFields[arch.children[0].attrs.name].invisible, props.data)
+            || parseDomain(arch.children[0].attrs?.invisible, props.data)
+            || parseDomain(arch.attrs.invisible, props.data))) {
+          return () => createVNode(
+              ElTabPane,
+              {...newProps, label: arch.attrs.string, name: arch.children[0].attrs.name},
+              () => slots.default && slots.default()
+          );
+        }
       }
       return () => createVNode(
           tag, newProps,

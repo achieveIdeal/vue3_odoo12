@@ -11,7 +11,7 @@ const isSelection = typeStore.isSelection;
 const isBool = typeStore.isBool;
 
 
-export const setFormAttribute = (formFieldsOption, extras) => {
+export const setFormAttribute = (extras, formFieldsOption) => {
     if (!!Object.keys(formFieldsOption || {}).length) {
         let attributes = extras?.attributes || {};
         for (const field of Object.keys(formFieldsOption || {})) {  // 自定义属性 readonly 和invisible等
@@ -60,7 +60,7 @@ export const initFormData = async (formData, formFieldsOption) => {
     }
     return {formFieldsOption, formData}
 }
-export const setTreeAttribute = (treeField, lineData, formData, treeFieldsOption, extras) => {
+export const setTreeAttribute = (treeField, extras,treeFieldsOption) => {
     let attributes = extras.attributes && extras.attributes[treeField] ? extras.attributes[treeField]?.fields : {};
     if (!attributes) return
     for (const field of Object.keys(treeFieldsOption[treeField] || {})) { // 设置自定义的属性
@@ -114,7 +114,10 @@ export const initTreeData = async (extras, treeData, treeFieldsOption, formData)
             if (extras) {
                 setTreeAttribute(treeField, lineData, formData, treeFieldsOption, extras)
                 if (extras[treeField]) {
-                    extras[treeField].buttons = initButton((extras[treeField] || {}), {...formData, [treeField]: lineData})
+                    extras[treeField].buttons = initButton((extras[treeField] || {}), {
+                        ...formData,
+                        [treeField]: lineData
+                    })
                 }
             }
         }

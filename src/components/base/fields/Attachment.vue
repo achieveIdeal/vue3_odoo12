@@ -6,13 +6,13 @@
         :data-index="field"
         action="#"
         :limit="1"
-        :file-list="datas[options[field].filename]?[{name: datas[options[field].filename]}]:[]"
+        :file-list="data[option[field]?.filename]?[{name: data[option[field].filename]}]:[]"
         :list-type="option.list_type?.split(',')"
         :on-change="handleFileChange(field)"
         :on-remove="handleFileRemove(field)"
         :on-exceed="handleExceed(field)"
         :auto-upload="false"
-        :on-preview="downLoadFile(datas[field], datas[option.filename])"
+        :on-preview="downLoadFile(data[field], data[option.filename])"
         :disabled="readonly  || disabled"
     >
       <template #trigger>
@@ -25,9 +25,11 @@
 
 <script lang="ts" setup>
 
-import {defineEmits, defineProps} from "vue/dist/vue";
-import {onchangeField} from "../../../tools";
-const emits= defineEmits(['fieldOnchange']);
+import {ref} from "vue";
+
+const emits = defineEmits(['fieldOnchange']);
+import {onchangeField, downLoadFile, encodeFileToBase64} from "../../../tools";
+
 const props = defineProps({
   field: {
     default: ''
@@ -67,6 +69,31 @@ const props = defineProps({
     default: true
   }
 })
+
+const handleFileRemove = (field) => () => {
+  const curFile = upload.value.find(r => {
+    return r.$attrs['data-index'] === field
+  })
+  props.datas[field] = ''
+  props.datas[props.options[field].filename] = ''
+  curFile!.clearFiles()
+}
+const handleFileChange = (field) => async (files) => {
+  const file = files as UploadRawFile;
+  props.datas[field] = await encodeFileToBase64(file.raw);
+  props.datas[props.options[field].filename] = file.name
+}
+const handleExceed: UploadProps['onExceed'] = (field) => (files) => {
+  const curFile = upload.value.find(r => {
+    return r.$attrs['data-index'] === field
+  })
+  curFile!.clearFiles()
+  const file = files[0] as UploadRawFile
+  file.uid = genFileId()
+  curFile!.handleStart(file)
+}
+let loading = ref(false)
+
 
 const fieldOnchange = (params) => {
   let noChange = false;

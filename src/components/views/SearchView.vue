@@ -111,12 +111,12 @@
 import {onMounted, ref, watch} from "vue";
 import {Search, Check} from "@element-plus/icons-vue";
 import {dateFtt, getDateTypeValue} from "../../tools";
+import {callParseDomain, callPath} from "../../service/module/call";
 
 const props = defineProps({
   searchViewInfo: {
     type: Object,
-    default: {
-    }
+    default: {}
   },
   isDialog: {
     type: Boolean,
@@ -132,8 +132,9 @@ const props = defineProps({
   }
 })
 
-const searcher = {}
-const groupby = []
+const searcher = {};
+const groupby = [];
+const domainFilter = [];
 
 const dateStart = ref(dateFtt("yyyy-MM-dd", new Date()))
 const dateEnd = ref(dateFtt("yyyy-MM-dd", new Date()))
@@ -209,23 +210,38 @@ const curDateRangeVal = ref('')
 
 const searchFields = [];
 
-const parseSearchViewInfo = (searcher)=>{
+const formatStr2JsonStr = (string) => {
+  return string.replaceAll('(', '[').replaceAll(')', ']').replaceAll("'", '"').replaceAll('uid', 2)
+}
+
+const parseSearchViewInfo = async (searcher, searchFields, groupby, domainFilter) => {
   const arch = searcher.arch;
-  const searchFields = [];
-  const filterFields = [];
-  const fieldsInfo = searcher.viewFields;
-  for(const child of arch.children){
+  for (const child of arch.children) {
     const field = child.attrs.name
-    if(child.tag==='field'){
-      searchFields.push(fieldsInfo[field])
+    if (child.tag === 'field') {
+      searchFields.push(field)
     }
-    if(child.tag==='filter'){
-      console.log(child);
+    if (child.tag === 'filter') {
+      const context = child.attrs.context;
+      const domain = child.attrs.domain;
+      if (context) {
+        const data = JSON.parse(formatStr2JsonStr(context));
+        groupby.push(data.group_by)
+      }
+      if (domain) {
+        console.log(domain, typeof domain);
+        const data = await callParseDomain(domain)
+        domainFilter.push({
+          field: child.attrs.name,
+          string: child.attrs.string,
+          value: data,
+          text: child.attrs.name
+        })
+      }
     }
   }
 }
 
-parseSearchViewInfo(props.searchViewInfo)
 
 const getDomain = () => {
   let domain = []
@@ -258,7 +274,9 @@ const getDomain = () => {
       domain = domain.concat([[field, '>=', start], [field, '<=', end]]);
     } else {
       const ilikeDomain = []
-      if (value instanceof Array) {
+      if (value instanceof Array && value[0] instanceof Array) {
+        domain = domain.concat(value)
+      } else if (value instanceof Array) {
         let orCount = 0;
         for (const val of value) {
           ilikeDomain.push([field, operate, val]);
@@ -279,6 +297,7 @@ const getDomain = () => {
 const doSearch = () => {
   sessionStorage.setItem(props.model + 'searchFacets', JSON.stringify(searchFacets.value));
   const groupbys = searchFacets.value.filter(r => r.groupby).map(r => r.groupby);
+  console.log(getDomain())
   if (groupbys?.length) {
     emits('groupbyClick', groupbys)
   } else {
@@ -287,14 +306,16 @@ const doSearch = () => {
 }
 
 
-onMounted(() => {
+onMounted(async () => {
+  await parseSearchViewInfo(props.searchViewInfo, searchFields, groupby, domainFilter)
   const searchOptions = props.searchViewInfo.viewFields || [];
   const fields = Object.keys(searchOptions);
-  if (fields.length) {
+  if (searchFields.length) {
     let hasDefault = false;
-    for (const field of fields) {
-      const fieldOption = searchOptions[field]
-      if (['range', 'customRange'].includes(fieldOption.searchType)) {
+    for (const field of searchFields) {
+      const fieldOption = searchOptions[field];
+      if (['date', 'datetime'].includes(fieldOption.type)) {
+        !fieldOption.searchType ? fieldOption.searchType = 'customRange' : null;
         !curDateRangeField.value ? curDateRangeField.value = field : null;
         dateFields.value.push(field);
         for (const dateVal of (fieldOption.options || Object.keys(dateRangeSelect))) {
@@ -310,35 +331,7 @@ onMounted(() => {
             string: fieldOption.string
           })
         }
-      }
-      if (fieldOption.searchType === 'filter') {
-        for (const selectVal of fieldOption.options || fieldOption.selection.map(r => r[0])) {
-          if (fieldOption.type === 'selection') {
-            filterOptions.value.push({
-              field: field,
-              text: fieldOption.selection.find(r => r[0] === selectVal)[1],
-              value: selectVal,
-              string: fieldOption.string
-            })
-          } else {
-            filterOptions.value.push({
-              field: field,
-              text: selectVal,
-              value: selectVal,
-              string: fieldOption.string
-            })
-          }
-        }
-      }
-      if (groupby.indexOf(field) !== -1) {
-        groupbyOptions.value.push({
-          groupby: field,
-          text: fieldOption.string,
-          string: '分组:',
-          value: field,
-        })
-      }
-      if (!fieldOption.searchType) {
+      } else {
         const searchItem = {
           field: field,
           text: [searchOptions[field]?.default],
@@ -360,6 +353,26 @@ onMounted(() => {
           string: searchOptions[field]?.string,
           value: searchOptions[field]?.default,
           text: text
+        })
+      }
+    }
+    if (groupby.length) {
+      for (const field of groupby) {
+        const fieldOption = searchOptions[field];
+        groupbyOptions.value.push({
+          groupby: field,
+          text: fieldOption.string,
+          string: '分组:',
+          value: field,
+        })
+      }
+    }
+    if (domainFilter.length) {
+      for (const selectVal of domainFilter) {
+        filterOptions.value.push({
+          field: selectVal.field,
+          text: selectVal.string,
+          value: selectVal.value,
         })
       }
     }
@@ -522,7 +535,6 @@ const searchItemClick = (searchItem) => {
   if (!existItem?.field) {
     searchFacets.value.push({...searchItem});
   } else {
-    console.log(existItem.value);
     existItem.value = existItem.value.concat(searchItem.value);
     existItem.text = existItem.text.concat(searchItem.text);
   }
@@ -563,7 +575,6 @@ defineExpose({
 })
 
 let store_searchFacets = JSON.parse(sessionStorage.getItem(props.model + 'searchFacets'));
-console.log(store_searchFacets);
 if (!props.isDialog && store_searchFacets) {
   searchFacets.value = store_searchFacets;
 }

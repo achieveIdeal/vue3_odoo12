@@ -22,6 +22,7 @@
       v-if="Object.keys(arch).length"
       :arch="arch"
       :action="action"
+      :extras="extras"
       :curViewType="curViewType"
       :fieldViewInfo="fieldViewInfo"
       :formViewInfo="formViewInfo"
@@ -44,6 +45,9 @@ import DialogView from './views/DialogView.vue'
 const props = defineProps({
   action: {
     default: ''
+  },
+  extras: {
+    default: {}
   }
 })
 
@@ -79,7 +83,6 @@ const loadAction = async (action_id, is_button) => {
     const treeViewInfo = views.find(r => r.type === 'tree' || r.type === 'list');
     const arch = fieldViewInfo.arch
     formatArch(arch)
-    console.log(searchViewInfo);
     return {
       action,
       viewType,

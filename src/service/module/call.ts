@@ -255,3 +255,17 @@ export const loadMenus = (parent_id) => {
         }
     })
 }
+
+
+export const callParseDomain = (domain) => {
+    return Request.post({
+        url: '/front/dataset/parse_domain',
+        data: {
+            'jsonrpc': "2.0",
+            'method': 'call',
+            'params': {
+                domain,
+            }
+        }
+    })
+}
