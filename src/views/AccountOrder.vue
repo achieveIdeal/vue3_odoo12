@@ -1,5 +1,5 @@
 <template>
-  <MainView :action="'e2yun_xw_account_order.srm_account_order_action'" :extras="extras"/>
+  <MainView :action_name="'e2yun_xw_account_order.srm_account_order_action'" :extras="extras"/>
 </template>
 
 <script lang="ts" setup>
@@ -20,7 +20,7 @@ const extras = {
     }
   }, {
     type: 'create',
-    showType: ['list', 'form'],
+    showType: ['tree', 'form'],
     text: '创建'
   }, {
     type: 'object',

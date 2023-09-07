@@ -32,7 +32,7 @@ const props = defineProps({
   }, viewType: {
     default: 'form'
   }, model: {
-    default: 'form'
+    default: ''
   },
   data: {
     type: Object,

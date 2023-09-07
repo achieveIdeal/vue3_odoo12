@@ -29,35 +29,40 @@ const buildOnchangeSpecs = function (fieldsInfo, treeOption, fields) {
     return specs;
 }
 
-const onchangeField = async (params) => {
+const onchangeField = async (params: OnchangeParamsType, checkAll) => {
     let options = params.options;
-    let attributes = params.attributes
-    let treeOptions = params.treeOptions;
-    let datas = params.datas
     let field = params.field;
-    let treeData = params.treeData;
-    let paramsDatas = JSON.parse(JSON.stringify(datas))
-    for (const treeField of Object.keys(treeData || {})) {
-        paramsDatas[treeField] = []
-        for (const data of treeData[treeField]) {
-            const dataId = data.id;
-            if (dataId) {
-                delete data['id'];
-                paramsDatas[treeField].push([1, dataId, data])
-            } else {
-                paramsDatas[treeField].push([0, 0, data])
+    if (options[field]?.onchange) {
+        let attributes = params.attributes
+        let treeOptions = params.treeOptions;
+        let datas = params.datas
+        let treeData = params.treeData;
+        let treeDataCopy = JSON.parse(JSON.stringify(treeData || {}))
+        let paramsDatas = JSON.parse(JSON.stringify(datas))
+        for (const treeField of Object.keys(treeDataCopy || {})) {
+            paramsDatas[treeField] = []
+            for (const data of treeDataCopy[treeField]) {
+                const dataId = data.id;
+                if (dataId) {
+                    delete data['id'];  // 更新数据时，不能传id
+                    paramsDatas[treeField].push([1, dataId, data]);
+                } else {
+                    paramsDatas[treeField].push([0, 0, data])
+                }
             }
         }
-    }
-    if (options[field].onchange) {
-        let onchange;
-        let changedData = {}
+        let onchange: { [prop: string]: '' | '1' };
+        let changedData: { [prop: string]: Multiple } = {}
         for (let field of Object.keys(paramsDatas || {})) {
-            changedData[field] = paramsDatas[field];
+            if (params.form?.model && options[field].relation === params.form?.model) {
+                changedData[field] = params.form.datas
+            } else {
+                changedData[field] = paramsDatas[field];
+            }
         }
         onchange = buildOnchangeSpecs(options, treeOptions, Object.keys(options || {}))
         const model = params.model;
-        const result = await callOnchange({
+        let request: RequestParamsType = {
             model: model,
             method: 'onchange',
             args: [[datas.id || 0], changedData, field, onchange, {
@@ -68,21 +73,37 @@ const onchangeField = async (params) => {
                 supplier_id
             }],
             path: model + '/onchange'
-        })
+        }
+        const res = await callOnchange(request)
+        if (res.error) {
+            ElMessage({
+
+                message: res.error.data.message,
+                type: 'error'
+            });
+            return false
+        }
+        const result = res.result;
         const domain = result.domain;
         const value = result.value;
         if (result.warning) {
             ElMessage({
+
                 message: result.warning.message,
                 type: 'error'
             });
-            return false;
+        }
+        if (result.max) {
+            for (const field of Object.keys(result.max)) {
+                options[field].max = result.max[field];
+            }
         }
         for (let changedField of Object.keys(domain || {})) {
             options[changedField].domain = (attributes[changedField]?.domain || []).concat(domain[changedField]);
             options[changedField].selection = [];
             if (datas[changedField] instanceof Array) {
                 datas[changedField] = [];
+                checkAll.value = false;
                 continue
             }
             datas[changedField] = '';
@@ -90,6 +111,7 @@ const onchangeField = async (params) => {
         for (let changedField of Object.keys(value || {})) {
             const isChangeLine = value[changedField][0] instanceof Array && value[changedField][0][0] === 5
             if (value[changedField] instanceof Array && !isChangeLine) {
+                !options[changedField].selection ? options[changedField].selection = [] : null;
                 options[changedField].selection.push(value[changedField]);
                 datas[changedField] = value[changedField][0];
                 continue
@@ -107,6 +129,16 @@ const onchangeField = async (params) => {
                 datas[changedField] = [];
                 for (let index = 1; index < newLines.length; index++) {
                     changeLines.push(newLines[index][2]);
+                    for (const field of Object.keys(newLines[index][2])) {
+                        const value = newLines[index][2][field]
+                        if (value instanceof Array && value[0][0] === 5) {
+                            newLines[index][2][field] = [];
+                            if (['float', 'integer'].includes(treeOptions[field]?.type)) {
+                                newLines[index][2][field] = 0;
+                            }
+                        }
+                    }
+
                 }
                 treeData[changedField] = changeLines;
                 initTreeData({}, treeData, treeOptions, datas);

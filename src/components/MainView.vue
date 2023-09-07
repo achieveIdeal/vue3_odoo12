@@ -35,7 +35,7 @@
 
 <script lang="ts" setup>
 import {callAction, callKw, callViews} from "../service/module/call";
-import {defineProps, ref} from "vue";
+import {defineProps, onMounted, ref, watch} from "vue";
 import {useRoute, useRouter} from "vue-router";
 import {formatArch} from "../tools";
 import RecordView from '../components/RecordView.vue'
@@ -43,7 +43,7 @@ import DialogView from './views/DialogView.vue'
 
 
 const props = defineProps({
-  action: {
+  action_name: {
     default: ''
   },
   extras: {
@@ -54,9 +54,8 @@ const props = defineProps({
 const route = useRoute();
 const router = useRouter();
 
-const curViewType = route.query.type || 'tree';
-const action_id = ref(parseInt(route.query.action_id || '0') || props.action);
-
+const curViewType = ref(route.query.type || 'tree');
+const action_id = ref(parseInt(route.query.action_id || '0') || props.action_name);
 const record_ref = ref()
 
 const action = ref({});
@@ -73,7 +72,7 @@ const loadAction = async (action_id, is_button) => {
   const action = await callAction(action_id);
   if (action.res_model) {
     const views = await callViews(action.res_model, action.views.concat([[false, 'search']]))
-    let viewType = curViewType;
+    let viewType = curViewType.value;
     if (is_button) {
       viewType = action.view_mode;
     }
@@ -94,17 +93,24 @@ const loadAction = async (action_id, is_button) => {
     }
   }
 }
-
-loadAction(props.action).then(res => {
-  action_id.value = res.id;
-  action.value = res.action;
-  fieldViewInfo.value = res.fieldViewInfo;
-  searchViewInfo.value = res.searchViewInfo;
-  treeViewInfo.value = res.treeViewInfo;
-  formViewInfo.value = res.formViewInfo;
-  arch.value = res.arch;
-});
-
+watch(route, (f, t) => {
+  const vType = t.query.type
+  curViewType.value = !vType ? 'tree' : 'form';
+  fieldViewInfo.value = !vType ? treeViewInfo.value : formViewInfo.value;
+  arch.value = fieldViewInfo.value.arch
+  formatArch(arch.value)
+})
+onMounted(async () => {
+  loadAction(action.value.id || action_id.value).then(res => {
+    action_id.value = res.id;
+    action.value = res.action;
+    fieldViewInfo.value = res.fieldViewInfo;
+    searchViewInfo.value = res.searchViewInfo;
+    treeViewInfo.value = res.treeViewInfo;
+    formViewInfo.value = res.formViewInfo;
+    arch.value = res.arch;
+  });
+})
 const buttonClick = (button, model, datas) => {
   if (button.attrs.type === 'action') {
     const action_id = parseInt(button.attrs.name);

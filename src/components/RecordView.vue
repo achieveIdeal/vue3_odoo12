@@ -1,4 +1,5 @@
 <template>
+    {{ curViewType }}
   <el-button style="display: none" v-loading.fullscreen.lock="loading" element-loading-text="正在加载..."/>
   <PagerHeader :title="action.name" v-if="!isDialog"/>
   <el-header class="controller-panel">
@@ -60,7 +61,8 @@ import ListView from "./views/ListView.vue";
 import FormView from "./views/FormView.vue";
 import SearchView from '../components/views/SearchView.vue'
 import ButtonView from "./views/ButtonView.vue";
-import {initButton} from "../tools/init";
+import {initButton, initListData} from "../tools/init";
+import {callKw, callReadGroup, callSearchRead} from "../service/module/call";
 
 const loading = ref(false);
 const listview_ref = ref('');
@@ -130,7 +132,7 @@ const getGroupChildren = async (row) => {
     sort: params.sort,
   }, props.isDialog)
   emits('loadGroupDetail', row, result)
-  const records = await initListData(extras, result.result.records, options.formFieldsOption, noloadField);
+  const records = await initListData(extras, result.result.records, props.fieldViewInfo.viewFields, noloadField);
   const diffRows = [];
   const newRowIds = records.listData.map(r => r.id) || [];
   if (row.children?.length) {
@@ -242,16 +244,17 @@ const editClick = () => {
   disabled.value = false;
 }
 const cancelClick = () => {
-  for (let file of formViewRef.value?.upload || []) {
-    file.clearFiles();
-  }
-  if (params.id) {
     disabled.value = true;
-    datas.formData = JSON.parse(JSON.stringify(dataCopy.formData))  // 数据复原
-    datas.treeData = JSON.parse(JSON.stringify(dataCopy.treeData))
-  }
+  // for (let file of formViewRef.value?.upload || []) {
+  //   file.clearFiles();
+  // }
+  // if (params.id) {
+  //   disabled.value = true;
+  //   datas.formData = JSON.parse(JSON.stringify(dataCopy.formData))  // 数据复原
+  //   datas.treeData = JSON.parse(JSON.stringify(dataCopy.treeData))
+  // }
 }
-const createClick = () => {
+const createClick = async () => {
   disabled.value = false;
 }
 const saveClick = (formEl: FormInstance | undefined) => {  // 处理保存按钮，包括编辑保存和创建保存

@@ -127,6 +127,7 @@ const handleCreate = function () {
   router.push({
     path: props.params.name,
     query: {
+      type: 'form',
       id: 0
     }
   })

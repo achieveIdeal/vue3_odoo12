@@ -25,7 +25,7 @@
 </template>
 
 <script lang="ts" setup>
-import {defineEmits, defineExpose, defineProps, computed, ref} from "vue";
+import {defineEmits, defineExpose, defineProps, computed, ref, onMounted} from "vue";
 import {callSearchRead} from "../../service/module/call";
 import {initListData, setFormAttribute} from "../../tools/init";
 import TableView from './TableView.vue'
@@ -68,8 +68,9 @@ const emits = defineEmits(['getDetailClick', 'selectClick', 'dataLoadedCallback'
 const tableview_ref = ref('')
 const dataCount = ref(0);
 const treeData = ref({})
+const fields = ref({})
 
-const fields = computed(() => {
+const getFields = () => {
   const arch = props.arch;
   const fields = {self: []};
   const recursion = (arch) => {
@@ -84,10 +85,12 @@ const fields = computed(() => {
   }
   recursion(arch)
   return fields
+}
+onMounted(async () => {
+  fields.value = await getFields()
 })
-fields.value.then(res => {
-  console.log(res);
-});
+
+
 if (props.extras) {
   setFormAttribute(props.extras, props.viewFields)
 }
