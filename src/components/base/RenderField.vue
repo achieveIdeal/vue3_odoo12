@@ -1,10 +1,16 @@
 <template>
   <el-form-item
-      v-if="
-      !(parseDomain(viewFields[children.attrs?.name]?.invisible || children.attrs?.invisible, data)||children.attrs?.invisible) && children.tag==='field'"
+      v-if="!(parseDomain(viewFields[children.attrs?.name]?.invisible
+      || children.attrs?.invisible, data)
+      ||children.attrs?.invisible) && children.tag==='field'"
       :style="{width: !Object.keys(treeViewFields).includes(children.attrs?.name)?'30%':'100%'}"
-      :prop="children.attrs?.name"
-      :label="viewType==='form' && !Object.keys(treeViewFields).includes(children.attrs?.name)? viewFields[children.attrs?.name]?.string:''">
+      :prop="viewType==='form'?children.attrs?.name:viewType==='tree'?[treeField,index, children.attrs.name]:[index,children.attrs.name]"
+      :label="viewType==='form' && !Object.keys(treeViewFields).includes(children.attrs?.name)? viewFields[children.attrs?.name]?.string:''"
+      :rules="viewFields[children.attrs.name]?.rules||[{
+        required: parseDomain(viewFields[children.attrs.name]?.required, data),
+        message: viewFields[children.attrs.name]?.string + '不能为空!',
+        trigger: 'blur'
+        }]">
     <component :is="FIELD_VIEW_MAP[viewFields[children.attrs?.name]?.type]"
                :data="data"
                :model="model"
@@ -28,6 +34,8 @@
             :treeViewFields="treeViewFields"
             :activeTab="activeTab"
             :data="data"
+            :index="index"
+            :treeField="treeField"
             :model="model"
             :fields="fields"
             :treeData="treeData"
@@ -63,6 +71,8 @@
           :activeTab="activeTab"
           :treeViewFields="treeViewFields"
           :data="data"
+          :index="index"
+          :treeField="treeField"
           :model="model"
           :fields="fields"
           :treeData="treeData"
@@ -105,6 +115,8 @@
           :treeViewFields="treeViewFields"
           :activeTab="activeTab"
           :data="data"
+          :index="index"
+          :treeField="treeField"
           :model="model"
           :fields="fields"
           :treeData="treeData"
@@ -152,6 +164,8 @@
             :activeTab="activeTab"
             :model="model"
             :data="data"
+            :index="index"
+            :treeField="treeField"
             :fields="fields"
             :treeData="treeData"
             :treeViewFields="treeViewFields"
@@ -195,6 +209,11 @@ const props = defineProps({
   }, model: {
     type: String,
     default: ''
+  }, treeField: {
+    type: String,
+    default: ''
+  }, index: {
+    type: Number,
   },
   parent: {
     type: Object,

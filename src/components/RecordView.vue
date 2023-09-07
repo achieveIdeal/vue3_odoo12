@@ -1,17 +1,16 @@
 <template>
-    {{ curViewType }}
   <el-button style="display: none" v-loading.fullscreen.lock="loading" element-loading-text="正在加载..."/>
   <PagerHeader :title="action.name" v-if="!isDialog"/>
   <el-header class="controller-panel">
     <!--    <MenuView v-if="hasMenus" :menus="menus" @menuClick="menuClick"/>-->
     <ButtonView
-        v-if="Object.keys(buttons.buttonOptions).length"
+        v-if="Object.keys(data).length"
         :disabled="disabled"
         :params="{type: curViewType, id: data.id, name: ''}"
         :buttons="buttons"
         :data="data"
         @editClick="editClick"
-        @saveClick="saveClick(formRef)"
+        @saveClick="saveClick(formview_ref)"
         @objectClick="objectClick"
         @createClick="createClick"
         @customClick="customClick"
@@ -25,8 +24,8 @@
     <el-main>
       <FormView ref="formview_ref" v-if="curViewType==='form' &&Object.keys(arch).length"
                 :arch="arch"
-                :data="res_data"
                 :isDialog="isDialog"
+                :data="dialog_data"
                 :extras="extras"
                 :disabled="disabled"
                 :loading="loading"
@@ -61,8 +60,9 @@ import ListView from "./views/ListView.vue";
 import FormView from "./views/FormView.vue";
 import SearchView from '../components/views/SearchView.vue'
 import ButtonView from "./views/ButtonView.vue";
-import {initButton, initListData} from "../tools/init";
-import {callKw, callReadGroup, callSearchRead} from "../service/module/call";
+import {formatData, initButton, initListData} from "../tools/init";
+import {callCreate, callReadGroup, callSearchRead, callWrite} from "../service/module/call";
+import router from "../router";
 
 const loading = ref(false);
 const listview_ref = ref('');
@@ -75,7 +75,7 @@ const props = defineProps({
   }, action: {
     type: Object,
     default: {}
-  }, res_data: {
+  }, dialog_data: {
     type: Object,
   },
   curViewType: {
@@ -99,10 +99,13 @@ const props = defineProps({
   },
 })
 
-const data = ref({})
+const data = ref({});
+const treeData = ref({})
+let dataCopy = {};
 const attrs = ref(props.arch.attrs);
-const dataLoadedCallback = (datas) => {
+const dataLoadedCallback = (datas, treeData) => {
   props.curViewType === 'form' ? data.value = datas : null;
+  dataCopy = {formData: {...datas}, treeData: {...treeData}};
 }
 const buttons = ref({buttonOptions: []});
 buttons.value.buttonOptions = initButton(props.extras, props.curViewType);
@@ -243,45 +246,62 @@ const searchClick = async () => {  // 搜索数据重置
 const editClick = () => {
   disabled.value = false;
 }
-const cancelClick = () => {
-    disabled.value = true;
-  // for (let file of formViewRef.value?.upload || []) {
-  //   file.clearFiles();
-  // }
-  // if (params.id) {
-  //   disabled.value = true;
-  //   datas.formData = JSON.parse(JSON.stringify(dataCopy.formData))  // 数据复原
-  //   datas.treeData = JSON.parse(JSON.stringify(dataCopy.treeData))
-  // }
+
+const cancelClick = (real_id) => {
+  disabled.value = true;
+  if (real_id) {
+    for (const field of Object.keys(data.value)) {
+      data.value[field] = dataCopy.formData[field];
+    }
+    for (const field of Object.keys(treeData.value)) {
+      treeData.value[field] = dataCopy.treeData[field]
+    }
+  }
 }
 const createClick = async () => {
   disabled.value = false;
 }
-const saveClick = (formEl: FormInstance | undefined) => {  // 处理保存按钮，包括编辑保存和创建保存
+
+const saveWrite = async (savedDatas) => {
+  await callWrite({id: data.value.id, model: props.fieldViewInfo.base_model}, savedDatas)
+  disabled.value = true;
+}
+const saveCreate = async (savedDatas) => {
+  const real_id = await callCreate(params, savedDatas)
+  disabled.value = true;
+  router.push({
+    path: router.currentRoute.value.fullPath,
+    query: {
+      type: 'form',
+      id: real_id
+    }
+  })
+}
+
+const saveClick = (formview_ref) => {  // 处理保存按钮，包括编辑保存和创建保存
+  const formEl = formview_ref.form_ref;
+  formEl.validate()
   if (!formEl) return
   formEl.validate((valid) => {
     if (valid) {
-      let savedDatas = formatData(datas, dataCopy, options);
-      for (let file of formViewRef.value?.upload || []) {
-        file.submit()
-      }
+      let savedDatas = formatData({formData: data.value, treeData: treeData.value}, dataCopy);
       let noeSave = false;
-      if (Object.keys(savedDatas).length && params.id) {
-        emits('saveWriteClick', datas, savedDatas, saveWrite, () => {
-          noeSave = true;
-        }, loading, reload)
+      const noSave = () => {
+        noeSave = true;
+      }
+      if (Object.keys(savedDatas).length && data.value.id) {
+        emits('saveWriteClick', data.value, {savedDatas, saveWrite, noSave})
         !noeSave && saveWrite(savedDatas)
       } else if (Object.keys(savedDatas).length) {
-        let savedDatas = formatData(datas, {formData: {}, treeData: []}, options);
+        let savedDatas = formatData({formData: data.value, treeData: treeData.value}, {formData: {}, treeData: []});
         emits('saveCreateClick', datas, savedDatas, saveCreate, () => {
           noeSave = true;
-        }, loading, reload)
+        })
         !noeSave && saveCreate(savedDatas);
       } else if (!savedDatas) {
         return false;
       } else {
         disabled.value = true;
-        reload()
       }
     } else {
       ElMessage({
@@ -291,7 +311,6 @@ const saveClick = (formEl: FormInstance | undefined) => {  // 处理保存按钮
       })
       return false;
     }
-    emits('saveClick', valid, reload, loading, datas)
   })
 }
 const customClick = (button) => {

@@ -103,7 +103,7 @@ callSearchRead({
 }).then(async res => {
   dataCount.value = res.length || 0;
   treeData.value['self'] = await initListData(res.records, props.viewFields);
-  emits('dataLoadedCallback', treeData.value['self'])
+  emits('dataLoadedCallback', treeData.value['self'], {})
 })
 
 

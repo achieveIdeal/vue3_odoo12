@@ -13,7 +13,7 @@
             <el-button class="el-button--primary" @click.prevent="handleSave">
               {{ button.confirmText || '保存' }}
             </el-button>
-            <el-button class="info" @click.prevent="handleCancel">
+            <el-button class="info" @click.prevent="()=>handleCancel(params.id)">
               {{ button.cancelText || '取消' }}
             </el-button>
           </template>
@@ -28,7 +28,7 @@
             <el-button class="el-button--primary" @click.prevent="handleSave">
               {{ button.confirmText || '保存' }}
             </el-button>
-            <el-button class="info" @click.prevent="handleCancel">
+            <el-button class="info" @click.prevent="()=>handleCancel(params.id)">
               {{ button.cancelText || '取消' }}
             </el-button>
           </template>
@@ -114,11 +114,11 @@ const handleSave = function () {
 const handleExport = () => {
   emits("exportClick")
 }
-const handleCancel = function () {
+const handleCancel = function (real_id) {
   if (!props.params.id) {
     router.back()
   }
-  emits('cancelClick');
+  emits('cancelClick', real_id);
 }
 const handleObject = function (name) {
   emits('objectClick', name);

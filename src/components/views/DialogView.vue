@@ -3,7 +3,7 @@
              @close="(e)=>closeDialog(e, index)">
     <RecordView
         :isDialog="true"
-        :res_data="dataDialog"
+        :dialog_data="dataDialog"
         :action="actionDialog"
         :fieldViewInfo="fieldViewInfoDialog"
         :formViewInfo="formViewInfoDialog"

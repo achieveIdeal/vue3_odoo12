@@ -1,7 +1,8 @@
 <template>
+
   <el-form
       v-if="Object.keys(datas||{}).length"
-      ref="formRef"
+      ref="form_ref"
       :inline="true"
       :model="datas"
       label-position="left"
@@ -31,7 +32,7 @@
 
 <script lang="ts" setup>
 
-import {computed, defineEmits, defineProps, onMounted, ref, watch} from "vue";
+import {computed, defineEmits, defineExpose, defineProps, onMounted, ref, watch} from "vue";
 import {callKw, callRead, callSearchRead} from "../../service/module/call";
 import RenderField from '../../components/base/RenderField.vue'
 
@@ -43,6 +44,7 @@ import {initListData, setFormAttribute, setTreeAttribute} from "../../tools/init
 
 const route = useRoute();
 let real_id = parseInt(route.query.id);
+const form_ref = ref('')
 watch(route, async (f, t) => {
   const data_id = t.query.id
   if (data_id) {
@@ -195,8 +197,9 @@ const loadData = async (data_id) => {
           domain: ['|', ['id', 'in', datas.value[treeField] || []],
             [props.viewFields[treeField].relation_field, '=', datas.value['id']]],
         }).then(async res => {
-          treeData.value[treeField] = await initListData(res.records, props.viewFields);
-          emits('dataLoadedCallback', {...datas.value, ...treeData.value});
+          treeData.value[treeField] = res.records;
+          datas.value[treeField] = res.records;
+          emits('dataLoadedCallback', datas.value, treeData.value);
         })
       }
     })
@@ -217,19 +220,19 @@ const loadData = async (data_id) => {
       datas.value = data;
       for (const treeField of Object.keys(treeViewFields.value || {})) {
         setTreeAttribute(treeField, props.extras, treeViewFields.value);
-        treeData.value[treeField] = await initListData(datas.value[treeField], props.viewFields) || [];
+        treeData.value[treeField] = datas.value[treeField]
+        datas.value[treeField] = datas.value[treeField];
         emits('dataLoadedCallback', {...datas.value, ...treeData.value});
       }
     })
   }
 }
-const datas = ref({});  // 抬头数据
-const treeData = ref({})  // 表格数据
+const datas = ref();  // 抬头数据
+const treeData = ref({});  // 表格数据
 if (props.extras) {
   setFormAttribute(props.extras, props.viewFields);
 }
 const emits = defineEmits(['buttonClick', 'getLineDetailClick', 'dataLoadedCallback']);
-
 onMounted(async () => {
   if (!props.data) {   // 加载详情时，不需要请求后端获取抬头数据
     await loadData(real_id);
@@ -245,7 +248,8 @@ onMounted(async () => {
         domain: ['|', ['id', 'in', datas.value[treeField] || []],
           [props.viewFields[treeField].relation_field, '=', datas.value['id']]],
       }).then(async res => {
-        treeData.value[treeField] = await initListData(res.records, props.viewFields);
+        treeData.value[treeField] = res.records;
+        datas.value[treeField] = res.records
         emits('dataLoadedCallback', {...datas.value, ...treeData.value});
       })
     }
@@ -260,7 +264,9 @@ const getLineDetailClick = (data, index, formViewInfo) => {
   emits('getLineDetailClick', data, index, formViewInfo)
 }
 
-
+defineExpose({
+  form_ref
+})
 </script>
 
 <style lang="less">

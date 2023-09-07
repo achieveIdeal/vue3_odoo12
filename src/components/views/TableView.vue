@@ -19,24 +19,16 @@
           <span>{{ viewFields[children.attrs.name]?.string }}</span>
         </template>
         <template #default="scoped">
-          <el-form-item
-              v-if="!(parseDomain(viewFields[children.attrs?.name]?.invisible || children.attrs?.invisible, {...formData, [treeField]: scoped.row}))"
-              :prop="[scoped.$index, children.attrs.name]" class="table-form-item"
-              style="position:relative;"
-              :rules="viewFields[children.attrs.name]?.rules||[{
-                                required: parseDomain(viewFields[children.attrs.name]?.required, scoped.row),
-                                message: viewFields[children.attrs.name]?.string + '不能为空!',
-                                trigger: 'blur'
-                              }]">
             <RenderField :children="children"
                          :model="model"
+                         :treeField="treeField"
+                         :index="scoped.$index"
                          :data="scoped.row"
                          viewType="tree"
                          :viewFields="viewFields"
                          :disabled="disabled"
                          :loading="loading"
             />
-          </el-form-item>
         </template>
       </el-table-column>
     </template>

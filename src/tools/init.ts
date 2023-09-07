@@ -211,10 +211,6 @@ export const formatData = function (datas, dataCopy, options): Object {  // 数�
         }
     }
     for (const treeField of Object.keys(datas.treeData || {})) {
-        if (parseDomain(options.formFieldsOption[treeField]?.invisible, {
-            ...datas.formData,
-            [treeField]: datas.treeData[treeField]
-        })) continue
         let isChanged = false;
         let delFlag = {};
         let addFlag = false;
@@ -252,13 +248,6 @@ export const formatData = function (datas, dataCopy, options): Object {  // 数�
         }
         if (!isChanged) {  // 未发生修改或新增的数据不处理
             delete updated[treeField]
-        }
-        if (options.formFieldsOption[treeField].required && (!datas.treeData[treeField].length && !addFlag)) {  // 行数据非空约束
-            ElMessage({
-                message: options.formFieldsOption[treeField].string + '不能为空！',
-                type: 'error'
-            })
-            return false
         }
     }
     return updated
