@@ -71,7 +71,7 @@ const dialogVisible = ref(false);
 const loadAction = async (action_id, is_button) => {
   const action = await callAction(action_id);
   if (action.res_model) {
-    const views = await callViews(action.res_model, action.views.concat([[false, 'search']]))
+    const views = await callViews(action.res_model, [[false, 'search'],[false, 'tree'],[false, 'form']])
     let viewType = curViewType.value;
     if (is_button) {
       viewType = action.view_mode;
@@ -153,7 +153,6 @@ const getDetailClick = (data) => {
   })
 }
 const dialogGetDetailClick = (data, index, formViewInfo) => {
-  console.log(data);
 }
 const closeDialog = (e, index) => {
   dialogStack.value[index].visible = false;
@@ -163,7 +162,6 @@ const dialogGetLineDetailClick = (data, index, formViewInfo) => {
   console.log(data);
 }
 const getLineDetailClick = (data, index, formViewInfo) => {
-  console.log(data, 'detail data');
   dialogStack.value.push({
     fieldViewInfoDialog: formViewInfo,
     archDialog: formViewInfo.arch,

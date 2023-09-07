@@ -1,5 +1,4 @@
 <template>
-  {{ fields }}
   <el-table :data="treeData[treeField]" ref="listTable" stripe
             lazy
             fit
@@ -20,51 +19,53 @@
           <span>{{ viewFields[children.attrs.name]?.string }}</span>
         </template>
         <template #default="scoped">
-          <!--        <el-form-item-->
-          <!--            v-if="!(parseDomain(viewFields[children.attrs?.name]?.invisible || children.attrs?.invisible, {...formData, [treeField]: scoped.row}))"-->
-          <!--            :prop="[scoped.$index, children.attrs.name]" class="table-form-item"-->
-          <!--            style="position:relative;"-->
-          <!--            :rules="viewFields[children.attrs.name]?.rules||[{-->
-          <!--                      required: parseDomain(viewFields[children.attrs.name]?.required, scoped.row),-->
-          <!--                      message: viewFields[children.attrs.name]?.string + '不能为空!',-->
-          <!--                      trigger: 'blur'-->
-          <!--                    }]">-->
-          <RenderField :children="children"
-                       :model="model"
-                       :data="scoped.row"
-                       viewType="tree"
-                       :viewFields="viewFields"
-                       :disabled="disabled"
-                       :loading="loading"
-          />
-          <!--        </el-form-item>-->
+          <el-form-item
+              v-if="!(parseDomain(viewFields[children.attrs?.name]?.invisible || children.attrs?.invisible, {...formData, [treeField]: scoped.row}))"
+              :prop="[scoped.$index, children.attrs.name]" class="table-form-item"
+              style="position:relative;"
+              :rules="viewFields[children.attrs.name]?.rules||[{
+                                required: parseDomain(viewFields[children.attrs.name]?.required, scoped.row),
+                                message: viewFields[children.attrs.name]?.string + '不能为空!',
+                                trigger: 'blur'
+                              }]">
+            <RenderField :children="children"
+                         :model="model"
+                         :data="scoped.row"
+                         viewType="tree"
+                         :viewFields="viewFields"
+                         :disabled="disabled"
+                         :loading="loading"
+            />
+          </el-form-item>
         </template>
       </el-table-column>
     </template>
-    <!--    <template-->
-    <!--        v-for="(button, index) in attributes[treeField]?.buttons|| []" :key="index">-->
-    <!--      <el-table-column :width="button.width|| 130" fixed="right" :label="button.text"-->
-    <!--                       v-if="!parseDomain(button.attributes.invisible,{...formData, [treeField]: {}})">-->
-    <!--        <template #default="scoped">-->
-    <!--          <el-button :type="button.classify || 'primary'" :style="{width: button.width|| 130}"-->
-    <!--                     v-if="!parseDomain(button.attributes.invisible,{...formData, [treeField]: scoped.row})"-->
-    <!--                     @click="handleButtonClick(treeField, scoped.row, button)"-->
-    <!--          >{{ button.text }}-->
-    <!--          </el-button>-->
-    <!--        </template>-->
-    <!--      </el-table-column>-->
-    <!--    </template>-->
+    <template
+        v-for="(button, index) in attributes?.buttons|| []" :key="index">
+      <el-table-column :width="button.width|| 130" fixed="right" :label="button.text"
+                       v-if="!parseDomain(button.attributes?.invisible,{...formData, [treeField]: {}})">
+        <template #default="scoped">
+          <el-button :type="button.classify || 'primary'" :style="{width: button.width|| 130}"
+                     v-if="!parseDomain(button.attributes?.invisible,{...formData, [treeField]: scoped.row})"
+                     @click="handleButtonClick(treeField, scoped.row, button)"
+          >{{ button.text }}
+          </el-button>
+        </template>
+      </el-table-column>
+    </template>
     <el-table-column fixed="right" label="操作"
                      width="120">
 
       <template #default="scoped">
         <el-button link
+                   v-if="disabled"
                    size="small"
                    type="primary"
                    @click="getDetail(scoped.row, scoped.$index, formViewInfo)"
         >查看详情
         </el-button>
         <el-button link
+                   v-if="!(disabled || parseDomain(arch.attrs.readonly, formData) ||  parseDomain(attributes.unadel, formData))"
                    size="small"
                    type="danger"
                    @click="handleDeleteLine(scoped.$index, treeField,scoped.row)"
@@ -76,6 +77,7 @@
   <el-button
       class="mt-4"
       style="width: 100%"
+      v-if="!(disabled || parseDomain(arch.attrs.readonly, formData) || parseDomain(attributes.unadd, formData))"
       @click="onAddItem(treeField)"
   >添加一行
   </el-button>
@@ -150,6 +152,9 @@ const props = defineProps({
   formViewInfo: {
     type: Object,
     default: {}
+  }, attributes: {
+    type: Object,
+    default: {}
   }, fields: {
     type: Object,
     default: []
@@ -192,8 +197,11 @@ const getSummaries = (treeField, children) => (table) => {
     let index = 0;
     const viewFields = props.viewFields
     for (const field of props.fields) {
-      const fieldChild = children.find(r=>r.attrs.name === field)
-      if (parseDomain(viewFields[field]?.invisible, {...props.formData, [treeField]: data}) || fieldChild.attrs.invisible) {
+      const fieldChild = children.find(r => r.attrs.name === field)
+      if (parseDomain(viewFields[field]?.invisible, {
+        ...props.formData,
+        [treeField]: data
+      }) || fieldChild.attrs.invisible) {
         continue
       }
       sums[index] = !sums[index] ? 0 : sums[index];
@@ -232,15 +240,15 @@ const handleTreeRowStyle = (treeField) => (row) => {
 
 
 const handleDeleteLine = (index, field, row) => {  //  行删除
-  const delFiles = upload.value?.filter(r => {
-    return r.$attrs['data-index'].indexOf(field + '_' + index) !== -1;
-  })
-  for (const file of delFiles || []) {
-    file.clearFiles();
-  }
+  props.treeData[field].splice(index, 1)
   emits('deleteLineClick', field, index, row);
 }
 const onAddItem = (treeField) => {
+  const newLine = {}
+  for (const field of props.fields) {
+    newLine[field] = '';
+  }
+  props.treeData[treeField].push(newLine)
   emits('addLineClick', treeField);
 }
 const handleCurrentChange = (treeField) => {

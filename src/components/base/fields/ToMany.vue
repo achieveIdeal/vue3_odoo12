@@ -128,10 +128,12 @@ const fieldOnchange = (params) => {
 .item-text {
   overflow: hidden;
   width: 100%;
+  min-width: 120px;
   text-overflow: ellipsis;
   text-align: left;
 }
+
 .border-bottom {
-    border-bottom: 1px solid #eef1fa;
+  border-bottom: 1px solid #eef1fa;
 }
 </style>

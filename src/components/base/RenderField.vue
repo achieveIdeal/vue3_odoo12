@@ -23,6 +23,7 @@
         <RenderField
             :children="subChildren"
             :parent="children"
+            :extras="extras"
             :viewType="viewType"
             :treeViewFields="treeViewFields"
             :activeTab="activeTab"
@@ -58,6 +59,7 @@
       <RenderField
           :children="subChildren"
           :parent="children"
+          :extras="extras"
           :activeTab="activeTab"
           :treeViewFields="treeViewFields"
           :data="data"
@@ -75,6 +77,7 @@
   </component>
   <component v-else-if="children.tag==='tree'" :is="TableView"
              :formData="data"
+             :attributes="extras.attributes[children.field]"
              :fields="fields[children.field]"
              :treeField="children.field"
              :model="viewFields[children.field].relation"
@@ -98,6 +101,7 @@
       <RenderField
           :children="subChildren"
           :parent="children"
+          :extras="extras"
           :treeViewFields="treeViewFields"
           :activeTab="activeTab"
           :data="data"
@@ -118,7 +122,9 @@
       <div v-if="(children.children || []).filter(r=>r.tag==='button')?.length">
         <template v-for="subChildren in (children.children || []).filter(r=>r.tag==='button')">
           <el-button :class="['btn-group',children.class]"
-                     v-if="!subChildren.attrs?.states || (subChildren.attrs?.states||'')?.split(',').includes(data.state) && !parseDomain(subChildren.attrs.invisible, data)"
+                     v-if="(!subChildren.attrs?.states
+                     || (subChildren.attrs?.states||'')?.split(',').includes(data.state)
+                      && !parseDomain(subChildren.attrs.invisible, data))&&disabled"
                      @click="(e)=> handleButtonClick(e,subChildren)">
             {{ subChildren.attrs.string }}
           </el-button>
@@ -142,6 +148,7 @@
             v-else
             :children="subChildren"
             :parent="children"
+            :extras="extras"
             :activeTab="activeTab"
             :model="model"
             :data="data"
@@ -209,6 +216,9 @@ const props = defineProps({
     default: {}
   },
   attrs: {
+    type: Object,
+    default: {}
+  }, extras: {
     type: Object,
     default: {}
   }, fields: {

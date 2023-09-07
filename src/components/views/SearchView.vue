@@ -229,7 +229,6 @@ const parseSearchViewInfo = async (searcher, searchFields, groupby, domainFilter
         groupby.push(data.group_by)
       }
       if (domain) {
-        console.log(domain, typeof domain);
         const data = await callParseDomain(domain)
         domainFilter.push({
           field: child.attrs.name,
@@ -297,7 +296,6 @@ const getDomain = () => {
 const doSearch = () => {
   sessionStorage.setItem(props.model + 'searchFacets', JSON.stringify(searchFacets.value));
   const groupbys = searchFacets.value.filter(r => r.groupby).map(r => r.groupby);
-  console.log(getDomain())
   if (groupbys?.length) {
     emits('groupbyClick', groupbys)
   } else {

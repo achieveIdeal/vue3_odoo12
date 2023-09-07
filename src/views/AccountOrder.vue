@@ -15,9 +15,7 @@ const extras = {
     type: 'edit',
     text: '编辑',
     showType: ['form'],
-    attributes: {
-      invisible: [['state', 'not in', ['draft', '']]]
-    }
+    attributes: {}
   }, {
     type: 'create',
     showType: ['tree', 'form'],
@@ -62,6 +60,13 @@ const extras = {
     account_lines: {
       unadd: true,
       readonly: [['state', 'not in', ['', 'draft']]],
+      buttons: [
+        {
+          method: 'watch_code',
+          text: '查看生成/绑定批号',
+          width: 200,
+        }
+      ],
       fields: {
         invisible: ['can_delete', 'vouchers_synchronize_data_id'],
         readonly: '_all_',

@@ -24,7 +24,6 @@ menuStore.getMenus().then(r => {
 const loadActiveAction = (menu) => {
   if (!!menu.action) {
     curMenu.value = menu
-    console.log(menu);
     const action = menu.action.split(',');
     const action_id = action[1];
     router.push({
@@ -70,7 +69,6 @@ const createMenuTree = (menuItems) => {
   return Object.values(menuMap).filter(menuItem => !menuItem.attrs.parent);;
 }
 readFile('views.xml').then(result => {
-  console.log(result);
   const menus = createMenuTree(result.filter(r => r.tag === 'menuitem'));
   const records = result.filter(r => r.tag === 'record');
 })

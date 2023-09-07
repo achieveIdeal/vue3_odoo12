@@ -84,6 +84,7 @@ const fieldOnchange = (params) => {
 .item-text {
   overflow: hidden;
   width: 100%;
+  min-width: 120px;
   text-overflow: ellipsis;
   text-align: left;
 }

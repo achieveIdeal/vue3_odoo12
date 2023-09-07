@@ -14,6 +14,7 @@
                    :data="datas"
                    :treeData="treeData"
                    :model="model"
+                   :extras="extras"
                    :fields="fields"
                    :activeTab="activeTab"
                    viewType="form"
@@ -30,7 +31,7 @@
 
 <script lang="ts" setup>
 
-import {computed, defineEmits, defineExpose, defineProps, onMounted, ref, watch} from "vue";
+import {computed, defineEmits, defineProps, onMounted, ref, watch} from "vue";
 import {callKw, callRead, callSearchRead} from "../../service/module/call";
 import RenderField from '../../components/base/RenderField.vue'
 
@@ -104,14 +105,13 @@ const treeViewFields = computed(() => {
 const formatArch = async (arch) => {
   for (const children of arch.children) {
     if (Object.keys(props.viewFields[children.attrs?.name]?.views || {}).length) {
-      console.log(props.viewFields[children.attrs?.name]?.views);
       let formView = props.viewFields[children.attrs?.name]?.views?.form;
       let treeView = props.viewFields[children.attrs?.name]?.views?.tree;
       const model = props.viewFields[children.attrs?.name].relation;
       const formArch = props.viewFields[children.attrs?.name]?.views?.form?.arch;
       const treeArch = props.viewFields[children.attrs?.name]?.views?.tree?.arch;
       if (formArch) {
-        formView.arch = typeof formArch === "string" ? parseXMlToJson(props.viewFields[children.attrs?.name]?.views?.form?.arch) : treeArch;
+        formView.arch = typeof formArch === "string" ? parseXMlToJson(props.viewFields[children.attrs?.name]?.views?.form?.arch) : formArch;
         formView.base_model = model
       } else {
         const res = await callKw({   // 若为定义form,请求后端获取form
@@ -149,7 +149,7 @@ const formatArch = async (arch) => {
         string: props.viewFields[children.attrs?.name]?.string
       }]
     }
-    children.children && await formatArch(children)
+    children.children.length && await formatArch(children)
   }
 }
 
@@ -260,9 +260,6 @@ const getLineDetailClick = (data, index, formViewInfo) => {
   emits('getLineDetailClick', data, index, formViewInfo)
 }
 
-defineExpose({
-  datas, treeData, getFields
-})
 
 </script>
 

@@ -1,6 +1,6 @@
 <template>
   <el-select v-if="!(readonly || disabled)" class="form-input alien-left"
-             v-model="data[field][0]"
+             v-model="data[field]"
              placeholder="请选择"
              clearable
              filterable
@@ -28,7 +28,7 @@
   </el-select>
 
   <span :style="option.style"
- class="item-text" :class="{'border-bottom':  viewType==='form'}"
+        class="item-text" :class="{'border-bottom':  viewType==='form'}"
         v-else> {{
       data[field]?.length ? data[field][1] : '　'
     }}</span>
@@ -111,11 +111,13 @@ const fieldOnchange = (params) => {
 <style lang="less" scoped>
 .item-text {
   overflow: hidden;
+  min-width: 120px;
   width: 100%;
   text-overflow: ellipsis;
   text-align: left;
 }
+
 .border-bottom {
-    border-bottom: 1px solid #eef1fa;
+  border-bottom: 1px solid #eef1fa;
 }
 </style>

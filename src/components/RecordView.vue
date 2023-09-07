@@ -379,7 +379,6 @@ const objectClick = async (name: string) => {   // 处理非创建和编辑按�
     await reload();
     loading.value = false;
     const result = res.result || {};
-    console.log(result, 'adsas');
 
     if (!!result.report_file) {  // 如果是文件，请求下载
       loading.value = true;
