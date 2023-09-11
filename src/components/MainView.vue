@@ -15,6 +15,8 @@
         @getLineDetailClick="getLineDetailClick"
         @buttonClick="buttonClick"
         @closeDialog="closeDialog"
+        @deleteLineClick="deleteLineClick"
+        @addLineClick="addLineClick"
     />
   </template>
   <RecordView
@@ -30,12 +32,15 @@
       @getDetailClick="getDetailClick"
       @getLineDetailClick="getLineDetailClick"
       @buttonClick="buttonClick"
+      @deleteLineClick="deleteLineClick"
+      @addLineClick="addLineClick"
+
   />
 </template>
 
 <script lang="ts" setup>
 import {callAction, callKw, callViews} from "../service/module/call";
-import {defineProps, onMounted, ref, watch} from "vue";
+import {defineEmits, defineProps, onMounted, ref, watch} from "vue";
 import {useRoute, useRouter} from "vue-router";
 import {formatArch} from "../tools";
 import RecordView from '../components/RecordView.vue'
@@ -93,13 +98,22 @@ const loadAction = async (action_id, is_button) => {
     }
   }
 }
+
+const emits = defineEmits(['deleteLineClick', 'addLineClick'])
 watch(route, (f, t) => {
   const vType = t.query.type
   curViewType.value = !vType ? 'tree' : 'form';
   fieldViewInfo.value = !vType ? treeViewInfo.value : formViewInfo.value;
   arch.value = fieldViewInfo.value.arch
-  formatArch(arch.value)
+  formatArch(arch.value);
 })
+
+const deleteLineClick = (treeField, index, treeData, row, noAddCallback) => {
+  emits('deleteLineClick', treeField, index, treeData, row, noAddCallback)
+}
+const addLineClick = (treeField, treeData, newLine, noAddCallback) => {
+  emits('addLineClick', treeField, treeData, newLine, noAddCallback)
+}
 onMounted(async () => {
   loadAction(action.value.id || action_id.value).then(res => {
     action_id.value = res.id;
@@ -111,6 +125,7 @@ onMounted(async () => {
     arch.value = res.arch;
   });
 })
+
 const buttonClick = (button, model, datas) => {
   if (button.attrs.type === 'action') {
     const action_id = parseInt(button.attrs.name);
@@ -141,9 +156,7 @@ const buttonClick = (button, model, datas) => {
     dialogVisible.value = false;
   }
 }
-
 const getDetailClick = (data) => {
-  console.log(router.currentRoute.value.query.action_id);
   router.push({
     path: router.currentRoute.value.fullPath,
     query: {
@@ -158,7 +171,6 @@ const dialogGetDetailClick = (data, index, formViewInfo) => {
 const closeDialog = (e, index) => {
   dialogStack.value[index].visible = false;
 }
-
 const dialogGetLineDetailClick = (data, index, formViewInfo) => {
   console.log(data);
 }

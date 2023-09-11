@@ -15,7 +15,6 @@
         @createClick="createClick"
         @customClick="customClick"
         @importClick="importClick"
-        @anyClick="anyClick"
         @exportClick="exportClick"
         @cancelClick="cancelClick"/>
     <SearchView ref="searchview_ref" v-if="curViewType==='tree'" :searchViewInfo="searchViewInfo"
@@ -24,7 +23,7 @@
     />
   </el-header>
   <el-container>
-    <el-main>
+    <el-main class="main-container">
       <FormView ref="formview_ref" v-if="curViewType==='form' &&Object.keys(arch).length"
                 :arch="arch"
                 :isDialog="isDialog"
@@ -37,6 +36,8 @@
                 @buttonClick="buttonClick"
                 @getLineDetailClick="getLineDetailClick"
                 @dataLoadedCallback="dataLoadedCallback"
+                @deleteLineClick="deleteLineClick"
+                @addLineClick="addLineClick"
       />
       <ListView ref="listview_ref" v-if="curViewType==='tree' && Object.keys(arch).length" :action="action"
                 :arch="arch"
@@ -50,6 +51,8 @@
                 @getDetailClick="getDetailClick"
                 @selectClick="selectClick"
                 @dataLoadedCallback="dataLoadedCallback"
+                @deleteLineClick="deleteLineClick"
+                @addLineClick="addLineClick"
       />
     </el-main>
   </el-container>
@@ -107,19 +110,19 @@ let data = ref({});
 let listData = ref([]);
 let treeData = ref({});
 let dataCopy = {};
-let dataCount = ref()
+let dataCount = ref();
 const attrs = ref(props.arch.attrs);
-
+const model = props.fieldViewInfo.base_model;
 const dataLoadedCallback = (datas, treeData, countRef) => {
-  console.log(datas);
-  props.curViewType === 'form' ? data = datas : null;
+  props.curViewType === 'form' ? data.value = datas.value : null;
   props.curViewType === 'tree' ? listData = datas : null;
   dataCount = countRef
   dataCopy = {formData: {...datas}, treeData: {...treeData}};
 }
 const buttons = ref({buttonOptions: []});
 buttons.value.buttonOptions = initButton(props.extras, props.curViewType);
-const emits = defineEmits(['buttonClick', 'getDetailClick', 'getLineDetailClick', 'selectClick'])
+const emits = defineEmits(['buttonClick', 'getDetailClick', 'getLineDetailClick', 'selectClick',
+  'deleteLineClick', 'addLineClick', 'saveWriteClick','saveCreateClick'])
 
 const buttonClick = (button, model, datas) => {
   emits('buttonClick', button, model, datas)
@@ -131,7 +134,89 @@ const getDetailClick = (data, index) => {
 const getLineDetailClick = (data, index, formViewInfo) => {
   emits('getLineDetailClick', data, index, formViewInfo)
 }
+const editClick = () => {
+  disabled.value = false;
+}
 
+const cancelClick = (real_id) => {
+  disabled.value = true;
+  data.value = dataCopy.formData;
+  treeData.value = dataCopy.treeData;
+}
+const createClick = async () => {
+  disabled.value = false;
+}
+const deleteLineClick = (treeField, index, treeData, row, noAddCallback) => {
+  emits('deleteLineClick', treeField, index, treeData, row, noAddCallback)
+}
+const addLineClick = (treeField, treeData, newLine, noAddCallback) => {
+  emits('addLineClick', treeField, treeData, newLine, noAddCallback)
+}
+
+const saveWrite = async (savedDatas) => {
+  await callWrite({id: data.value.id, model}, savedDatas)
+  disabled.value = true;
+}
+const saveCreate = async (savedDatas) => {
+  const real_id = await callCreate({model}, savedDatas)
+  disabled.value = true;
+  router.push({
+    path: router.currentRoute.value.fullPath,
+    query: {
+      action_id: router.currentRoute.value.query.action_id,
+      type: 'form',
+      id: real_id
+    }
+  })
+}
+
+const saveClick = (formview_ref) => {  // 处理保存按钮，包括编辑保存和创建保存
+  const formEl = formview_ref.form_ref;
+  formEl.validate()
+  if (!formEl) return
+  formEl.validate((valid) => {
+    if (valid) {
+      let savedDatas = formatData({formData: data.value, treeData: treeData.value}, dataCopy);
+      let noeSave = false;
+      const noSave = () => {
+        noeSave = true;
+      }
+      if (Object.keys(savedDatas).length && data.value.id) {
+        emits('saveWriteClick', data.value, {savedDatas, saveWrite, noSave})
+        !noeSave && saveWrite(savedDatas)
+      } else if (Object.keys(savedDatas).length) {
+        let savedDatas = formatData({formData: data.value, treeData: treeData.value}, {formData: {}, treeData: []});
+        emits('saveCreateClick', data.value, {savedDatas, saveCreate, noeSave})
+        !noeSave && saveCreate(savedDatas);
+      } else if (!savedDatas) {
+        return false;
+      } else {
+        disabled.value = true;
+      }
+    } else {
+      ElMessage({
+        dangerouslyUseHTMLString: true,
+        message: '表单数据存在错误, 请检查!',
+        type: 'error'
+      })
+      return false;
+    }
+  })
+}
+
+const searchClick = async () => {  // 搜索数据重置
+  const domain = searchview_ref?.value?.getDomain() || [];
+  callSearchRead({
+    model: props.fieldViewInfo.base_model,
+    fields: Object.keys(props.fieldViewInfo.viewFields),
+    offset: 0,
+    limit: props.action.limit,
+    domain: (props.action.domain || []).concat(domain),
+  }).then(async res => {
+    listData.value['self'] = await initListData(res.records, props.viewFields);
+    dataCount.value = res.length
+  })
+}
 
 const getGroupChildren = async (row) => {
   const domain = searchview_ref?.value?.getDomain() || [];
@@ -143,9 +228,9 @@ const getGroupChildren = async (row) => {
     limit: count,
     domain: row.__domain.concat(params.domain).concat(domain),
     sort: params.sort,
-  }, props.isDialog)
+  })
   emits('loadGroupDetail', row, result)
-  const records = await initListData(extras, result.result.records, props.fieldViewInfo.viewFields, noloadField);
+  const records = await initListData(extras, result.result.records, props.fieldViewInfo.viewFields);
   const diffRows = [];
   const newRowIds = records.listData.map(r => r.id) || [];
   if (row.children?.length) {
@@ -224,86 +309,6 @@ const loadGroupDetail = async (row, treeNode, resolve) => {
   resolve(children)
 }
 
-const searchClick = async () => {  // 搜索数据重置
-  const domain = searchview_ref?.value?.getDomain() || [];
-  callSearchRead({
-    model: props.fieldViewInfo.base_model,
-    fields: Object.keys(props.fieldViewInfo.viewFields),
-    offset: 0,
-    limit: props.action.limit,
-    domain: (props.action.domain || []).concat(domain),
-  }).then(async res => {
-    console.log(res);
-    listData.value['self'] = await initListData(res.records, props.viewFields);
-    dataCount.value = res.length
-  })
-}
-
-const editClick = () => {
-  disabled.value = false;
-}
-
-const cancelClick = (real_id) => {
-  disabled.value = true;
-  data.value = dataCopy.formData;
-  treeData.value = dataCopy.treeData;
-}
-const createClick = async () => {
-  disabled.value = false;
-}
-
-const saveWrite = async (savedDatas) => {
-  await callWrite({id: data.value.id, model: props.fieldViewInfo.base_model}, savedDatas)
-  disabled.value = true;
-}
-const saveCreate = async (savedDatas) => {
-  const real_id = await callCreate(params, savedDatas)
-  disabled.value = true;
-  router.push({
-    path: router.currentRoute.value.fullPath,
-    query: {
-      action_id: router.currentRoute.value.query.action_id,
-      type: 'form',
-      id: real_id
-    }
-  })
-}
-
-const saveClick = (formview_ref) => {  // 处理保存按钮，包括编辑保存和创建保存
-  const formEl = formview_ref.form_ref;
-  formEl.validate()
-  if (!formEl) return
-  formEl.validate((valid) => {
-    if (valid) {
-      let savedDatas = formatData({formData: data.value, treeData: treeData.value}, dataCopy);
-      let noeSave = false;
-      const noSave = () => {
-        noeSave = true;
-      }
-      if (Object.keys(savedDatas).length && data.value.id) {
-        emits('saveWriteClick', data.value, {savedDatas, saveWrite, noSave})
-        !noeSave && saveWrite(savedDatas)
-      } else if (Object.keys(savedDatas).length) {
-        let savedDatas = formatData({formData: data.value, treeData: treeData.value}, {formData: {}, treeData: []});
-        emits('saveCreateClick', datas, savedDatas, saveCreate, () => {
-          noeSave = true;
-        })
-        !noeSave && saveCreate(savedDatas);
-      } else if (!savedDatas) {
-        return false;
-      } else {
-        disabled.value = true;
-      }
-    } else {
-      ElMessage({
-        dangerouslyUseHTMLString: true,
-        message: '表单数据存在错误, 请检查!',
-        type: 'error'
-      })
-      return false;
-    }
-  })
-}
 const customClick = (button) => {
   const listViewExpose = getListViewExpose();
   const rows = listViewExpose.listTable?.getSelectionRows() || []
@@ -360,6 +365,7 @@ const exportClick = () => {
     loading.value = false;
   })
 }
+
 const objectClick = async (name: string) => {   // 处理非创建和编辑按钮点击
   const listViewExpose = getListViewExpose();
   const rows = listViewExpose.listTable?.getSelectionRows() || []
@@ -440,9 +446,6 @@ const importClick = (result) => {
   })
 }
 
-const anyClick = (button) => {
-  emits('anyClick', button, datas, reload, loading)
-}
 const selectClick = (rows, listTable, toggleRowSelection) => {
   const dataVal = {};
   for (const row of rows) {
@@ -460,37 +463,8 @@ const selectClick = (rows, listTable, toggleRowSelection) => {
   emits('selectClick', rows, reload, loading, toggleRowSelection)
 }
 
-const deleteRow = (row) => {
-  emits('deleteRow', row, reload)
-}
-
 const lineButtonClick = (treeField, data, button) => {
   emits('lineButtonClick', datas, treeField, data, button, reload, loading);
-}
-const addLineClick = (field) => {
-  !params.tables[field].count ? params.tables[field].count = 0 : null;
-  !datas.treeData[field] ? datas.treeData[field] = [] : null;
-  datas.treeData[field].push(JSON.parse(JSON.stringify(emptyData[field])))
-  params.tables[field].count++;
-
-}
-const deleteLineClick = (field, index, row) => {
-  let lineData = datas.treeData[field];
-  !params.tables[field].count ? params.tables[field].count = 0 : null;
-  let id = lineData[index].id
-  lineData.splice(index, 1)
-  params.tables[field].count -= 1
-  if (id) {
-    let idInd = datas?.formData[field].indexOf(id)
-    datas?.formData[field].splice(idInd, 1)
-    onchangeField({  // 删除请求行字段的onchange事件
-      field: field,
-      datas: datas?.formData,
-      model: params?.model,
-      options: options?.formFieldsOption
-    })
-  }
-  emits('deleteLineClick', field, index, row, reload, loading)
 }
 
 const fieldOnchange = (changeParams, noChange) => {
@@ -527,5 +501,9 @@ defineExpose({
 .grid-content {
   background-color: #ee0000;
   min-height: 36px;
+}
+
+.main-container {
+  overflow-x: hidden;
 }
 </style>

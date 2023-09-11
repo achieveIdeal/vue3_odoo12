@@ -1,4 +1,5 @@
 <template>
+
   <el-form-item
       v-if="!(parseDomain(viewFields[children.attrs?.name]?.invisible
       || children.attrs?.invisible, data)
@@ -21,7 +22,7 @@
                :viewFields="viewFields"
                :field="children.attrs?.name"
                :option="viewFields[children.attrs?.name]"
-               :readonly="parseDomain(viewFields[children.attrs?.name]?.readonly||children.attrs.readonly, data)"
+               :readonly="!!parseDomain(viewFields[children.attrs?.name]?.readonly||children.attrs.readonly, data)"
                :disabled="disabled"
                :loading="loading"
     >
@@ -45,6 +46,8 @@
             :disabled="disabled"
             :viewFields="viewFields"
             @getLineDetailClick="getLineDetailClick"
+            @deleteLineClick="deleteLineClick"
+            @addLineClick="addLineClick"
         />
       </template>
     </component>
@@ -82,6 +85,8 @@
           :readonly="parseDomain(subChildren.attrs?.readonly, data)"
           :disabled="disabled"
           :viewFields="viewFields"
+          @deleteLineClick="deleteLineClick"
+          @addLineClick="addLineClick"
       />
     </template>
   </component>
@@ -106,6 +111,8 @@
                 viewFields:children.formViewInfo?.fields
              }"
              @getDetailClick="getLineDetailClick"
+             @deleteLineClick="deleteLineClick"
+             @addLineClick="addLineClick"
   >
     <template v-if="(children.children || [])?.length" v-for="subChildren in (children.children || [])">
       <RenderField
@@ -126,6 +133,8 @@
           :readonly="parseDomain(subChildren.attrs?.readonly, data)"
           :disabled="disabled"
           :viewFields="viewFields"
+          @deleteLineClick="deleteLineClick"
+          @addLineClick="addLineClick"
       />
     </template>
   </component>
@@ -176,6 +185,8 @@
             :disabled="disabled"
             :viewFields="viewFields"
             @getLineDetailClick="getLineDetailClick"
+            @deleteLineClick="deleteLineClick"
+            @addLineClick="addLineClick"
         />
       </template>
     </template>
@@ -267,28 +278,6 @@ const createComponent = (arch, parent) => {
           textAlign: 'left',
         };
       }
-      // if (tag === 'group' && parent.tag === 'sheet') {
-      //   newProps.style = {
-      //     ...newProps.style,
-      //     display: 'flex',
-      //     flexDirection: 'row',
-      //   };
-      // }
-      if (tag === 'group' && parent.children?.length) {
-        newProps.style = {
-          ...newProps.style,
-          textAlign: 'left',
-        };
-      }
-      // if ((arch.children[0] || {}).tag === 'field' && tag === 'group') {
-      //   newProps.style = {
-      //     ...newProps.style,
-      //     display: 'flex',
-      //     flexDirection: 'column',
-      //     padding: '10px',
-      //     width: '49.1%'
-      //   };
-      // }
       if (tag === 'header') {
         newProps.style = {
           ...newProps.style,
@@ -298,9 +287,6 @@ const createComponent = (arch, parent) => {
           marginBottom: '20px',
           justifyContent: 'space-between'
         };
-      }
-      if (['group'].includes(tag)) {
-        tag = 'div'
       }
       if (tag === 'notebook') {
         return () => createVNode(
@@ -335,7 +321,7 @@ const createComponent = (arch, parent) => {
   });
 }
 
-const emits = defineEmits(['handleButtonClick', 'getLineDetailClick'])
+const emits = defineEmits(['handleButtonClick', 'getLineDetailClick', 'deleteLineClick', 'addLineClick'])
 const handleButtonClick = (e, button) => {
   e.stopPropagation();
   emits('handleButtonClick', button)
@@ -345,6 +331,12 @@ const getLineDetailClick = (data, index, formViewInfo) => {
   emits('getLineDetailClick', data, index, formViewInfo)
 }
 
+const deleteLineClick = (treeField, index, treeData, row,noAddCallback) => {
+  emits('deleteLineClick', treeField, index, treeData, row,noAddCallback)
+}
+const addLineClick = (treeField, treeData, newLine,noAddCallback) => {
+  emits('addLineClick', treeField, treeData, newLine,noAddCallback)
+}
 </script>
 
 <style lang="less" scoped>

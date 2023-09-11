@@ -1,5 +1,5 @@
 <template>
-  <MainView :action_name="'e2yun_xw_account_order.srm_account_order_action'" :extras="extras"/>
+  <MainView :action_name="'e2yun_dpsrm_supplier_permission.supplier_menus_action'" :extras="extras"/>
 </template>
 
 <script lang="ts" setup>
@@ -15,7 +15,8 @@ const extras = {
     type: 'edit',
     text: '编辑',
     showType: ['form'],
-    attributes: {}
+    attributes: {
+    }
   }, {
     type: 'create',
     showType: ['tree', 'form'],
@@ -151,7 +152,9 @@ const extras = {
     date_end: {
       readonly: [['state', 'not in', ['', 'draft']]],
     },
-    name: {},
+    name: {
+      default:'12323'
+    },
     partner_id: {}
   },
   search_fields: {

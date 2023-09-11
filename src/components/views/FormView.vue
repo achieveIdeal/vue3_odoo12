@@ -24,6 +24,8 @@
                    :treeViewFields="treeViewFields"
                    @handleButtonClick="buttonClick"
                    @getLineDetailClick="getLineDetailClick"
+                   @deleteLineClick="deleteLineClick"
+                   @addLineClick="addLineClick"
       />
     </template>
   </el-form>
@@ -39,7 +41,6 @@ import RenderField from '../../components/base/RenderField.vue'
 import {useRoute} from "vue-router";
 import {parseXMlToJson} from "../../tools";
 import {initListData, setFormAttribute, setTreeAttribute} from "../../tools/init";
-
 
 const route = useRoute();
 let real_id = parseInt(route.query.id);
@@ -154,9 +155,7 @@ const formatArch = async (arch) => {
   }
 }
 
-onMounted(async () => {
-  fields.value = await getFields();
-})
+
 const getFields = async () => {
   const arch = props.arch;
   await formatArch(arch)
@@ -181,47 +180,43 @@ const getFields = async () => {
 
 const loadData = async (data_id) => {
   if (data_id) {
-    callRead({
+    const res = await callRead({
       model: props.model,
       args: [data_id, Object.keys(props.viewFields || {})],
-    }).then(async res => {
-      datas.value = res[0];
-      console.log(res[0]);
-      for (const treeField of Object.keys(treeViewFields.value || {})) {
-        setTreeAttribute(treeField, props.extras, treeViewFields.value);
-        callSearchRead({
-          model: props.viewFields[treeField].relation,
-          fields: Object.keys(treeViewFields.value[treeField]),
-          offset: 0,
-          limit: 100,
-          domain: ['|', ['id', 'in', datas.value[treeField] || []],
-            [props.viewFields[treeField].relation_field, '=', datas.value['id']]],
-        }).then(async res => {
-          treeData.value[treeField] = res.records;
-          emits('dataLoadedCallback', datas, treeData);
-        })
-      }
     })
+    datas.value = res[0];
+    for (const treeField of Object.keys(treeViewFields.value || {})) {
+      setTreeAttribute(treeField, props.extras, treeViewFields.value);
+      const res = await callSearchRead({
+        model: props.viewFields[treeField].relation,
+        fields: Object.keys(treeViewFields.value[treeField]),
+        offset: 0,
+        limit: 100,
+        domain: ['|', ['id', 'in', datas.value[treeField] || []],
+          [props.viewFields[treeField].relation_field, '=', datas.value['id']]],
+      })
+      treeData.value[treeField] = res.records;
+    }
+    emits('dataLoadedCallback', datas, treeData);
   } else {
     const fields = await getFields();
-    await callKw({
+    const res = await callKw({
       model: props.model,
       method: 'default_get',
       args: [fields['self']]
-    }).then(async res => {
-      const data = {};
-      for (const field of fields['self']) {
-        data[field] = res[field] || ''
-        if (['float', 'integer'].includes(props.viewFields[field].type)) {
-          data[field] = parseFloat(res[field]) || 0
-        }
-      }
-      datas.value = data;
-      for (const treeField of Object.keys(treeViewFields.value || {})) {
-        setTreeAttribute(treeField, props.extras, treeViewFields.value);
-        emits('dataLoadedCallback', {datas,treeData});
-      }
     })
+    const data = {};
+    for (const field of fields['self']) {
+      data[field] = res[field] || ''
+      if (['float', 'integer'].includes(props.viewFields[field].type)) {
+        data[field] = parseFloat(res[field]) || 0
+      }
+    }
+    datas.value = data;
+    for (const treeField of Object.keys(treeViewFields.value || {})) {
+      setTreeAttribute(treeField, props.extras, treeViewFields.value);
+    }
+    emits('dataLoadedCallback', datas, treeData);
   }
 }
 const datas = ref();  // 抬头数据
@@ -229,35 +224,43 @@ const treeData = ref({});  // 表格数据
 if (props.extras) {
   setFormAttribute(props.extras, props.viewFields);
 }
-const emits = defineEmits(['buttonClick', 'getLineDetailClick', 'dataLoadedCallback']);
-onMounted(async () => {
+const emits = defineEmits(['buttonClick', 'getLineDetailClick', 'dataLoadedCallback', 'deleteLineClick', 'addLineClick']);
+const main = async () => {
+  fields.value = await getFields();
   if (!props.data) {   // 加载详情时，不需要请求后端获取抬头数据
     await loadData(real_id);
   } else {
     datas.value = props.data;
     for (const treeField of Object.keys(treeViewFields.value || {})) {
       setTreeAttribute(treeField, props.extras, treeViewFields.value);
-      callSearchRead({
+      const res = callSearchRead({
         model: props.viewFields[treeField].relation,
         fields: Object.keys(treeViewFields.value[treeField]),
         offset: 0,
         limit: 100,
         domain: ['|', ['id', 'in', datas.value[treeField] || []],
           [props.viewFields[treeField].relation_field, '=', datas.value['id']]],
-      }).then(async res => {
-        treeData.value[treeField] = res.records;
-        emits('dataLoadedCallback', {datas, treeData});
       })
+      treeData.value[treeField] = res.records;
     }
+    emits('dataLoadedCallback', datas, treeData);
   }
-})
+}
 
+main()
 
 const buttonClick = (button) => {
   emits('buttonClick', button, props.model, datas.value)
 }
 const getLineDetailClick = (data, index, formViewInfo) => {
   emits('getLineDetailClick', data, index, formViewInfo)
+}
+
+const deleteLineClick = (treeField, index, treeData, row, noDeleteCallback) => {
+  emits('deleteLineClick', treeField, index, treeData, row, noDeleteCallback)
+}
+const addLineClick = (treeField, treeData, newLine, noAddCallback) => {
+  emits('addLineClick', treeField, treeData, newLine, noAddCallback)
 }
 
 defineExpose({

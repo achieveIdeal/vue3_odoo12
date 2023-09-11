@@ -20,6 +20,8 @@
         :loading="loading"
         @getDetailClick="getDetailClick"
         @selectClick="selectClick"
+        @deleteLineClick="deleteLineClick"
+        @addLineClick="addLineClick"
     />
   </el-form>
 </template>
@@ -63,7 +65,7 @@ const props = defineProps({
     default: true
   }
 })
-const emits = defineEmits(['getDetailClick', 'selectClick', 'dataLoadedCallback'])
+const emits = defineEmits(['getDetailClick', 'selectClick', 'dataLoadedCallback', 'deleteLineClick', 'addLineClick'])
 
 const tableview_ref = ref('')
 const dataCount = ref(0);
@@ -117,6 +119,12 @@ const handleCurrentChange = () => {
 }
 const selectClick = (rows) => {
   emits('selectClick', rows)
+}
+const deleteLineClick = (treeField, index, treeData, row, noAddCallback) => {
+  emits('deleteLineClick', treeField, index, treeData, row, noAddCallback)
+}
+const addLineClick = (treeField, treeData, newLine, noAddCallback) => {
+  emits('addLineClick', treeField, treeData, newLine, noAddCallback)
 }
 defineExpose({
   tableview_ref, treeData: treeData['self']

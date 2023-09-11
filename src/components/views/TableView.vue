@@ -19,16 +19,16 @@
           <span>{{ viewFields[children.attrs.name]?.string }}</span>
         </template>
         <template #default="scoped">
-            <RenderField :children="children"
-                         :model="model"
-                         :treeField="treeField"
-                         :index="scoped.$index"
-                         :data="scoped.row"
-                         viewType="tree"
-                         :viewFields="viewFields"
-                         :disabled="disabled"
-                         :loading="loading"
-            />
+          <RenderField :children="children"
+                       :model="model"
+                       :treeField="treeField"
+                       :index="scoped.$index"
+                       :data="scoped.row"
+                       viewType="tree"
+                       :viewFields="viewFields"
+                       :disabled="disabled"
+                       :loading="loading"
+          />
         </template>
       </el-table-column>
     </template>
@@ -231,17 +231,25 @@ const handleTreeRowStyle = (treeField) => (row) => {
 }
 
 
-const handleDeleteLine = (index, field, row) => {  //  行删除
-  props.treeData[field].splice(index, 1)
-  emits('deleteLineClick', field, index, row);
+const handleDeleteLine = (index, treeField, row) => {  //  行删除
+  let delete_row = true;
+  const noDelete = () => {
+    delete_row = false;
+  }
+  delete_row && props.treeData[treeField].splice(index, 1);
+  emits('deleteLineClick', treeField, index, props.treeData[treeField], row, delete_row);
 }
 const onAddItem = (treeField) => {
   const newLine = {}
   for (const field of props.fields) {
     newLine[field] = '';
   }
-  props.treeData[treeField].push(newLine)
-  emits('addLineClick', treeField);
+  let add_row = true;
+  const noAdd = () => {
+    add_row = false;
+  }
+  add_row && props.treeData[treeField].push(newLine);
+  emits('addLineClick', treeField, props.treeData[treeField], newLine, add_row);
 }
 const handleCurrentChange = (treeField) => {
   emits('pageChange', currentPage.value, treeField);
