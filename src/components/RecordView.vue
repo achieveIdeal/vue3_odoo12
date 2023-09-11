@@ -18,7 +18,10 @@
         @anyClick="anyClick"
         @exportClick="exportClick"
         @cancelClick="cancelClick"/>
-    <SearchView v-if="curViewType==='tree'" :searchViewInfo="searchViewInfo"/>
+    <SearchView ref="searchview_ref" v-if="curViewType==='tree'" :searchViewInfo="searchViewInfo"
+                @groupbyClick="groupbyClick"
+                @searchClick="searchClick"
+    />
   </el-header>
   <el-container>
     <el-main>
@@ -67,6 +70,7 @@ import router from "../router";
 const loading = ref(false);
 const listview_ref = ref('');
 const formview_ref = ref('');
+const searchview_ref = ref('');
 const disabled = ref(true);
 const props = defineProps({
   arch: {
@@ -99,12 +103,18 @@ const props = defineProps({
   },
 })
 
-const data = ref({});
-const treeData = ref({})
+let data = ref({});
+let listData = ref([]);
+let treeData = ref({});
 let dataCopy = {};
+let dataCount = ref()
 const attrs = ref(props.arch.attrs);
-const dataLoadedCallback = (datas, treeData) => {
-  props.curViewType === 'form' ? data.value = datas : null;
+
+const dataLoadedCallback = (datas, treeData, countRef) => {
+  console.log(datas);
+  props.curViewType === 'form' ? data = datas : null;
+  props.curViewType === 'tree' ? listData = datas : null;
+  dataCount = countRef
   dataCopy = {formData: {...datas}, treeData: {...treeData}};
 }
 const buttons = ref({buttonOptions: []});
@@ -124,7 +134,7 @@ const getLineDetailClick = (data, index, formViewInfo) => {
 
 
 const getGroupChildren = async (row) => {
-  const domain = searchViewRef?.value?.getDomain() || [];
+  const domain = searchview_ref?.value?.getDomain() || [];
   const count = row[Object.keys(row)[0]]
   const result = await callSearchRead({
     model: params.model,
@@ -151,16 +161,12 @@ const getGroupChildren = async (row) => {
 }
 
 const groupbyClick = (row, treeNode, resolve) => {
-  const domain = searchViewRef.value?.getDomain();
+  const domain = searchview_ref.value?.getDomain();
   const childGroupby = row?.__context?.group_by
-  const groupbys = childGroupby || searchViewRef.value.searchFacets.filter(r => r.groupby).map(r => r.groupby);
+  const groupbys = childGroupby || searchview_ref.value.searchFacets.filter(r => r.groupby).map(r => r.groupby);
   groupbyKey.value = groupbys;
   params.groupby = groupbys;
   loading.value = true;
-  if (!props.isDialog) {
-    sessionStorage.setItem(params.model + 'search_data', JSON.stringify(domain))
-    sessionStorage.setItem(params.model + 'group_data', JSON.stringify(groupbys))
-  }
   callReadGroup({
     model: params.model,
     domain: domain.concat(params.domain).concat(row?.__domain || []),
@@ -219,28 +225,18 @@ const loadGroupDetail = async (row, treeNode, resolve) => {
 }
 
 const searchClick = async () => {  // 搜索数据重置
-  const domain = searchViewRef?.value?.getDomain() || [];
-  const listViewExpose = getListViewExpose();
-  listViewExpose?.recoverPageTo1();
-  const size = listViewExpose.pageSize;
-  loading.value = true;
-  groupbyKey.value = [];
-  params.groupby = [];
-  if (!props.isDialog) {
-    sessionStorage.setItem(params.model + 'search_data', JSON.stringify(params.domain.concat(domain)));
-
-  }
-  const result = await loadListData({
-    model: params.model,
-    fields: params.fields,
-    limit: size,
-    sort: params.sort,
-    domain: params.domain.concat(domain)
-  }); // 加载列表
-  const initedList = await initListData(extras, result.listData, options.formFieldsOption, noloadField);
-  datas.listData = initedList.listData;
-  params.count = result.count;
-  loading.value = false;
+  const domain = searchview_ref?.value?.getDomain() || [];
+  callSearchRead({
+    model: props.fieldViewInfo.base_model,
+    fields: Object.keys(props.fieldViewInfo.viewFields),
+    offset: 0,
+    limit: props.action.limit,
+    domain: (props.action.domain || []).concat(domain),
+  }).then(async res => {
+    console.log(res);
+    listData.value['self'] = await initListData(res.records, props.viewFields);
+    dataCount.value = res.length
+  })
 }
 
 const editClick = () => {
@@ -249,14 +245,8 @@ const editClick = () => {
 
 const cancelClick = (real_id) => {
   disabled.value = true;
-  if (real_id) {
-    for (const field of Object.keys(data.value)) {
-      data.value[field] = dataCopy.formData[field];
-    }
-    for (const field of Object.keys(treeData.value)) {
-      treeData.value[field] = dataCopy.treeData[field]
-    }
-  }
+  data.value = dataCopy.formData;
+  treeData.value = dataCopy.treeData;
 }
 const createClick = async () => {
   disabled.value = false;
@@ -272,6 +262,7 @@ const saveCreate = async (savedDatas) => {
   router.push({
     path: router.currentRoute.value.fullPath,
     query: {
+      action_id: router.currentRoute.value.query.action_id,
       type: 'form',
       id: real_id
     }

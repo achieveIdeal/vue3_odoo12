@@ -71,7 +71,7 @@ const dialogVisible = ref(false);
 const loadAction = async (action_id, is_button) => {
   const action = await callAction(action_id);
   if (action.res_model) {
-    const views = await callViews(action.res_model, [[false, 'search'],[false, 'tree'],[false, 'form']])
+    const views = await callViews(action.res_model, [[false, 'search'], [false, 'tree'], [false, 'form']])
     let viewType = curViewType.value;
     if (is_button) {
       viewType = action.view_mode;
@@ -143,10 +143,11 @@ const buttonClick = (button, model, datas) => {
 }
 
 const getDetailClick = (data) => {
+  console.log(router.currentRoute.value.query.action_id);
   router.push({
     path: router.currentRoute.value.fullPath,
     query: {
-      action_id: action_id.value,
+      action_id: router.currentRoute.value.query.action_id,
       type: 'form',
       id: data.id
     }

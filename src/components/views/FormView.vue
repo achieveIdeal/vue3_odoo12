@@ -1,5 +1,4 @@
 <template>
-
   <el-form
       v-if="Object.keys(datas||{}).length"
       ref="form_ref"
@@ -46,7 +45,7 @@ const route = useRoute();
 let real_id = parseInt(route.query.id);
 const form_ref = ref('')
 watch(route, async (f, t) => {
-  const data_id = t.query.id
+  const data_id = t.query.id;
   if (data_id) {
     real_id = parseInt(data_id);
     await loadData(real_id)
@@ -187,6 +186,7 @@ const loadData = async (data_id) => {
       args: [data_id, Object.keys(props.viewFields || {})],
     }).then(async res => {
       datas.value = res[0];
+      console.log(res[0]);
       for (const treeField of Object.keys(treeViewFields.value || {})) {
         setTreeAttribute(treeField, props.extras, treeViewFields.value);
         callSearchRead({
@@ -198,8 +198,7 @@ const loadData = async (data_id) => {
             [props.viewFields[treeField].relation_field, '=', datas.value['id']]],
         }).then(async res => {
           treeData.value[treeField] = res.records;
-          datas.value[treeField] = res.records;
-          emits('dataLoadedCallback', datas.value, treeData.value);
+          emits('dataLoadedCallback', datas, treeData);
         })
       }
     })
@@ -220,9 +219,7 @@ const loadData = async (data_id) => {
       datas.value = data;
       for (const treeField of Object.keys(treeViewFields.value || {})) {
         setTreeAttribute(treeField, props.extras, treeViewFields.value);
-        treeData.value[treeField] = datas.value[treeField]
-        datas.value[treeField] = datas.value[treeField];
-        emits('dataLoadedCallback', {...datas.value, ...treeData.value});
+        emits('dataLoadedCallback', {datas,treeData});
       }
     })
   }
@@ -249,8 +246,7 @@ onMounted(async () => {
           [props.viewFields[treeField].relation_field, '=', datas.value['id']]],
       }).then(async res => {
         treeData.value[treeField] = res.records;
-        datas.value[treeField] = res.records
-        emits('dataLoadedCallback', {...datas.value, ...treeData.value});
+        emits('dataLoadedCallback', {datas, treeData});
       })
     }
   }

@@ -294,7 +294,6 @@ const getDomain = () => {
 }
 
 const doSearch = () => {
-  sessionStorage.setItem(props.model + 'searchFacets', JSON.stringify(searchFacets.value));
   const groupbys = searchFacets.value.filter(r => r.groupby).map(r => r.groupby);
   if (groupbys?.length) {
     emits('groupbyClick', groupbys)
@@ -572,10 +571,6 @@ defineExpose({
   getDomain, searchFacets
 })
 
-let store_searchFacets = JSON.parse(sessionStorage.getItem(props.model + 'searchFacets'));
-if (!props.isDialog && store_searchFacets) {
-  searchFacets.value = store_searchFacets;
-}
 
 </script>
 

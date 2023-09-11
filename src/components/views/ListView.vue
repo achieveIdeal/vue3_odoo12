@@ -25,7 +25,7 @@
 </template>
 
 <script lang="ts" setup>
-import {defineEmits, defineExpose, defineProps, computed, ref, onMounted} from "vue";
+import {defineEmits, defineExpose, defineProps, computed, ref, onMounted, watch} from "vue";
 import {callSearchRead} from "../../service/module/call";
 import {initListData, setFormAttribute} from "../../tools/init";
 import TableView from './TableView.vue'
@@ -86,26 +86,25 @@ const getFields = () => {
   recursion(arch)
   return fields
 }
-onMounted(async () => {
+
+const main = async () => {
   fields.value = await getFields()
-})
-
-
-if (props.extras) {
-  setFormAttribute(props.extras, props.viewFields)
+  if (props.extras) {
+    setFormAttribute(props.extras, props.viewFields)
+  }
+  callSearchRead({
+    model: props.model,
+    fields: Object.keys(props.viewFields),
+    offset: 0,
+    limit: props.action.limit,
+    domain: props.action.domain || [],
+  }).then(async res => {
+    dataCount.value = res.length || 0;
+    treeData.value['self'] = await initListData(res.records, props.viewFields);
+    emits('dataLoadedCallback', treeData, ref({}), dataCount)
+  })
 }
-callSearchRead({
-  model: props.model,
-  fields: Object.keys(props.viewFields),
-  offset: 0,
-  limit: props.action.limit,
-  domain: props.action.domain || [],
-}).then(async res => {
-  dataCount.value = res.length || 0;
-  treeData.value['self'] = await initListData(res.records, props.viewFields);
-  emits('dataLoadedCallback', treeData.value['self'], {})
-})
-
+main();
 
 const getDetailClick = (data, index) => {
   emits('getDetailClick', data, index)

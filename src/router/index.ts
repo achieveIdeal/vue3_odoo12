@@ -6,7 +6,11 @@ let ycRoutes: Array<RouteRecordRaw> = [
         name: 'account_order',
         path: '/account_order',
         component: () => import("../views/AccountOrder.vue")
-    }
+    }, {
+        name: 'action',
+        path: '/action',
+        component: () => import("../components/MainView.vue"),
+    },
 ]
 
 // 2.返回一个 router 实列，为函数，配置 history 模式

@@ -87,7 +87,7 @@
   </component>
   <component v-else-if="children.tag==='tree'" :is="TableView"
              :formData="data"
-             :attributes="extras.attributes[children.field]"
+             :attributes="extras?.attributes?extras?.attributes[children.field]:{}"
              :fields="fields[children.field]"
              :treeField="children.field"
              :model="viewFields[children.field].relation"
