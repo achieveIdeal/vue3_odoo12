@@ -73,6 +73,7 @@ const arch = ref({});
 const dialogStack = ref([]);
 
 const dialogVisible = ref(false);
+
 const loadAction = async (action_id, is_button) => {
   const action = await callAction(action_id);
   if (action.res_model) {
@@ -114,9 +115,9 @@ const deleteLineClick = (treeField, index, treeData, row, noAddCallback) => {
 const addLineClick = (treeField, treeData, newLine, noAddCallback) => {
   emits('addLineClick', treeField, treeData, newLine, noAddCallback)
 }
-onMounted(async () => {
+const main = () => {
   loadAction(action.value.id || action_id.value).then(res => {
-    action_id.value = res.id;
+    action_id.value = res.action.id;
     action.value = res.action;
     fieldViewInfo.value = res.fieldViewInfo;
     searchViewInfo.value = res.searchViewInfo;
@@ -124,7 +125,7 @@ onMounted(async () => {
     formViewInfo.value = res.formViewInfo;
     arch.value = res.arch;
   });
-})
+}
 
 const buttonClick = (button, model, datas) => {
   if (button.attrs.type === 'action') {
@@ -185,6 +186,9 @@ const getLineDetailClick = (data, index, formViewInfo) => {
     actionDialog: {},
   })
 }
+
+
+main()
 
 </script>
 

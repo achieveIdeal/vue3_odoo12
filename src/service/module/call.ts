@@ -122,14 +122,24 @@ export function callReadGroup(data) {
     })
 }
 
-export function callFile(data, loading) {
-    const fileType = data.converter.split('-')[1];
-    return Request.get({
-        url: '/front/report/' + data.converter.split('-')[1] + '/' + data.reportname + '/' + data.docids,
-        responseType: 'blob'
-    }).then(async res => {  // 请求成功后处理流
-        downLoadFileBold(res, data.name, fileType)
-        loading.value = false;
+export function callFile(data) {
+    window.open('/front/report/' + data.converter.split('-')[1] + '/' + data.reportname + '/' + data.docids, '_blank')
+}
+
+export const callMethod = async (params) => {   // 处理非创建和编辑按钮点击
+    await callKw({
+        model: params.model,
+        method: params.method,
+        args: params.args
+    }).then(async result => {
+        if (!!result.report_file) {  // 如果是文件，请求下载
+            await callFile({
+                reportname: result.report_file,
+                docids: result?.context?.active_ids,
+                converter: result.report_type,
+                name: result.name
+            },)
+        }
     })
 }
 

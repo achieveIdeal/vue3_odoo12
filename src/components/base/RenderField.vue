@@ -5,7 +5,7 @@
       || children.attrs?.invisible, data)
       ||children.attrs?.invisible) && children.tag==='field'"
       :style="{width: !Object.keys(treeViewFields).includes(children.attrs?.name)?'30%':'100%'}"
-      :prop="viewType==='form'?children.attrs?.name:viewType==='tree'?[treeField,index, children.attrs.name]:[index,children.attrs.name]"
+      :prop="viewType==='form'?['formData',children.attrs?.name]:viewType==='tree'?['treeData',treeField,index, children.attrs.name]:[index,children.attrs.name]"
       :label="viewType==='form' && !Object.keys(treeViewFields).includes(children.attrs?.name)? viewFields[children.attrs?.name]?.string:''"
       :rules="viewFields[children.attrs.name]?.rules||[{
         required: parseDomain(viewFields[children.attrs.name]?.required, data),
@@ -25,6 +25,7 @@
                :readonly="!!parseDomain(viewFields[children.attrs?.name]?.readonly||children.attrs.readonly, data)"
                :disabled="disabled"
                :loading="loading"
+               @fieldOnchange="fieldOnchange"
     >
       <template v-if="((children.children || []))?.length" v-for="subChildren in (children.children || [])">
         <RenderField
@@ -48,6 +49,7 @@
             @getLineDetailClick="getLineDetailClick"
             @deleteLineClick="deleteLineClick"
             @addLineClick="addLineClick"
+            @fieldOnchange="fieldOnchange"
         />
       </template>
     </component>
@@ -86,6 +88,7 @@
           :disabled="disabled"
           :viewFields="viewFields"
           @deleteLineClick="deleteLineClick"
+          @fieldOnchange="fieldOnchange"
           @addLineClick="addLineClick"
       />
     </template>
@@ -135,6 +138,7 @@
           :viewFields="viewFields"
           @deleteLineClick="deleteLineClick"
           @addLineClick="addLineClick"
+          @fieldOnchange="fieldOnchange"
       />
     </template>
   </component>
@@ -187,6 +191,7 @@
             @getLineDetailClick="getLineDetailClick"
             @deleteLineClick="deleteLineClick"
             @addLineClick="addLineClick"
+            @fieldOnchange="fieldOnchange"
         />
       </template>
     </template>
@@ -321,7 +326,7 @@ const createComponent = (arch, parent) => {
   });
 }
 
-const emits = defineEmits(['handleButtonClick', 'getLineDetailClick', 'deleteLineClick', 'addLineClick'])
+const emits = defineEmits(['handleButtonClick', 'getLineDetailClick', 'deleteLineClick', 'addLineClick', 'fieldOnchange'])
 const handleButtonClick = (e, button) => {
   e.stopPropagation();
   emits('handleButtonClick', button)
@@ -331,11 +336,14 @@ const getLineDetailClick = (data, index, formViewInfo) => {
   emits('getLineDetailClick', data, index, formViewInfo)
 }
 
-const deleteLineClick = (treeField, index, treeData, row,noAddCallback) => {
-  emits('deleteLineClick', treeField, index, treeData, row,noAddCallback)
+const deleteLineClick = (treeField, index, treeData, row, noAddCallback) => {
+  emits('deleteLineClick', treeField, index, treeData, row, noAddCallback)
 }
-const addLineClick = (treeField, treeData, newLine,noAddCallback) => {
-  emits('addLineClick', treeField, treeData, newLine,noAddCallback)
+const addLineClick = (treeField, treeData, newLine, noAddCallback) => {
+  emits('addLineClick', treeField, treeData, newLine, noAddCallback)
+}
+const fieldOnchange = (params)=>{
+  emits('fieldOnchange', params)
 }
 </script>
 

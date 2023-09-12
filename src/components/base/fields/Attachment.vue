@@ -82,6 +82,7 @@ const handleFileChange = (field) => async (files) => {
   const file = files as UploadRawFile;
   props.datas[field] = await encodeFileToBase64(file.raw);
   props.datas[props.options[field].filename] = file.name
+  // fieldOnchange()
 }
 const handleExceed: UploadProps['onExceed'] = (field) => (files) => {
   const curFile = upload.value.find(r => {

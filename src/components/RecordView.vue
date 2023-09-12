@@ -4,16 +4,15 @@
   <el-header class="controller-panel">
     <!--    <MenuView v-if="hasMenus" :menus="menus" @menuClick="menuClick"/>-->
     <ButtonView
-        v-if="Object.keys(data).length"
+        v-if="Object.keys(formData).length"
         :disabled="disabled"
-        :params="{type: curViewType, id: data.id, name: ''}"
+        :params="{type: curViewType, id: formData.id, name: ''}"
         :buttons="buttons"
-        :data="data"
+        :data="curViewType==='form'?formData:selectRows"
         @editClick="editClick"
         @saveClick="saveClick(formview_ref)"
         @objectClick="objectClick"
         @createClick="createClick"
-        @customClick="customClick"
         @importClick="importClick"
         @exportClick="exportClick"
         @cancelClick="cancelClick"/>
@@ -38,6 +37,7 @@
                 @dataLoadedCallback="dataLoadedCallback"
                 @deleteLineClick="deleteLineClick"
                 @addLineClick="addLineClick"
+                @fieldOnchange="fieldOnchange"
       />
       <ListView ref="listview_ref" v-if="curViewType==='tree' && Object.keys(arch).length" :action="action"
                 :arch="arch"
@@ -67,14 +67,24 @@ import FormView from "./views/FormView.vue";
 import SearchView from '../components/views/SearchView.vue'
 import ButtonView from "./views/ButtonView.vue";
 import {formatData, initButton, initListData} from "../tools/init";
-import {callCreate, callReadGroup, callSearchRead, callWrite} from "../service/module/call";
+import {
+  callCreate,
+  callMethod,
+  callReadGroup,
+  callSearchRead,
+  callWrite
+} from "../service/module/call";
 import router from "../router";
+import {useRoute} from "vue-router";
 
+const route = useRoute();
 const loading = ref(false);
 const listview_ref = ref('');
 const formview_ref = ref('');
 const searchview_ref = ref('');
-const disabled = ref(true);
+const data_id = route.query.id;
+const disabled = ref(parseInt(data_id) !== 0);
+
 const props = defineProps({
   arch: {
     type: Object,
@@ -108,21 +118,27 @@ const props = defineProps({
 
 let data = ref({});
 let listData = ref([]);
+let formData = ref({});
+let selectRows = ref({});
 let treeData = ref({});
 let dataCopy = {};
 let dataCount = ref();
+const changedFieldsVal = {};
+
 const attrs = ref(props.arch.attrs);
 const model = props.fieldViewInfo.base_model;
-const dataLoadedCallback = (datas, treeData, countRef) => {
-  props.curViewType === 'form' ? data.value = datas.value : null;
+const dataLoadedCallback = (datas, treeDatas, countRef) => {
+  props.curViewType === 'form' ? data = datas : null;
+  props.curViewType === 'form' ? treeData = treeDatas : null;
+  props.curViewType === 'form' ? formData.value = datas.value : null;
   props.curViewType === 'tree' ? listData = datas : null;
   dataCount = countRef
-  dataCopy = {formData: {...datas}, treeData: {...treeData}};
+  dataCopy = {formData: JSON.parse(JSON.stringify(datas.value)), treeData: JSON.parse(JSON.stringify(treeDatas.value))};
 }
 const buttons = ref({buttonOptions: []});
 buttons.value.buttonOptions = initButton(props.extras, props.curViewType);
 const emits = defineEmits(['buttonClick', 'getDetailClick', 'getLineDetailClick', 'selectClick',
-  'deleteLineClick', 'addLineClick', 'saveWriteClick','saveCreateClick'])
+  'deleteLineClick', 'addLineClick', 'saveWriteClick', 'saveCreateClick', 'objectClick'])
 
 const buttonClick = (button, model, datas) => {
   emits('buttonClick', button, model, datas)
@@ -138,10 +154,10 @@ const editClick = () => {
   disabled.value = false;
 }
 
-const cancelClick = (real_id) => {
+const cancelClick = () => {
   disabled.value = true;
-  data.value = dataCopy.formData;
-  treeData.value = dataCopy.treeData;
+  data.value = JSON.parse(JSON.stringify(dataCopy.formData));
+  treeData.value = JSON.parse(JSON.stringify(dataCopy.treeData));
 }
 const createClick = async () => {
   disabled.value = false;
@@ -176,11 +192,13 @@ const saveClick = (formview_ref) => {  // 处理保存按钮，包括编辑保�
   if (!formEl) return
   formEl.validate((valid) => {
     if (valid) {
+      // changedFieldsVal
       let savedDatas = formatData({formData: data.value, treeData: treeData.value}, dataCopy);
       let noeSave = false;
       const noSave = () => {
         noeSave = true;
       }
+      debugger
       if (Object.keys(savedDatas).length && data.value.id) {
         emits('saveWriteClick', data.value, {savedDatas, saveWrite, noSave})
         !noeSave && saveWrite(savedDatas)
@@ -217,6 +235,29 @@ const searchClick = async () => {  // 搜索数据重置
     dataCount.value = res.length
   })
 }
+
+const objectClick = async (button) => {   // 处理非创建和编辑按钮点击
+  const data = props.curViewType === 'form' ? formData.value : selectRows.value
+  let ids = props.curViewType === 'form' ? [data.id] : data.id;
+  let send = true;
+  const noSend = () => {
+    send = false;
+  }
+  emits('objectClick', button, data, noSend);
+  if (!ids || !ids.length) {
+    ElMessage({
+      message: '请至少选择一条记录!',
+      type: 'error'
+    })
+    return false
+  }
+  send && await callMethod({
+    model: model,
+    method: button.method,
+    args: [ids]
+  })
+}
+
 
 const getGroupChildren = async (row) => {
   const domain = searchview_ref?.value?.getDomain() || [];
@@ -309,15 +350,6 @@ const loadGroupDetail = async (row, treeNode, resolve) => {
   resolve(children)
 }
 
-const customClick = (button) => {
-  const listViewExpose = getListViewExpose();
-  const rows = listViewExpose.listTable?.getSelectionRows() || []
-  if (rows.length) {
-    emits('customClick', button, rows, reload, loading);
-  } else {
-    emits('customClick', button, formatData(datas, {formData: {}, treeData: []}, options), reload, loading, formRef);
-  }
-}
 const exportClick = () => {
   const listViewExpose = getListViewExpose();
   const rows = listViewExpose.listTable?.getSelectionRows() || []
@@ -366,47 +398,6 @@ const exportClick = () => {
   })
 }
 
-const objectClick = async (name: string) => {   // 处理非创建和编辑按钮点击
-  const listViewExpose = getListViewExpose();
-  const rows = listViewExpose.listTable?.getSelectionRows() || []
-  let ids = !!params.id ? [params.id] : rows.map(r => r.id);
-  if (!ids.length) {
-    ElMessage({
-      message: '请至少选择一条记录!',
-      type: 'error'
-    })
-    return false
-  }
-  loading.value = true;
-  await callButton({
-    model: params.model,
-    method: name,
-    args: [ids]
-  }).then(async res => {
-    if (res.error) {
-      loading.value = false;
-      ElMessage({
-        message: res.error.data.message,
-        type: 'error'
-      });
-      return false;
-    }
-    emits('objectClick', name, rows, res, reload, loading);
-    await reload();
-    loading.value = false;
-    const result = res.result || {};
-
-    if (!!result.report_file) {  // 如果是文件，请求下载
-      loading.value = true;
-      await callFile({
-        reportname: result.report_file,
-        docids: result?.context?.active_ids || ids,
-        converter: result.report_type,
-        name: result.name,
-      }, loading)
-    }
-  })
-}
 const importClick = (result) => {
   const importFields = params.import_fields;
   if (!importFields?.length) {
@@ -454,7 +445,7 @@ const selectClick = (rows, listTable, toggleRowSelection) => {
       dataVal[field].push(row[field])
     }
   }
-  data.value = dataVal;
+  selectRows.value = dataVal;
   for (const button of buttons.buttonOptions) {
     if (button.needRow) {
       button.attributes.noRowInvisible = !rows.length;
@@ -467,8 +458,9 @@ const lineButtonClick = (treeField, data, button) => {
   emits('lineButtonClick', datas, treeField, data, button, reload, loading);
 }
 
-const fieldOnchange = (changeParams, noChange) => {
-  emits('fieldOnchange', datas, changeParams, noChange, reload, loading)
+const fieldOnchange = (params, noChange) => {
+  changedFieldsVal[params.field] = data.value[params.field];
+  emits('fieldOnchange', params)
 }
 
 defineExpose({

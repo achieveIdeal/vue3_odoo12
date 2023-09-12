@@ -3,7 +3,7 @@
       v-if="Object.keys(datas||{}).length"
       ref="form_ref"
       :inline="true"
-      :model="datas"
+      :model="{formData:datas, treeData}"
       label-position="left"
       label-width="120px"
       class="form-inline">
@@ -26,6 +26,7 @@
                    @getLineDetailClick="getLineDetailClick"
                    @deleteLineClick="deleteLineClick"
                    @addLineClick="addLineClick"
+                   @fieldOnchange="fieldOnchange"
       />
     </template>
   </el-form>
@@ -45,13 +46,7 @@ import {initListData, setFormAttribute, setTreeAttribute} from "../../tools/init
 const route = useRoute();
 let real_id = parseInt(route.query.id);
 const form_ref = ref('')
-watch(route, async (f, t) => {
-  const data_id = t.query.id;
-  if (data_id) {
-    real_id = parseInt(data_id);
-    await loadData(real_id)
-  }
-})
+
 const props = defineProps({
   model: {
     type: String,
@@ -78,6 +73,14 @@ const props = defineProps({
   }, loading: {
     type: Boolean,
     default: true
+  }
+})
+
+watch(route, async (f, t) => {
+  const data_id = t.query.id;
+  if (data_id) {
+    real_id = parseInt(data_id);
+    await loadData(real_id)
   }
 })
 
@@ -215,6 +218,8 @@ const loadData = async (data_id) => {
     datas.value = data;
     for (const treeField of Object.keys(treeViewFields.value || {})) {
       setTreeAttribute(treeField, props.extras, treeViewFields.value);
+      treeData.value[treeField] = [];
+
     }
     emits('dataLoadedCallback', datas, treeData);
   }
@@ -224,7 +229,7 @@ const treeData = ref({});  // 表格数据
 if (props.extras) {
   setFormAttribute(props.extras, props.viewFields);
 }
-const emits = defineEmits(['buttonClick', 'getLineDetailClick', 'dataLoadedCallback', 'deleteLineClick', 'addLineClick']);
+const emits = defineEmits(['buttonClick', 'getLineDetailClick', 'dataLoadedCallback', 'deleteLineClick', 'addLineClick','fieldOnchange']);
 const main = async () => {
   fields.value = await getFields();
   if (!props.data) {   // 加载详情时，不需要请求后端获取抬头数据
@@ -263,6 +268,9 @@ const addLineClick = (treeField, treeData, newLine, noAddCallback) => {
   emits('addLineClick', treeField, treeData, newLine, noAddCallback)
 }
 
+const fieldOnchange = (params) =>{
+  emits('fieldOnchange', params)
+}
 defineExpose({
   form_ref
 })

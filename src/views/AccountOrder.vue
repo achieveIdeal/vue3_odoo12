@@ -1,5 +1,5 @@
 <template>
-  <MainView :action_name="'e2yun_dpsrm_supplier_permission.supplier_menus_action'" :extras="extras"/>
+  <MainView :action_name="'e2yun_xw_account_order.srm_account_order_action'" :extras="extras"/>
 </template>
 
 <script lang="ts" setup>
@@ -15,8 +15,7 @@ const extras = {
     type: 'edit',
     text: '编辑',
     showType: ['form'],
-    attributes: {
-    }
+    attributes: {}
   }, {
     type: 'create',
     showType: ['tree', 'form'],
@@ -45,15 +44,6 @@ const extras = {
     showType: ['form'],
     attributes: {
       invisible: [['state', 'in', ['draft', '', 'submit', 'cancel']]]
-    }
-  }, {
-    type: 'edit',
-    text: '填写发票信息',
-    classify: 'success',
-    method: 'write_invoice_info',
-    showType: ['form'],
-    attributes: {
-      invisible: [['state', '!=', 'purchase_confirm']]
     }
   }
   ],
@@ -152,9 +142,7 @@ const extras = {
     date_end: {
       readonly: [['state', 'not in', ['', 'draft']]],
     },
-    name: {
-      default:'12323'
-    },
+    name: {},
     partner_id: {}
   },
   search_fields: {

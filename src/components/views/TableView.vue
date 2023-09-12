@@ -1,5 +1,5 @@
 <template>
-  <el-table :data="treeData[treeField]" ref="listTable" stripe
+  <el-table :data="treeData[treeField]||[]" ref="listTable" stripe
             lazy
             fit
             show-summary
@@ -28,6 +28,7 @@
                        :viewFields="viewFields"
                        :disabled="disabled"
                        :loading="loading"
+                       :fieldOnchange="fieldOnchange"
           />
         </template>
       </el-table-column>
@@ -152,7 +153,6 @@ const props = defineProps({
     default: []
   }
 })
-
 const pageSize = ref(props.action.limit);
 const dataLimit = ref(props.action.limit);
 const dataCount = ref((props.treeData[props.treeField] || []).length);
@@ -162,7 +162,7 @@ const isDigit = typeStore.isDigit;
 const upload = ref<UploadInstance>();
 
 
-const emits = defineEmits(['getDetailClick', 'selectClick', 'pageChange', 'editClick', 'addLineClick', 'deleteLineClick', 'lineButtonClick', 'fieldOnchange'])
+const emits = defineEmits(['getDetailClick', 'fieldOnchange', 'selectClick', 'pageChange', 'editClick', 'addLineClick', 'deleteLineClick', 'lineButtonClick', 'fieldOnchange'])
 
 const getDetail = async (data, index, formViewInfo) => {
   emits('getDetailClick', data, index, formViewInfo)
@@ -237,7 +237,9 @@ const handleDeleteLine = (index, treeField, row) => {  //  行删除
     delete_row = false;
   }
   delete_row && props.treeData[treeField].splice(index, 1);
-  emits('deleteLineClick', treeField, index, props.treeData[treeField], row, delete_row);
+  delete_row && props.formData[treeField].splice(index, 1);
+  emits('fieldOnchange', {field: treeField});
+  emits('deleteLineClick', treeField, index, props.treeData[treeField], row, noDelete);
 }
 const onAddItem = (treeField) => {
   const newLine = {}
@@ -249,7 +251,8 @@ const onAddItem = (treeField) => {
     add_row = false;
   }
   add_row && props.treeData[treeField].push(newLine);
-  emits('addLineClick', treeField, props.treeData[treeField], newLine, add_row);
+  add_row && props.formData[treeField].push(0)
+  emits('addLineClick', treeField, props.treeData[treeField], newLine, noAdd);
 }
 const handleCurrentChange = (treeField) => {
   emits('pageChange', currentPage.value, treeField);
@@ -257,6 +260,10 @@ const handleCurrentChange = (treeField) => {
 
 const handleButtonClick = (field, row, button) => {
   emits('lineButtonClick', field, row, button);
+}
+
+const fieldOnchange = (params) => {
+  emits('fieldOnchange', params)
 }
 defineExpose({})
 </script>

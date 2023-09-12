@@ -45,23 +45,13 @@
         </template>
         <template v-else-if="(disabled || button.show)&&button.type==='object'">
           <el-button :type="button.classify||'primary'" :name="button.method"
-                     @click.prevent="handleObject(button.method)">
-            {{ button.text }}
-          </el-button>
-        </template>
-        <template v-else-if="( disabled || button.show)&&button.type==='custom'">
-          <el-button :type="button.classify" @click.prevent="handleCustom(button)">
+                     @click.prevent="handleObject(button)">
             {{ button.text }}
           </el-button>
         </template>
         <template v-else-if="(disabled || button.show)&&button.type==='export'">
           <el-button :type="button.classify" @click.prevent="handleExport">
             {{ button.text || '导出' }}
-          </el-button>
-        </template>
-        <template v-else-if="(disabled || button.show)&&button.type==='any'">
-          <el-button :type="button.classify" @click.prevent="handleAny(button)">
-            {{ button.text }}
           </el-button>
         </template>
       </template>
@@ -99,7 +89,7 @@ const props = defineProps({
 })
 
 const emits = defineEmits(['editClick', 'saveClick', 'cancelClick', 'exportClick',
-  'createClick', 'objectClick', 'importClick', 'downTmpClick', 'customClick', 'anyClick'
+  'createClick', 'objectClick', 'importClick', 'downTmpClick'
 ])
 const handleCustom = (button) => {
   emits('customClick', button)
@@ -120,8 +110,8 @@ const handleCancel = function (real_id) {
   }
   emits('cancelClick', real_id);
 }
-const handleObject = function (name) {
-  emits('objectClick', name);
+const handleObject = function (button) {
+  emits('objectClick', button);
 }
 const handleCreate = function () {
   router.push({
@@ -134,9 +124,6 @@ const handleCreate = function () {
   emits('createClick');
 }
 
-const handleAny = (button) => {
-  emits('anyClick', button)
-}
 const handleDownTemplate = (template) => {
   if (template) {
     location.href = template
