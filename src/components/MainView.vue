@@ -73,11 +73,10 @@ const arch = ref({});
 
 const dialogStack = ref([]);
 
-const dialog_ref = ref(false);
+const dialog_ref = ref([]);
 
 const loadAction = async (action_id, is_button) => {
   const action = await callAction(action_id);
-  console.log(action);
   if (action.res_model) {
     const views = await callViews(action.res_model, [[false, 'search'], [false, 'tree'], [false, 'form']])
     let viewType = curViewType.value;
@@ -130,6 +129,7 @@ const main = () => {
 }
 
 const buttonClick = (button, model, datas, selectRows) => {
+  const curDialog = dialog_ref.value[dialog_ref.value.length - 1];
   if (button.attrs.type === 'action') {
     const action_id = parseInt(button.attrs.name);
     loadAction(action_id, true).then(res => {
@@ -145,7 +145,6 @@ const buttonClick = (button, model, datas, selectRows) => {
       })
     })
   } else if (button.attrs.type === 'object') {
-    const curDialog = dialog_ref.value[dialog_ref.value.length - 1];
     const curDialogData = dialogStack.value[dialog_ref.value.length - 1];
     callKw({
       model: model,

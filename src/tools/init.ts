@@ -29,38 +29,18 @@ export const setFormAttribute = (extras, formFieldsOption) => {
         }
     }
 }
-export const initFormData = async (formData, formFieldsOption) => {
+export const initFormData = (formData, formFieldsOption) => {
     for (let field of formData ? Object.keys(formFieldsOption || {}) : []) {   // 初始化下拉选项值
-        let extraOptions = attributes[field];
-        formData[field] = formData[field] || extraOptions?.default || '';
         let value = formData[field];
         if (!isBool(formFieldsOption[field]?.type) && !value) {
             formData[field] = '';
         } else if (isDigit(formFieldsOption[field]?.type) && !value) {
             formData[field] = 0;
-            continue
-        }
-        if (is2Many(formFieldsOption[field]?.type)) {
-            await searchFieldSelection(formFieldsOption[field], '', [['id', 'in', formData[field]]], formData[field].length)
-        }
-        !formFieldsOption[field]?.selection ? formFieldsOption[field].selection = [] : null;
-        let sameFlag = false
-        if (is2One(formFieldsOption[field]?.type)) {  // 保证选项唯一
-            if (!value) continue;
-            for (let i of formFieldsOption[field]?.selection) {
-                if (i[0] === value[0] && i[1] === value[1]) {
-                    sameFlag = true;
-                }
-            }
-            if (!sameFlag && value) {
-                formFieldsOption[field]?.selection.push(value);
-            }
-            // formData[field] = value[0]
         }
     }
-    return {formFieldsOption, formData}
+    return formData
 }
-export const setTreeAttribute = (treeField, extras,treeFieldsOption) => {
+export const setTreeAttribute = (treeField, extras, treeFieldsOption) => {
     let attributes = extras.attributes && extras.attributes[treeField] ? extras.attributes[treeField]?.fields : {};
     if (!attributes) return
     for (const field of Object.keys(treeFieldsOption[treeField] || {})) { // 设置自定义的属性
@@ -73,56 +53,22 @@ export const setTreeAttribute = (treeField, extras,treeFieldsOption) => {
         }
     }
 }
-export const initTreeData = async (extras, treeData, treeFieldsOption, formData) => {
+export const initTreeData = async (treeData, treeFieldsOption) => {
     for (let treeField of Object.keys(treeFieldsOption || {})) {
         !treeData[treeField] ? treeData[treeField] = [] : null;
         let lineDatas = treeData[treeField] || [];
-        if (!lineDatas.length) {
-            setTreeAttribute(treeField, {}, formData, treeFieldsOption, extras);
-        }
         for (let lineData of !!lineDatas.length ? lineDatas : []) {
-            let attributes = extras.attributes && extras.attributes[treeField] ? extras.attributes[treeField]?.fields : {};
             for (let field of Object.keys(lineData || {})) {
-                let extraOptions = attributes[field];
-                lineData[field] = lineData[field] || extraOptions?.default || '';
                 let value = lineData[field];
                 if (isDigit(treeFieldsOption[treeField][field]?.type) && !value) {
                     lineData[field] = 0
                 } else if (!isBool(treeFieldsOption[treeField][field]?.type) && !value) {
                     lineData[field] = ''
                 }
-                let sameFlag = false
-                if (is2One(treeFieldsOption[treeField][field]?.type)) {
-                    !treeFieldsOption[treeField][field]['curSelect'] ? treeFieldsOption[treeField][field]['curSelect'] = [] : null;
-                    for (let i of treeFieldsOption[treeField][field]['curSelect']) {
-                        if (i[0] === value[0] && i[1] === value[1]) {
-                            sameFlag = true;
-                        }
-                    }
-                    if (!sameFlag && value) {
-                        treeFieldsOption[treeField][field]['curSelect'].push(value);
-                    }
-                    treeFieldsOption[treeField][field].selection = treeFieldsOption[treeField][field]['curSelect'];
-                    // lineData[field] = value[0];
-                }
-                if (is2Many(treeFieldsOption[treeField][field]?.type)) {
-                    if (lineData[field].length && !(lineData[field][0] instanceof Array)) {
-                        await searchFieldSelection(treeFieldsOption[treeField][field], '', [['id', 'in', lineData[field]]], lineData[field].length)
-                    }
-                }
-            }
-            if (extras) {
-                setTreeAttribute(treeField, lineData, formData, treeFieldsOption, extras)
-                if (extras[treeField]) {
-                    extras[treeField].buttons = initButton((extras[treeField] || {}), {
-                        ...formData,
-                        [treeField]: lineData
-                    })
-                }
             }
         }
     }
-    return {treeData, treeFieldsOption}
+    return treeData
 }
 
 

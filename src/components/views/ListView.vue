@@ -33,7 +33,6 @@ import {defineEmits, defineExpose, defineProps, computed, ref, onMounted, watch}
 import {callSearchRead} from "../../service/module/call";
 import {initListData, setFormAttribute} from "../../tools/init";
 import TableView from './TableView.vue'
-import {formatArch} from "../../tools";
 
 const props = defineProps({
   model: {

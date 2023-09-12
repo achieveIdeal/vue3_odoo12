@@ -20,14 +20,8 @@
 
 
 <script lang="ts" setup>
+import {onchangeField,eventBus} from "../../../tools";
 
-import {defineProps} from "vue";
-import {onchangeField} from "../../../tools";
-import {defineEmits} from "vue/dist/vue";
-
-import mitt from "mitt";
-
-const eventBus = mitt()
 const props = defineProps({
   field: {
     default: ''

@@ -26,11 +26,7 @@
 <script lang="ts" setup>
 
 import {ref} from "vue";
-
-import mitt from "mitt";
-
-const eventBus = mitt()
-import {onchangeField, downLoadFile, encodeFileToBase64} from "../../../tools";
+import {onchangeField, downLoadFile, encodeFileToBase64,eventBus} from "../../../tools";
 
 const props = defineProps({
   field: {

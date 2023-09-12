@@ -36,12 +36,9 @@
 </template>
 
 <script lang="ts" setup>
-import {onchangeField, searchFieldSelection} from "../../../tools";
+import {onchangeField, eventBus, searchFieldSelection} from "../../../tools";
 import {ref} from "vue";
 
-import mitt from "mitt";
-
-const eventBus = mitt()
 const props = defineProps({
   field: {
     default: ''

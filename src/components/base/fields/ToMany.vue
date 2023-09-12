@@ -48,8 +48,8 @@
 </template>
 
 <script lang="ts" setup>
-import {onchangeField, searchFieldSelection} from "../../../tools";
-import {defineEmits, ref} from "vue";
+import {onchangeField, searchFieldSelection,eventBus} from "../../../tools";
+import { ref} from "vue";
 
 const checkAll = ref(false);
 const props = defineProps({
@@ -98,9 +98,6 @@ const props = defineProps({
     default: true
   }
 })
-import mitt from "mitt";
-
-const eventBus = mitt()
 const loading = ref(false)
 const searchSelection = (option) => (query: string) => {
   loading.value = true;

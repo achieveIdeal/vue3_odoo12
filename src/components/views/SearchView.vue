@@ -70,22 +70,22 @@
                 <select class="input filter-item" v-model="curDateRangeField"
                         @change="dateRangeFieldChange">
                   <option v-for="field of dateFields" :key="field" :value="field" class="filter-item">
-                    {{ searcher.searchOptions[field]?.string }}
+                    {{ searchViewInfo.viewFields[field]?.string }}
                   </option>
                 </select>
               </div>
-              <div v-if="searcher.searchOptions[curDateRangeField]?.searchType==='range'"
-                   class="pulldown-element-text filter-item">
-                <label for="time_range_selector filter-item">范围</label>
-                <select class="input filter-item" v-model="curDateRangeVal">
-                  <option style='display: none' value=""></option>
-                  <option v-for="dateSelect of dateOptions[curDateRangeField]" :key="dateSelect.key" class="filter-item"
-                          :value="dateSelect.key">
-                    {{ dateSelect.text }}
-                  </option>
-                </select>
-              </div>
-              <div v-else class="pulldown-element-text filter-item" role="menuitem">
+              <!--              <div v-if="searchViewInfo.viewFields[curDateRangeField]?.searchType==='range'"-->
+              <!--                   class="pulldown-element-text filter-item">-->
+              <!--                <label for="time_range_selector filter-item">范围</label>-->
+              <!--                <select class="input filter-item" v-model="curDateRangeVal">-->
+              <!--                  <option style='display: none' value=""></option>-->
+              <!--                  <option v-for="dateSelect of dateOptions[curDateRangeField]" :key="dateSelect.key" class="filter-item"-->
+              <!--                          :value="dateSelect.key">-->
+              <!--                    {{ dateSelect.text }}-->
+              <!--                  </option>-->
+              <!--                </select>-->
+              <!--              </div>-->
+              <div class="pulldown-element-text filter-item" role="menuitem">
                   <span class="searchview_extended_prop_value filter-item" style="font-size: 13px;color:#000000;">
                   从:<input class="input filter-item" type="date" v-model="dateStart"> <br>
                   至:<input class="input filter-item" type="date" v-model="dateEnd">
@@ -226,6 +226,10 @@ const parseSearchViewInfo = async (searcher, searchFields, groupby, domainFilter
       const domain = child.attrs.domain;
       if (context) {
         const data = JSON.parse(formatStr2JsonStr(context));
+        if (!props.searchViewInfo.viewFields[data.group_by]) {
+          props.searchViewInfo.viewFields[data.group_by] = {}
+        }
+        props.searchViewInfo.viewFields[data.group_by].string = child.attrs.string
         groupby.push(data.group_by)
       }
       if (domain) {
@@ -261,7 +265,7 @@ const getDomain = () => {
     if (isDate) {
       let start = 0;
       let end = 0;
-      const fieldType = props.searcher.searchOptions[field].type;
+      const fieldType = props.searchViewInfo.viewFields[field].type;
       if (fieldType === 'date') {
         start = dateFtt("yyyy-MM-dd", value[0]);
         end = dateFtt("yyyy-MM-dd", value[1]);
@@ -490,7 +494,7 @@ const groupbyItemClick = (groupbyOption) => {
 }
 
 const dateRangeClick = () => {
-  if (!curDateRangeVal.value && props.searcher.searchOptions[curDateRangeField.value].searchType === 'range') return;
+  if (!curDateRangeVal.value && props.searchViewInfo.viewFields[curDateRangeField.value].searchType === 'range') return;
   const dateKey = curDateRangeVal.value;
   const dateSelect = dateRangeSelect[dateKey];
   const existFilter = searchFacets.value.find(r => r.field === curDateRangeField.value);
@@ -498,7 +502,7 @@ const dateRangeClick = () => {
   const start = new Date(Date.parse(dateStart.value))
   const end = new Date(Date.parse(dateEnd.value))
   const text = [dateSelect?.text || [dateFtt("yyyy-MM-dd", start), dateFtt("yyyy-MM-dd", end)].join('~')]
-  if (props.searcher.searchOptions[curDateRangeField.value].searchType !== 'range') {
+  if (props.searchViewInfo.viewFields[curDateRangeField.value].searchType !== 'range') {
     dateRange[0] = start;
     dateRange[1] = end
   }
@@ -508,7 +512,7 @@ const dateRangeClick = () => {
   } else {
     searchFacets.value.push({
       field: curDateRangeField.value,
-      string: props.searcher.searchOptions[curDateRangeField.value].string,
+      string: props.searchViewInfo.viewFields[curDateRangeField.value].string,
       value: dateRange,
       text: text
     })

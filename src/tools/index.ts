@@ -2,6 +2,9 @@ import {callNames, callOnchange, callFields, callRead, callSearchRead} from "../
 import {ElMessage} from "element-plus";
 import {initTreeData} from "./init";
 import axios from "axios";
+import mitt from "mitt";
+
+const eventBus = mitt()
 // 请求数据
 
 const appElement = document.getElementById('app');
@@ -30,7 +33,6 @@ const buildOnchangeSpecs = function (fieldsInfo, treeOption, fields) {
 }
 
 const onchangeField = async (params: OnchangeParamsType, checkAll) => {
-    debugger
     let options = params.options;
     let field = params.field;
     if (options[field]?.onchange) {
@@ -645,7 +647,7 @@ export {
     getFileType, loadFormData, dateFtt, downLoadFileBold,
     base64ToBlobUrl, loadListData, readFile, parseXMlToJson,
     downLoadFile, getFieldOption, formatArch,
-    encodeFileToBase64,
+    encodeFileToBase64,eventBus,
     parseDomain, loadActiveAction
 }
 

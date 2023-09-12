@@ -237,15 +237,18 @@ const handleDeleteLine = (index, treeField, row) => {  //  行删除
   }
   delete_row && props.treeData[treeField].splice(index, 1);
   delete_row && props.formData[treeField].splice(index, 1);
-  onchangeField({
-
-  })
+  onchangeField({})
   emits('deleteLineClick', treeField, index, props.treeData[treeField], row, noDelete);
 }
 const onAddItem = (treeField) => {
   const newLine = {}
   for (const field of props.fields) {
     newLine[field] = '';
+    if (['float', 'integer'].includes(props.viewFields[field]?.type)) {
+      newLine[field] = 0
+    } else if (props.viewFields[field]?.type === 'boolean') {
+      newLine[field] = false;
+    }
   }
   let add_row = true;
   const noAdd = () => {

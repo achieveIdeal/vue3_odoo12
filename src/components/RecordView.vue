@@ -4,7 +4,7 @@
   <el-header class="controller-panel">
     <!--    <MenuView v-if="hasMenus" :menus="menus" @menuClick="menuClick"/>-->
     <ButtonView
-        v-if="Object.keys(formData).length"
+        v-if="Object.keys(formData||{}).length"
         :disabled="disabled"
         :params="{type: curViewType, id: formData.id, name: ''}"
         :buttons="buttons"
@@ -76,6 +76,14 @@ import {
 } from "../service/module/call";
 import router from "../router";
 import {useRoute} from "vue-router";
+import {eventBus} from "../tools";
+
+eventBus.on('requestCallback',()=>{
+  loading.value = true;
+})
+eventBus.on('responseCallback',()=>{
+  loading.value = false;
+})
 
 const route = useRoute();
 const loading = ref(false);

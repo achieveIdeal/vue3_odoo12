@@ -41,7 +41,7 @@ import RenderField from '../../components/base/RenderField.vue'
 
 import {useRoute} from "vue-router";
 import {parseXMlToJson} from "../../tools";
-import {initListData, setFormAttribute, setTreeAttribute} from "../../tools/init";
+import {initFormData, initTreeData, setFormAttribute, setTreeAttribute} from "../../tools/init";
 
 const route = useRoute();
 let real_id = parseInt(route.query.id);
@@ -106,9 +106,9 @@ const treeViewFields = computed(() => {
   }
   return treeOption
 })
-console.log(props.viewFields);
+
 const formatArch = async (arch) => {
-  for (const children of (arch.children instanceof Array?arch.children:[])) {
+  for (const children of (arch.children instanceof Array ? arch.children : [])) {
     if (Object.keys(props.viewFields[children.attrs?.name]?.views || {}).length) {
       let formView = props.viewFields[children.attrs?.name]?.views?.form;
       let treeView = props.viewFields[children.attrs?.name]?.views?.tree;
@@ -165,7 +165,7 @@ const getFields = async () => {
   const fields = {self: []};
   const recursion = (arch, parent) => {
     const treeFields = []
-    for (const children of arch.children instanceof Array?arch.children:[]) {
+    for (const children of arch.children instanceof Array ? arch.children : []) {
       if (arch.tag === 'tree') {
         treeFields.push(children.attrs.name)
       } else if (children.tag === 'field') {
@@ -174,7 +174,7 @@ const getFields = async () => {
       recursion(children, arch)
     }
     if (arch.tag === 'tree') {
-      fields[parent.attrs.name] = treeFields
+      fields[parent.attrs.name] = treeFields;
     }
   }
   recursion(arch)
@@ -187,7 +187,8 @@ const loadData = async (data_id) => {
       model: props.model,
       args: [data_id, Object.keys(props.viewFields || {})],
     })
-    datas.value = res[0];
+    datas.value = initFormData(res[0], props.viewFields);
+    const treeViewFieldsInfo = {};
     for (const treeField of Object.keys(treeViewFields.value || {})) {
       setTreeAttribute(treeField, props.extras, treeViewFields.value);
       const res = await callSearchRead({
@@ -198,8 +199,11 @@ const loadData = async (data_id) => {
         domain: ['|', ['id', 'in', datas.value[treeField] || []],
           [props.viewFields[treeField].relation_field, '=', datas.value['id']]],
       })
+      treeViewFieldsInfo[treeField] = props.viewFields[treeField]?.views?.tree?.fields || {}
+
       treeData.value[treeField] = res.records;
     }
+    initTreeData(treeData.value, treeViewFieldsInfo);
     emits('dataLoadedCallback', datas, treeData);
   } else {
     const fields = await getFields();
@@ -219,7 +223,7 @@ const loadData = async (data_id) => {
     for (const treeField of Object.keys(treeViewFields.value || {})) {
       setTreeAttribute(treeField, props.extras, treeViewFields.value);
       treeData.value[treeField] = [];
-
+      datas.value[treeField] = []
     }
     emits('dataLoadedCallback', datas, treeData);
   }

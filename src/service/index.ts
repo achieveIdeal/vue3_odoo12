@@ -3,7 +3,7 @@ import type {AxiosInstance} from "axios";
 import {RequestConfig} from "./type";
 import {BASEURL, TIMEOUT} from "./config";
 import {ElMessage} from "element-plus";
-
+import {eventBus} from "../tools";
 // 用类封装的好处,可以创建多个axios实例
 class Request {
     instance: AxiosInstance;
@@ -13,14 +13,19 @@ class Request {
         // 每个instance都添加拦截器
         this.instance.interceptors.request.use(
             (config) => {
+                if(config.data.params.method !== 'name_search'){
+                    eventBus.emit('requestCallback', config)
+                }
                 return config;
             },
             (err) => {
+                eventBus.emit('requestCallback', err)
                 return err;
             }
         );
         this.instance.interceptors.response.use(
             (res) => {
+                eventBus.emit('responseCallback', res)
                 if (res.data.error) {
                     ElMessage({
                         message: res.data.error.data.message,
@@ -31,6 +36,14 @@ class Request {
                 return res.data.result;
             },
             (err) => {
+                eventBus.emit('responseCallback', err)
+                if (res.data.error) {
+                    ElMessage({
+                        message: err,
+                        type: 'error'
+                    });
+                    return {}
+                }
                 return err;
             }
         );
