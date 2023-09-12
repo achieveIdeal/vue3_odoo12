@@ -27,7 +27,9 @@
 
 import {ref} from "vue";
 
-const emits = defineEmits(['fieldOnchange']);
+import mitt from "mitt";
+
+const eventBus = mitt()
 import {onchangeField, downLoadFile, encodeFileToBase64} from "../../../tools";
 
 const props = defineProps({
@@ -98,7 +100,7 @@ let loading = ref(false)
 
 const fieldOnchange = (params) => {
   let noChange = false;
-  emits('fieldOnchange', params, () => {
+  eventBus.emit('fieldOnchange', params, () => {
     noChange = true
   });
   !noChange && onchangeField(params)

@@ -19,7 +19,7 @@
 
 <script lang="ts" setup>
 import RecordView from '../RecordView.vue'
-import {defineProps, ref} from "vue";
+import {defineExpose, defineProps, ref} from "vue";
 import {defineEmits} from "vue/dist/vue";
 
 
@@ -49,12 +49,9 @@ const props = defineProps({
   }, index: {
     type: Number,
     default: 0
-  }, visible: {
-    type: Boolean,
-    default: false
   }
 })
-const dialogVisible = ref(props.visible)
+const dialogVisible = ref(true);
 
 
 const emits = defineEmits(['buttonClick', 'getDetailClick', 'getLineDetailClick', 'selectClick', 'closeDialog'])
@@ -85,6 +82,10 @@ const selectClick = (rows) => {
   data.value = dataVal;
   emits('selectClick', rows)
 }
+
+defineExpose({
+  dialogVisible
+})
 </script>
 
 <style lang="less" scoped>

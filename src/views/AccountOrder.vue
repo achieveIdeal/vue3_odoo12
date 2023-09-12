@@ -1,5 +1,5 @@
 <template>
-  <MainView :action_name="'e2yun_xw_account_order.srm_account_order_action'" :extras="extras"/>
+  <MainView :action_name="'e2yun_dpsrm_qweb_extends.srm_delivery_order_action'" :extras="extras"/>
 </template>
 
 <script lang="ts" setup>

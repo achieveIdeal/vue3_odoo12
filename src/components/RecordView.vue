@@ -141,7 +141,7 @@ const emits = defineEmits(['buttonClick', 'getDetailClick', 'getLineDetailClick'
   'deleteLineClick', 'addLineClick', 'saveWriteClick', 'saveCreateClick', 'objectClick'])
 
 const buttonClick = (button, model, datas) => {
-  emits('buttonClick', button, model, datas)
+  emits('buttonClick', button, model, datas, selectRows)
 }
 const getDetailClick = (data, index) => {
   emits('getDetailClick', data, index)
@@ -460,7 +460,8 @@ const lineButtonClick = (treeField, data, button) => {
 
 const fieldOnchange = (params, noChange) => {
   changedFieldsVal[params.field] = data.value[params.field];
-  emits('fieldOnchange', params)
+  console.log(changedFieldsVal);
+  emits('fieldOnchange', params, noChange)
 }
 
 defineExpose({

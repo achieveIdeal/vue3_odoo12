@@ -106,9 +106,9 @@ const treeViewFields = computed(() => {
   }
   return treeOption
 })
-
+console.log(props.viewFields);
 const formatArch = async (arch) => {
-  for (const children of arch.children) {
+  for (const children of (arch.children instanceof Array?arch.children:[])) {
     if (Object.keys(props.viewFields[children.attrs?.name]?.views || {}).length) {
       let formView = props.viewFields[children.attrs?.name]?.views?.form;
       let treeView = props.viewFields[children.attrs?.name]?.views?.tree;
@@ -154,7 +154,7 @@ const formatArch = async (arch) => {
         string: props.viewFields[children.attrs?.name]?.string
       }]
     }
-    children.children.length && await formatArch(children)
+    children.children?.length && await formatArch(children)
   }
 }
 
@@ -165,7 +165,7 @@ const getFields = async () => {
   const fields = {self: []};
   const recursion = (arch, parent) => {
     const treeFields = []
-    for (const children of arch.children) {
+    for (const children of arch.children instanceof Array?arch.children:[]) {
       if (arch.tag === 'tree') {
         treeFields.push(children.attrs.name)
       } else if (children.tag === 'field') {
@@ -229,7 +229,7 @@ const treeData = ref({});  // 表格数据
 if (props.extras) {
   setFormAttribute(props.extras, props.viewFields);
 }
-const emits = defineEmits(['buttonClick', 'getLineDetailClick', 'dataLoadedCallback', 'deleteLineClick', 'addLineClick','fieldOnchange']);
+const emits = defineEmits(['buttonClick', 'getLineDetailClick', 'dataLoadedCallback', 'deleteLineClick', 'addLineClick', 'fieldOnchange']);
 const main = async () => {
   fields.value = await getFields();
   if (!props.data) {   // 加载详情时，不需要请求后端获取抬头数据
@@ -268,8 +268,9 @@ const addLineClick = (treeField, treeData, newLine, noAddCallback) => {
   emits('addLineClick', treeField, treeData, newLine, noAddCallback)
 }
 
-const fieldOnchange = (params) =>{
-  emits('fieldOnchange', params)
+const fieldOnchange = (params, noChange) => {
+  console.log(2222);
+  emits('fieldOnchange', params, noChange)
 }
 defineExpose({
   form_ref

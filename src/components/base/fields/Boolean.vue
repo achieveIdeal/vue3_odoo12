@@ -20,8 +20,9 @@
 
 import {defineEmits, defineProps} from "vue/dist/vue";
 import {onchangeField} from "../../../tools";
+import mitt from "mitt";
 
-const emits = defineEmits(['fieldOnchange']);
+const eventBus = mitt()
 const props = defineProps({
   field: {
     default: ''
@@ -33,7 +34,7 @@ const props = defineProps({
   data: {
     type: Object,
     default: {}
-  },   treeData: {
+  }, treeData: {
     type: Object,
     default: {}
   }, attrs: {
@@ -43,7 +44,7 @@ const props = defineProps({
   option: {
     type: Object,
     default: {}
-  },   viewFields: {
+  }, viewFields: {
     type: Object,
     default: {}
   }, treeViewFields: {
@@ -69,7 +70,7 @@ const props = defineProps({
 })
 const fieldOnchange = (params) => {
   let noChange = false;
-  emits('fieldOnchange', params, () => {
+  eventBus.emit('fieldOnchange', params, () => {
     noChange = true
   });
   !noChange && onchangeField(params)

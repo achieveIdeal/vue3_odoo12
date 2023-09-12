@@ -30,6 +30,7 @@ const buildOnchangeSpecs = function (fieldsInfo, treeOption, fields) {
 }
 
 const onchangeField = async (params: OnchangeParamsType, checkAll) => {
+    debugger
     let options = params.options;
     let field = params.field;
     if (options[field]?.onchange) {
@@ -54,7 +55,7 @@ const onchangeField = async (params: OnchangeParamsType, checkAll) => {
         let onchange: { [prop: string]: '' | '1' };
         let changedData: { [prop: string]: Multiple } = {}
         for (let field of Object.keys(paramsDatas || {})) {
-            if (params.form?.model && options[field].relation === params.form?.model) {
+            if (field === options[field].relation_field) {
                 changedData[field] = params.form.datas
             } else {
                 changedData[field] = paramsDatas[field];
@@ -146,9 +147,6 @@ const onchangeField = async (params: OnchangeParamsType, checkAll) => {
             }
             datas[changedField] = value[changedField];
         }
-    }
-    if (params.form?.datas) {
-        onchangeField(params.form);
     }
 }
 

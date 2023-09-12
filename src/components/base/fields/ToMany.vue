@@ -98,8 +98,9 @@ const props = defineProps({
     default: true
   }
 })
+import mitt from "mitt";
 
-const emits = defineEmits(['fieldOnchange']);
+const eventBus = mitt()
 const loading = ref(false)
 const searchSelection = (option) => (query: string) => {
   loading.value = true;
@@ -117,7 +118,7 @@ const preSearchSelect = async (option) => {
 }
 const fieldOnchange = (params) => {
   let noChange = false;
-  emits('fieldOnchange', params, () => {
+  eventBus.emit('fieldOnchange', params, () => {
     noChange = true
   });
   !noChange && onchangeField(params)

@@ -1,7 +1,7 @@
 <template>
   <template v-for="(dialog, index) in dialogStack" :key="index">
     <DialogView
-        :visible="dialog.visible"
+        ref="dialog_ref"
         :isDialog="true"
         :index="index"
         :dataDialog="dialog.dataDialog"
@@ -38,9 +38,10 @@
   />
 </template>
 
+
 <script lang="ts" setup>
 import {callAction, callKw, callViews} from "../service/module/call";
-import {defineEmits, defineProps, onMounted, ref, watch} from "vue";
+import {defineEmits, defineProps, ref, watch} from "vue";
 import {useRoute, useRouter} from "vue-router";
 import {formatArch} from "../tools";
 import RecordView from '../components/RecordView.vue'
@@ -72,10 +73,11 @@ const arch = ref({});
 
 const dialogStack = ref([]);
 
-const dialogVisible = ref(false);
+const dialog_ref = ref(false);
 
 const loadAction = async (action_id, is_button) => {
   const action = await callAction(action_id);
+  console.log(action);
   if (action.res_model) {
     const views = await callViews(action.res_model, [[false, 'search'], [false, 'tree'], [false, 'form']])
     let viewType = curViewType.value;
@@ -127,7 +129,7 @@ const main = () => {
   });
 }
 
-const buttonClick = (button, model, datas) => {
+const buttonClick = (button, model, datas, selectRows) => {
   if (button.attrs.type === 'action') {
     const action_id = parseInt(button.attrs.name);
     loadAction(action_id, true).then(res => {
@@ -135,7 +137,6 @@ const buttonClick = (button, model, datas) => {
         fieldViewInfoDialog: res.fieldViewInfo,
         archDialog: res.arch,
         curViewTypeDialog: res.viewType,
-        dialogVisible: true,
         searchViewInfoDialog: res.searchViewInfo,
         dataDialog: datas,
         actionDialog: res.action,
@@ -144,17 +145,18 @@ const buttonClick = (button, model, datas) => {
       })
     })
   } else if (button.attrs.type === 'object') {
-    debugger
+    const curDialog = dialog_ref.value[dialog_ref.value.length - 1];
+    const curDialogData = dialogStack.value[dialog_ref.value.length - 1];
     callKw({
       model: model,
       method: button.attrs.name,
-      args: [datas.id],
-      kwargs: {context: {'active_id': record_ref.value.data.id, 'active_ids': record_ref.value.data.id}}
+      args: [curDialogData.visible ? 0 : datas.id],
+      kwargs: {context: {'active_id': datas.id, 'active_ids': selectRows?.id || [datas.id]}}
     }).then(res => {
-      dialogVisible.value = false;
+      curDialog.dialogVisible = false;
     })
   } else {
-    dialogVisible.value = false;
+    curDialog.dialogVisible = false;
   }
 }
 const getDetailClick = (data) => {
@@ -180,7 +182,6 @@ const getLineDetailClick = (data, index, formViewInfo) => {
     fieldViewInfoDialog: formViewInfo,
     archDialog: formViewInfo.arch,
     curViewTypeDialog: 'form',
-    dialogVisible: true,
     dataDialog: data,
     visible: true,
     actionDialog: {},
@@ -191,6 +192,7 @@ const getLineDetailClick = (data, index, formViewInfo) => {
 main()
 
 </script>
+
 
 <style lang="less" scoped>
 

@@ -26,7 +26,9 @@
 <script lang="ts" setup>
 import {onchangeField} from "../../../tools";
 import {defineEmits} from "vue/dist/vue";
-const emits= defineEmits(['fieldOnchange']);
+import mitt from "mitt";
+
+const eventBus = mitt()
 const props = defineProps({
   field: {
     default: ''
@@ -69,7 +71,7 @@ const props = defineProps({
 
 const fieldOnchange = (params) => {
   let noChange = false;
-  emits('fieldOnchange', params, () => {
+  eventBus.emit('fieldOnchange', params, () => {
     noChange = true
   });
   !noChange && onchangeField(params)

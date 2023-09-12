@@ -28,7 +28,6 @@
                        :viewFields="viewFields"
                        :disabled="disabled"
                        :loading="loading"
-                       :fieldOnchange="fieldOnchange"
           />
         </template>
       </el-table-column>
@@ -94,7 +93,7 @@
 <script lang="ts" setup>
 import RenderField from '../base/RenderField.vue'
 import {defineEmits, defineExpose, defineProps, ref} from "vue";
-import {parseDomain} from "../../tools";
+import {onchangeField, parseDomain} from "../../tools";
 import {useTypeStore} from "../../store";
 
 const props = defineProps({
@@ -238,7 +237,9 @@ const handleDeleteLine = (index, treeField, row) => {  //  行删除
   }
   delete_row && props.treeData[treeField].splice(index, 1);
   delete_row && props.formData[treeField].splice(index, 1);
-  emits('fieldOnchange', {field: treeField});
+  onchangeField({
+
+  })
   emits('deleteLineClick', treeField, index, props.treeData[treeField], row, noDelete);
 }
 const onAddItem = (treeField) => {
@@ -262,9 +263,6 @@ const handleButtonClick = (field, row, button) => {
   emits('lineButtonClick', field, row, button);
 }
 
-const fieldOnchange = (params) => {
-  emits('fieldOnchange', params)
-}
 defineExpose({})
 </script>
 

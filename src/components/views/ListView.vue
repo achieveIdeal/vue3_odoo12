@@ -22,6 +22,8 @@
         @selectClick="selectClick"
         @deleteLineClick="deleteLineClick"
         @addLineClick="addLineClick"
+        @fieldOnchange="fieldOnchange"
+
     />
   </el-form>
 </template>
@@ -65,7 +67,7 @@ const props = defineProps({
     default: true
   }
 })
-const emits = defineEmits(['getDetailClick', 'selectClick', 'dataLoadedCallback', 'deleteLineClick', 'addLineClick'])
+const emits = defineEmits(['getDetailClick', 'selectClick', 'fieldOnchange', 'dataLoadedCallback', 'deleteLineClick', 'addLineClick'])
 
 const tableview_ref = ref('')
 const dataCount = ref(0);
@@ -76,7 +78,7 @@ const getFields = () => {
   const arch = props.arch;
   const fields = {self: []};
   const recursion = (arch) => {
-    for (const children of arch.children) {
+    for (const children of (arch.children instanceof Array?arch.children:[])) {
       if (children.tag === 'field') {
         fields.self.push(children.attrs.name)
       }
@@ -126,6 +128,11 @@ const deleteLineClick = (treeField, index, treeData, row, noAddCallback) => {
 const addLineClick = (treeField, treeData, newLine, noAddCallback) => {
   emits('addLineClick', treeField, treeData, newLine, noAddCallback)
 }
+
+const fieldOnchange = (params, noChange) => {
+  emits('fieldOnchange', params, noChange)
+}
+
 defineExpose({
   tableview_ref, treeData: treeData['self']
 })

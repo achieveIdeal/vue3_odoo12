@@ -25,7 +25,6 @@
                :readonly="!!parseDomain(viewFields[children.attrs?.name]?.readonly||children.attrs.readonly, data)"
                :disabled="disabled"
                :loading="loading"
-               @fieldOnchange="fieldOnchange"
     >
       <template v-if="((children.children || []))?.length" v-for="subChildren in (children.children || [])">
         <RenderField
@@ -49,7 +48,6 @@
             @getLineDetailClick="getLineDetailClick"
             @deleteLineClick="deleteLineClick"
             @addLineClick="addLineClick"
-            @fieldOnchange="fieldOnchange"
         />
       </template>
     </component>
@@ -88,7 +86,6 @@
           :disabled="disabled"
           :viewFields="viewFields"
           @deleteLineClick="deleteLineClick"
-          @fieldOnchange="fieldOnchange"
           @addLineClick="addLineClick"
       />
     </template>
@@ -138,7 +135,6 @@
           :viewFields="viewFields"
           @deleteLineClick="deleteLineClick"
           @addLineClick="addLineClick"
-          @fieldOnchange="fieldOnchange"
       />
     </template>
   </component>
@@ -191,7 +187,6 @@
             @getLineDetailClick="getLineDetailClick"
             @deleteLineClick="deleteLineClick"
             @addLineClick="addLineClick"
-            @fieldOnchange="fieldOnchange"
         />
       </template>
     </template>
@@ -204,7 +199,7 @@ import {createVNode, defineEmits, defineProps, ref} from "vue";
 import {defineComponent} from "vue";
 import TableView from '../views/TableView.vue'
 import FormView from '../views/FormView.vue'
-import {parseDomain} from "../../tools";
+import {onchangeField, parseDomain} from "../../tools";
 import {useRoute} from "vue-router";
 import {ElTabPane} from "element-plus";
 
@@ -326,7 +321,7 @@ const createComponent = (arch, parent) => {
   });
 }
 
-const emits = defineEmits(['handleButtonClick', 'getLineDetailClick', 'deleteLineClick', 'addLineClick', 'fieldOnchange'])
+const emits = defineEmits(['handleButtonClick', 'getLineDetailClick', 'deleteLineClick', 'addLineClick'])
 const handleButtonClick = (e, button) => {
   e.stopPropagation();
   emits('handleButtonClick', button)
@@ -342,9 +337,7 @@ const deleteLineClick = (treeField, index, treeData, row, noAddCallback) => {
 const addLineClick = (treeField, treeData, newLine, noAddCallback) => {
   emits('addLineClick', treeField, treeData, newLine, noAddCallback)
 }
-const fieldOnchange = (params)=>{
-  emits('fieldOnchange', params)
-}
+
 </script>
 
 <style lang="less" scoped>
