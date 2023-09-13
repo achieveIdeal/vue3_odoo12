@@ -5,6 +5,7 @@
             @change="fieldOnchange({
               field: field,
               datas: data,
+              treeField: treeField,
               attributes: attrs,
               model: model,
               options: viewFields,
@@ -20,7 +21,7 @@
 
 
 <script lang="ts" setup>
-import {onchangeField,eventBus} from "../../../tools";
+import {onchangeField, eventBus} from "../../../tools";
 
 const props = defineProps({
   field: {
@@ -29,6 +30,12 @@ const props = defineProps({
     default: 'form'
   }, model: {
     default: ''
+  }, treeField: {
+    type: String,
+    default: 'text'
+  }, index: {
+    type: Number,
+    default: 0
   },
   data: {
     type: Object,

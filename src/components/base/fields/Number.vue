@@ -9,9 +9,11 @@
       :max="option.max"
       @change="fieldOnchange({
               field: field,
+              treeField: treeField,
               datas: data,
               attributes: attrs,
               model: model,
+               index: index,
               options: viewFields,
               treeOptions: treeViewFields,
               treeData: treeData
@@ -26,7 +28,7 @@
 </template>
 
 <script lang="ts" setup>
-import {onchangeField,eventBus} from "../../../tools";
+import {onchangeField, eventBus} from "../../../tools";
 
 
 const props = defineProps({
@@ -36,6 +38,12 @@ const props = defineProps({
     default: 'form'
   }, model: {
     default: 'form'
+  }, treeField: {
+    type: String,
+    default: 'text'
+  }, index: {
+    type: Number,
+    default: 0
   },
   data: {
     type: Object,

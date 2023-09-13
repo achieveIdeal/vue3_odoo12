@@ -200,7 +200,6 @@ const loadData = async (data_id) => {
           [props.viewFields[treeField].relation_field, '=', datas.value['id']]],
       })
       treeViewFieldsInfo[treeField] = props.viewFields[treeField]?.views?.tree?.fields || {}
-
       treeData.value[treeField] = res.records;
     }
     initTreeData(treeData.value, treeViewFieldsInfo);

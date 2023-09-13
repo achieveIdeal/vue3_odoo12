@@ -57,10 +57,16 @@ const props = defineProps({
   type: {
     type: String,
     default: 'text'
+  },  treeField: {
+    type: String,
+    default: 'text'
   },
   disabled: {
     type: Boolean,
     default: true
+  }, index: {
+    type: Number,
+    default: 0
   },
   loading: {
     type: Boolean,

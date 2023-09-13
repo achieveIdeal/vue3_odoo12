@@ -8,7 +8,9 @@
              filterable
              @change="fieldOnchange({
               field: field,
+              treeField: treeField,
               datas: data,
+              index: index,
               attributes: attrs,
               treeOptions: treeViewFields,
               model: model,
@@ -33,7 +35,7 @@
 
 <script lang="ts" setup>
 
-import {onchangeField,eventBus} from "../../../tools";
+import {onchangeField, eventBus} from "../../../tools";
 
 const props = defineProps({
   field: {
@@ -42,6 +44,12 @@ const props = defineProps({
     default: 'form'
   }, model: {
     default: 'form'
+  }, treeField: {
+    type: String,
+    default: 'text'
+  }, index: {
+    type: Number,
+    default: 0
   },
   data: {
     type: Object,

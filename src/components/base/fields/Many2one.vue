@@ -8,7 +8,9 @@
              :loading="loading"
              @change="fieldOnchange({
               field: field,
+              treeField: treeField,
               datas: data,
+               index: index,
               attributes: attrs,
               treeOptions: treeViewFields,
               model: model,
@@ -46,6 +48,9 @@ const props = defineProps({
     default: 'form'
   }, model: {
     default: 'form'
+  },index: {
+    type: Number,
+    default: 0
   },
   data: {
     type: Object,
@@ -78,6 +83,9 @@ const props = defineProps({
   disabled: {
     type: Boolean,
     default: true
+  }, treeField: {
+    type: String,
+    default: 'text'
   },
   loading: {
     type: Boolean,

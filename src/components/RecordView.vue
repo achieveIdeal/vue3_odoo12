@@ -37,7 +37,6 @@
                 @dataLoadedCallback="dataLoadedCallback"
                 @deleteLineClick="deleteLineClick"
                 @addLineClick="addLineClick"
-                @fieldOnchange="fieldOnchange"
       />
       <ListView ref="listview_ref" v-if="curViewType==='tree' && Object.keys(arch).length" :action="action"
                 :arch="arch"
@@ -66,7 +65,7 @@ import ListView from "./views/ListView.vue";
 import FormView from "./views/FormView.vue";
 import SearchView from '../components/views/SearchView.vue'
 import ButtonView from "./views/ButtonView.vue";
-import {formatData, initButton, initListData} from "../tools/init";
+import {data2OdooFormat, formatData, initButton, initListData} from "../tools/init";
 import {
   callCreate,
   callMethod,
@@ -78,10 +77,10 @@ import router from "../router";
 import {useRoute} from "vue-router";
 import {eventBus} from "../tools";
 
-eventBus.on('requestCallback',()=>{
+eventBus.on('requestCallback', () => {
   loading.value = true;
 })
-eventBus.on('responseCallback',()=>{
+eventBus.on('responseCallback', () => {
   loading.value = false;
 })
 
@@ -171,6 +170,13 @@ const createClick = async () => {
   disabled.value = false;
 }
 const deleteLineClick = (treeField, index, treeData, row, noAddCallback) => {
+  if (row.id) {
+    if (!changedFieldsVal[treeField]) {
+      changedFieldsVal['deleteFieldMap'] = {};
+      changedFieldsVal['deleteFieldMap'][treeField] = [];
+    }
+    changedFieldsVal['deleteFieldMap'][treeField].push([2, row.id, false]);
+  }
   emits('deleteLineClick', treeField, index, treeData, row, noAddCallback)
 }
 const addLineClick = (treeField, treeData, newLine, noAddCallback) => {
@@ -201,7 +207,8 @@ const saveClick = (formview_ref) => {  // 处理保存按钮，包括编辑保�
   formEl.validate((valid) => {
     if (valid) {
       // changedFieldsVal
-      let savedDatas = formatData({formData: data.value, treeData: treeData.value}, dataCopy);
+      debugger
+      let savedDatas = data2OdooFormat(changedFieldsVal);
       let noeSave = false;
       const noSave = () => {
         noeSave = true;
@@ -211,7 +218,7 @@ const saveClick = (formview_ref) => {  // 处理保存按钮，包括编辑保�
         emits('saveWriteClick', data.value, {savedDatas, saveWrite, noSave})
         !noeSave && saveWrite(savedDatas)
       } else if (Object.keys(savedDatas).length) {
-        let savedDatas = formatData({formData: data.value, treeData: treeData.value}, {formData: {}, treeData: []});
+        let savedDatas = data2OdooFormat(changedFieldsVal);
         emits('saveCreateClick', data.value, {savedDatas, saveCreate, noeSave})
         !noeSave && saveCreate(savedDatas);
       } else if (!savedDatas) {
@@ -466,11 +473,21 @@ const lineButtonClick = (treeField, data, button) => {
   emits('lineButtonClick', datas, treeField, data, button, reload, loading);
 }
 
-const fieldOnchange = (params, noChange) => {
-  changedFieldsVal[params.field] = data.value[params.field];
-  console.log(changedFieldsVal);
-  emits('fieldOnchange', params, noChange)
-}
+eventBus.on('fieldOnchange', (params) => {
+  const field = params.field;
+  if (params.treeField) {
+    const treeField = params.treeField;
+    const index = params.index;
+    !changedFieldsVal[treeField] ? changedFieldsVal[treeField] = [] : null;
+    !changedFieldsVal[treeField][index] ? changedFieldsVal[treeField][index] = {} : null;
+    changedFieldsVal[treeField][index][field] = treeData.value[treeField][index][field];
+    if (treeData.value[treeField][index].id) {
+      changedFieldsVal[treeField][index].id = treeData.value[treeField][index].id;
+    }
+  } else {
+    changedFieldsVal[field] = data.value[field];
+  }
+})
 
 defineExpose({
   formview_ref, listview_ref, data

@@ -198,3 +198,39 @@ export const formatData = function (datas, dataCopy, options): Object {  // æ•°æ
     }
     return updated
 }
+
+
+export const data2OdooFormat = (data) => {
+    const formatData = {};
+    for (const field of Object.keys(data || {})) {
+        if (data[field] instanceof Array) {
+            data[field] = data[field].filter(r => !!r);
+        }
+        if (data[field] instanceof Array && (typeof data[field][0]) !== 'object') {
+            formatData[field] = [[6, 0, data[field]]]
+        } else if (data[field] instanceof Array && (typeof data[field][0]) === 'object' && !Array.isArray(data[field][0])) {
+            formatData[field] = [];
+            for (const line of data[field]) {
+                if (line[0] === 2) {
+                    formatData[field].push(data[field])
+                } else if (line.id) {
+                    const lineCopy = JSON.parse(JSON.stringify(line))
+                    delete lineCopy.id
+                    formatData[field].push([
+                        1, line.id, lineCopy
+                    ])
+                } else {
+                    formatData[field].push([
+                        0, 0, line
+                    ])
+                }
+            }
+        } else {
+            formatData[field] = data[field];
+        }
+    }
+    for (const field of Object.keys(data['deleteFieldMap'])) {
+        formatData[field] = formatData[field].concat(data['deleteFieldMap'][field])
+    }
+    return formatData
+}

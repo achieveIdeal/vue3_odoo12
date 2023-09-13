@@ -33,6 +33,12 @@ const props = defineProps({
     default: 'form'
   }, model: {
     default: 'form'
+  }, treeField: {
+    type: String,
+    default: 'text'
+  },index: {
+    type: Number,
+    default: 0
   },
   data: {
     type: Object,
