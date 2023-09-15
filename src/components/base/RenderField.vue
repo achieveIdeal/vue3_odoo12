@@ -1,16 +1,44 @@
 <template>
   <el-form-item
-      v-if="!(parseDomain((!!treeField.length?treeViewFields[treeField]: viewFields)[children.attrs?.name]?.invisible
-      || children.attrs?.invisible, data)
-      ||children.attrs?.invisible) && children.tag==='field'"
+      v-if="!(
+        parseDomain(
+          (
+            !!treeField.length
+            ?treeViewFields[treeField]
+            : viewFields
+          )[children.attrs?.name]?.invisible
+          || children.attrs?.invisible, data)
+          ||children.attrs?.invisible
+        )
+      && children.tag==='field'"
       :style="{width: !Object.keys(treeViewFields).includes(children.attrs?.name)?'30%':'100%'}"
       :prop="viewType==='form'?['formData',children.attrs?.name]:viewType==='tree'
         ?['treeData',treeField,index, children.attrs.name]:[index,children.attrs.name]"
-      :label="viewType==='form' && !Object.keys(treeViewFields).includes(children.attrs?.name)
-        ? (!!treeField.length?treeViewFields[treeField]: viewFields)[children.attrs?.name]?.string:''"
-      :rules="(!!treeField.length?treeViewFields[treeField]: viewFields)[children.attrs.name]?.rules||[{
-        required: parseDomain((!!treeField.length?treeViewFields[treeField]: viewFields)[children.attrs.name]?.required, data),
-        message: (!!treeField.length?treeViewFields[treeField]: viewFields)[children.attrs.name]?.string + '不能为空!',
+      :label="viewType==='form'
+        && !Object.keys(treeViewFields).includes(children.attrs?.name)
+          ? (
+            !!treeField.length
+            ?treeViewFields[treeField]
+            : viewFields
+          )[children.attrs?.name]?.string:''"
+      :rules="(
+          !!treeField.length
+          ?treeViewFields[treeField]
+          : viewFields
+        )[children.attrs.name]?.rules
+        ||[{
+        required: parseDomain(
+          (
+            !!treeField.length
+            ?treeViewFields[treeField]
+            : viewFields
+          )[children.attrs.name]?.required, data
+        ),
+        message: (
+          !!treeField.length
+          ?treeViewFields[treeField]
+          : viewFields
+        )[children.attrs.name]?.string + '不能为空!',
         trigger: 'blur'
         }]">
     <component

@@ -5,6 +5,7 @@
         :isDialog="true"
         :index="index"
         :dataDialog="dialog.dataDialog"
+        :preDialogReload="dialog.preDialogReload"
         :relation_field="dialog.relation_field"
         :actionDialog="dialog.actionDialog"
         :fieldViewInfoDialog="dialog.fieldViewInfoDialog"
@@ -62,7 +63,7 @@ const router = useRouter();
 
 const curViewType = ref(route.query.type || 'tree');
 const action_id = ref(parseInt(route.query.action_id || '0') || props.action_name);
-const record_ref = ref()
+const record_ref = ref([])
 
 const action = ref({});
 const fieldViewInfo = ref({});
@@ -140,8 +141,7 @@ const buttonClick = async (button, model, datas, selectRows) => {
         actionDialog: res.action,
         formViewInfoDialog: res.formViewInfo,
         active_ids: selectRows?.id || [datas.id],
-        preDialogReload: dialogStack.value[dialogStack.value.length - 1]?.preDialogReload
-            || record_ref.value.formview_ref.main
+        preDialogReload: dialogStack.value.length ? record_ref.value.formview_ref.main : dialog_ref.value.record_ref?.formview_ref.main
       })
     })
   } else if (button.attrs.type === 'object') {
@@ -183,7 +183,7 @@ const getDetailClick = (data) => {
 }
 
 
-const getLineDetailClick = (dataLine, index, formViewInfo,relation_field) => {
+const getLineDetailClick = (dataLine, index, formViewInfo, relation_field) => {
   dialogStack.value.push({
     fieldViewInfoDialog: formViewInfo,
     archDialog: formViewInfo.arch,
@@ -192,6 +192,9 @@ const getLineDetailClick = (dataLine, index, formViewInfo,relation_field) => {
     relation_field: relation_field,
     visible: true,
     actionDialog: {},
+    preDialogReload: !dialogStack.value.length   // 重载前一个弹框或者界面
+        ? record_ref.value.formview_ref.main
+        : dialog_ref.value[dialog_ref.value.length - 1].record_ref?.formview_ref.main
   })
 }
 

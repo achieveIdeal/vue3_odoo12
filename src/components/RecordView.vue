@@ -171,7 +171,8 @@ if (props.extras?.butons) {
   buttons.value.buttonOptions = initButton(props.extras, props.curViewType);
 }
 const emits = defineEmits(['buttonClick', 'getDetailClick', 'getLineDetailClick', 'selectClick',
-  'deleteLineClick', 'addLineClick', 'saveWriteClick', 'saveCreateClick', 'objectClick'])
+  'deleteLineClick', 'addLineClick', 'saveWriteClick', 'saveCreateClick', 'objectClick', 'dialogCreateClick',
+  'dialogCreateSaveClick'])
 
 const buttonClick = (button, model, datas) => {
   emits('buttonClick', button, model, datas, selectRows)
@@ -203,14 +204,9 @@ const createClick = async () => {
       }
     })
   } else {
-    console.log(props.relation_field);
-    for (const field of Object.keys(data.value)) {
-      if (field === props.relation_field) continue;
-      data.value[field] = 0
-    }
-    for (const treeField of Object.keys(treeData.value)) {
-      treeData.value[treeField] = []
-    }
+    const relation_field = props.relation_field;
+    changedFieldsVal[relation_field] = data.value[relation_field][0]
+    emits('dialogCreateClick', data, treeData, relation_field)
   }
 }
 const deleteLineClick = (treeField, index, treeData, row, noAddCallback) => {
@@ -236,14 +232,19 @@ const saveWrite = async (savedDatas) => {
 const saveCreate = async (savedDatas) => {
   const real_id = await callCreate({model, data: savedDatas})
   disabled.value = true;
-  router.push({
-    path: router.currentRoute.value.fullPath,
-    query: {
-      action_id: router.currentRoute.value.query.action_id,
-      type: 'form',
-      id: real_id
-    }
-  })
+  if (!props.isDialog) {
+    router.push({
+      path: router.currentRoute.value.fullPath,
+      query: {
+        action_id: router.currentRoute.value.query.action_id,
+        type: 'form',
+        id: real_id
+      }
+    })
+  } else {
+    data.value.id = real_id;
+    emits('dialogCreateSaveClick', real_id, data, treeData)
+  }
 }
 
 const saveClick = (formview_ref) => {  // 处理保存按钮，包括编辑保存和创建保存

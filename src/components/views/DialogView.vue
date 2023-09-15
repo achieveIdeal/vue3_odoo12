@@ -1,6 +1,7 @@
 <template>
   <el-dialog v-model="dialogVisible" :title="actionDialog.name || ''" draggable>
     <RecordView
+        ref="record_ref"
         :isDialog="true"
         :dialog_data="dataDialog"
         :action="actionDialog"
@@ -11,6 +12,8 @@
         :arch="archDialog"
         :curViewType="curViewTypeDialog"
         @getDetailClick="getDetailClick"
+        @dialogCreateSaveClick="dialogCreateSaveClick"
+        @dialogCreateClick="(data, treeData,relation_field)=>dialogCreateClick(data,treeData, relation_field,preDialogReload)"
         @getLineDetailClick="getLineDetailClick"
         @buttonClick="buttonClick"
     />
@@ -34,6 +37,8 @@ const props = defineProps({
     type: Object,
   }, relation_field: {
     type: String,
+  }, preDialogReload: {
+    type: Function,
   },
   curViewTypeDialog: {
     type: String,
@@ -54,7 +59,7 @@ const props = defineProps({
   }
 })
 const dialogVisible = ref(true);
-
+const record_ref = ref({})
 
 const emits = defineEmits(['buttonClick', 'getDetailClick', 'getLineDetailClick', 'selectClick', 'dialogCreateClick'])
 
@@ -64,6 +69,21 @@ const buttonClick = (button, model, datas) => {
 
 const getDetailClick = (data, index) => {
   emits('getDetailClick', data, index)
+}
+const dialogCreateSaveClick = (real_id, data) => {
+  preDialogReloadFunc();
+}
+let preDialogReloadFunc = () => {
+};
+const dialogCreateClick = (data, treeData, relation_field, preDialogReload) => {
+  preDialogReloadFunc = preDialogReload
+  for (const field of Object.keys(data.value)) {
+    if (field === relation_field) continue;
+    data.value[field] = 0
+  }
+  for (const treeField of Object.keys(treeData.value)) {
+    treeData.value[treeField] = []
+  }
 }
 
 const getLineDetailClick = (dataLine, index, formViewInfo, relation_field) => {
@@ -83,7 +103,7 @@ const selectClick = (rows) => {
 }
 
 defineExpose({
-  dialogVisible
+  dialogVisible,record_ref
 })
 </script>
 
