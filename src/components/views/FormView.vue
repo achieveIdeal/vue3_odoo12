@@ -26,7 +26,6 @@
                    @getLineDetailClick="getLineDetailClick"
                    @deleteLineClick="deleteLineClick"
                    @addLineClick="addLineClick"
-                   @fieldOnchange="fieldOnchange"
       />
     </template>
   </el-form>
@@ -84,7 +83,7 @@ if (props.isDialog) {
 watch(route, async (f, t) => {
   let data_id = 0;
   if (props.isDialog) {
-    data_id = props.data.id
+    data_id = props.data?.id
   } else {
     data_id = parseInt(route.query.id)
   }
@@ -242,27 +241,10 @@ const treeData = ref({});  // 表格数据
 if (props.extras) {
   setFormAttribute(props.extras, props.viewFields);
 }
-const emits = defineEmits(['buttonClick', 'getLineDetailClick', 'dataLoadedCallback', 'deleteLineClick', 'addLineClick', 'fieldOnchange']);
+const emits = defineEmits(['buttonClick', 'getLineDetailClick', 'dataLoadedCallback', 'deleteLineClick', 'addLineClick']);
 const main = async () => {
   fields.value = await getFields();
-  if (!props.data) {   // 加载详情时，不需要请求后端获取抬头数据
-    await loadData(data_id);
-  } else {
-    datas.value = props.data;
-    for (const treeField of Object.keys(treeViewFields.value || {})) {
-      setTreeAttribute(treeField, props.extras, treeViewFields.value);
-      const res = callSearchRead({
-        model: props.viewFields[treeField].relation,
-        fields: Object.keys(treeViewFields.value[treeField]),
-        offset: 0,
-        limit: 100,
-        domain: ['|', ['id', 'in', datas.value[treeField] || []],
-          [props.viewFields[treeField].relation_field, '=', datas.value['id']]],
-      })
-      treeData.value[treeField] = res.records;
-    }
-    emits('dataLoadedCallback', datas, treeData);
-  }
+  await loadData(props.data?.id || data_id);
 }
 
 main()
@@ -270,8 +252,8 @@ main()
 const buttonClick = (button) => {
   emits('buttonClick', button, props.model, datas.value)
 }
-const getLineDetailClick = (data, index, formViewInfo) => {
-  emits('getLineDetailClick', data, index, formViewInfo)
+const getLineDetailClick = (data, index, formViewInfo, relation_field) => {
+  emits('getLineDetailClick', data, index, formViewInfo, relation_field)
 }
 
 const deleteLineClick = (treeField, index, treeData, row, noDeleteCallback) => {
@@ -281,10 +263,6 @@ const addLineClick = (treeField, treeData, newLine, noAddCallback) => {
   emits('addLineClick', treeField, treeData, newLine, noAddCallback)
 }
 
-const fieldOnchange = (params, noChange) => {
-  console.log(2222);
-  emits('fieldOnchange', params, noChange)
-}
 defineExpose({
   form_ref, main
 })

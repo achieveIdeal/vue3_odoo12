@@ -1,10 +1,10 @@
 <template>
-  <el-dialog v-model="dialogVisible" :title="actionDialog.name || ''" draggable
-             @close="(e)=>closeDialog(e, index)">
+  <el-dialog v-model="dialogVisible" :title="actionDialog.name || ''" draggable>
     <RecordView
         :isDialog="true"
         :dialog_data="dataDialog"
         :action="actionDialog"
+        :relation_field="relation_field"
         :fieldViewInfo="fieldViewInfoDialog"
         :formViewInfo="formViewInfoDialog"
         :searchViewInfo="searchViewInfoDialog"
@@ -32,6 +32,8 @@ const props = defineProps({
     default: {}
   }, dataDialog: {
     type: Object,
+  }, relation_field: {
+    type: String,
   },
   curViewTypeDialog: {
     type: String,
@@ -54,21 +56,18 @@ const props = defineProps({
 const dialogVisible = ref(true);
 
 
-const emits = defineEmits(['buttonClick', 'getDetailClick', 'getLineDetailClick', 'selectClick', 'closeDialog'])
+const emits = defineEmits(['buttonClick', 'getDetailClick', 'getLineDetailClick', 'selectClick', 'dialogCreateClick'])
 
 const buttonClick = (button, model, datas) => {
   emits('buttonClick', button, model, datas)
 }
+
 const getDetailClick = (data, index) => {
   emits('getDetailClick', data, index)
 }
 
-const getLineDetailClick = (data, index, formViewInfo) => {
-  emits('getLineDetailClick', data, index, formViewInfo)
-}
-
-const closeDialog = (e, index) => {
-  emits('closeDialog', e, index)
+const getLineDetailClick = (dataLine, index, formViewInfo, relation_field) => {
+  emits('getLineDetailClick', dataLine, index, formViewInfo, relation_field)
 }
 
 const selectClick = (rows) => {

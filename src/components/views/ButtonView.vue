@@ -114,13 +114,6 @@ const handleObject = function (button) {
   emits('objectClick', button);
 }
 const handleCreate = function () {
-  router.push({
-    path: props.params.name,
-    query: {
-      type: 'form',
-      id: 0
-    }
-  })
   emits('createClick');
 }
 

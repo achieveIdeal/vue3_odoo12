@@ -17,7 +17,6 @@
         :label="item[1]"
         :value="item[0]"/>
   </el-select>
-
   <span :style="option.style"
         class="item-text" :class="{'border-bottom':  viewType==='form'}"
         v-else> {{
@@ -29,6 +28,7 @@
 <script lang="ts" setup>
 import {onchangeField, eventBus, searchFieldSelection} from "../../../tools";
 import {computed, onMounted, ref} from "vue";
+import {callKw, callNames} from "../../../service/module/call";
 
 const props = defineProps({
   field: {
@@ -86,7 +86,6 @@ const props = defineProps({
     default: true
   }
 })
-
 
 const value_id = computed({
   get() {

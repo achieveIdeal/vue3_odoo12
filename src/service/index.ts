@@ -31,9 +31,9 @@ class Request {
                         message: res.data.error.data.message,
                         type: 'error'
                     });
-                    return {}
+                    return false
                 }
-                return res.data.result;
+                return res.data.result ||{};
             },
             (err) => {
                 eventBus.emit('responseCallback', err)
@@ -42,7 +42,7 @@ class Request {
                         message: err,
                         type: 'error'
                     });
-                    return {}
+                    return false
                 }
                 return err;
             }

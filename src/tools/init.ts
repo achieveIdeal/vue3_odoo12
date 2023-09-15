@@ -147,62 +147,62 @@ export const initEmptyTreeData = (emptyData, treeFieldsOption) => {
     }
 }
 
-export const formatData = function (datas, dataCopy, options): Object {  // 数据修改和保存格式化处理 发送给后端
-    let updated = {}
-    for (let field of Object.keys(datas.formData || {})) {
-        if (datas.formData[field] !== dataCopy.formData[field]) {
-            if (datas.formData[field] instanceof Array) {
-                if (datas.formData[field].find(r => !(dataCopy.formData[field] || []).includes(r))) {
-                    updated[field] = [[6, 0, datas.formData[field]]];
-                }
-            } else {
-                updated[field] = datas.formData[field];
-            }
-        }
-    }
-    for (const treeField of Object.keys(datas.treeData || {})) {
-        let isChanged = false;
-        let delFlag = {};
-        let addFlag = false;
-        let updatedLineCopy = JSON.parse(JSON.stringify(datas.formData[treeField] || []))
-        updated[treeField] = []
-        for (const treeCopyId of dataCopy.formData[treeField] || []) {
-            if (updatedLineCopy.indexOf(treeCopyId) === -1 && !delFlag[treeCopyId]) {  //  处理删除行
-                isChanged = true;
-                delFlag[treeCopyId] = true;
-                updated[treeField].push([2, treeCopyId, false]);
-            }
-        }
-        for (const treeData of datas?.treeData[treeField]) {
-            let changedFieldsData = {};
-            const copyLine = (dataCopy.treeData[treeField] || []).find(r => r.id === treeData.id); // 没有找到就是新增的没有id的行
-            if (!copyLine) {
-                changedFieldsData = treeData;
-                isChanged = true;
-            } else {
-                for (const field of Object.keys(treeData || {})) {  // 处理修改行
-                    if (treeData[field] !== copyLine[field]) {
-                        isChanged = true;
-                        changedFieldsData[field] = treeData[field];
-                    }
-                }
-            }
-            if (Object.keys(changedFieldsData).length) {
-                if (isChanged && treeData.id && !delFlag[treeData.id]) {  // 更新
-                    updated[treeField].push([1, treeData.id, changedFieldsData])
-                } else if (isChanged && !delFlag[treeData.id]) {  // 新增
-                    updated[treeField].push([0, 0, changedFieldsData]);
-                    addFlag = true;
-                }
-            }
-        }
-        if (!isChanged) {  // 未发生修改或新增的数据不处理
-            delete updated[treeField]
-        }
-    }
-    return updated
-}
-
+// export const formatData = function (datas, dataCopy, options): Object {  // 数据修改和保存格式化处理 发送给后端
+//     let updated = {}
+//     for (let field of Object.keys(datas.formData || {})) {
+//         if (datas.formData[field] !== dataCopy.formData[field]) {
+//             if (datas.formData[field] instanceof Array) {
+//                 if (datas.formData[field].find(r => !(dataCopy.formData[field] || []).includes(r))) {
+//                     updated[field] = [[6, 0, datas.formData[field]]];
+//                 }
+//             } else {
+//                 updated[field] = datas.formData[field];
+//             }
+//         }
+//     }
+//     for (const treeField of Object.keys(datas.treeData || {})) {
+//         let isChanged = false;
+//         let delFlag = {};
+//         let addFlag = false;
+//         let updatedLineCopy = JSON.parse(JSON.stringify(datas.formData[treeField] || []))
+//         updated[treeField] = []
+//         for (const treeCopyId of dataCopy.formData[treeField] || []) {
+//             if (updatedLineCopy.indexOf(treeCopyId) === -1 && !delFlag[treeCopyId]) {  //  处理删除行
+//                 isChanged = true;
+//                 delFlag[treeCopyId] = true;
+//                 updated[treeField].push([2, treeCopyId, false]);
+//             }
+//         }
+//         for (const treeData of datas?.treeData[treeField]) {
+//             let changedFieldsData = {};
+//             const copyLine = (dataCopy.treeData[treeField] || []).find(r => r.id === treeData.id); // 没有找到就是新增的没有id的行
+//             if (!copyLine) {
+//                 changedFieldsData = treeData;
+//                 isChanged = true;
+//             } else {
+//                 for (const field of Object.keys(treeData || {})) {  // 处理修改行
+//                     if (treeData[field] !== copyLine[field]) {
+//                         isChanged = true;
+//                         changedFieldsData[field] = treeData[field];
+//                     }
+//                 }
+//             }
+//             if (Object.keys(changedFieldsData).length) {
+//                 if (isChanged && treeData.id && !delFlag[treeData.id]) {  // 更新
+//                     updated[treeField].push([1, treeData.id, changedFieldsData])
+//                 } else if (isChanged && !delFlag[treeData.id]) {  // 新增
+//                     updated[treeField].push([0, 0, changedFieldsData]);
+//                     addFlag = true;
+//                 }
+//             }
+//         }
+//         if (!isChanged) {  // 未发生修改或新增的数据不处理
+//             delete updated[treeField]
+//         }
+//     }
+//     return updated
+// }
+//
 
 export const data2OdooFormat = (data) => {
     const formatData = {};
@@ -234,6 +234,7 @@ export const data2OdooFormat = (data) => {
         }
     }
     for (const field of Object.keys(data['deleteFieldMap'] || {})) {
+        !formatData[field] ? formatData[field] = [] : null;
         formatData[field] = formatData[field].concat(data['deleteFieldMap'][field])
     }
     return formatData

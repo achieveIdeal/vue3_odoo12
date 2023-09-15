@@ -98,6 +98,8 @@ const props = defineProps({
     default: {}
   }, dialog_data: {
     type: Object,
+  }, relation_field: {
+    type: String,
   },
   curViewType: {
     type: String,
@@ -116,6 +118,7 @@ const props = defineProps({
     type: Boolean,
     default: false
   }, extras: {
+    type: Object,
     default: {}
   },
 })
@@ -129,10 +132,11 @@ watch(route, () => {
   disabled.value = !!parseInt(route.query.id) || !route.query.type
 })
 
-const disabled = ref(parseInt(data_id) !== 0 || props.curViewType === 'tree');
+const disabled = ref(parseInt(data_id) !== 0 || !route.query.type);
 if (props.isDialog && !props.dialog_data?.id) {
   disabled.value = false;
 }
+
 let data = ref({});
 let listData = ref([]);
 let formData = ref({});
@@ -152,8 +156,20 @@ const dataLoadedCallback = (datas, treeDatas, countRef) => {
   dataCount = countRef
   dataCopy = {formData: JSON.parse(JSON.stringify(datas.value)), treeData: JSON.parse(JSON.stringify(treeDatas.value))};
 }
-const buttons = ref({buttonOptions: []});
-buttons.value.buttonOptions = initButton(props.extras, props.curViewType);
+const buttons = ref({
+  buttonOptions: [{
+    type: 'edit',
+    text: '编辑',
+    showType: ['form'],
+  }, {
+    type: 'create',
+    showType: ['tree', 'form'],
+    text: '创建'
+  },]
+});
+if (props.extras?.butons) {
+  buttons.value.buttonOptions = initButton(props.extras, props.curViewType);
+}
 const emits = defineEmits(['buttonClick', 'getDetailClick', 'getLineDetailClick', 'selectClick',
   'deleteLineClick', 'addLineClick', 'saveWriteClick', 'saveCreateClick', 'objectClick'])
 
@@ -164,8 +180,8 @@ const getDetailClick = (data, index) => {
   emits('getDetailClick', data, index)
 }
 
-const getLineDetailClick = (data, index, formViewInfo) => {
-  emits('getLineDetailClick', data, index, formViewInfo)
+const getLineDetailClick = (dataLine, index, formViewInfo, relation_field) => {
+  emits('getLineDetailClick', dataLine, index, formViewInfo, relation_field)
 }
 const editClick = () => {
   disabled.value = false;
@@ -178,6 +194,24 @@ const cancelClick = () => {
 }
 const createClick = async () => {
   disabled.value = false;
+  if (!props.isDialog) {
+    router.push({
+      path: props.params.name,
+      query: {
+        type: 'form',
+        id: 0
+      }
+    })
+  } else {
+    console.log(props.relation_field);
+    for (const field of Object.keys(data.value)) {
+      if (field === props.relation_field) continue;
+      data.value[field] = 0
+    }
+    for (const treeField of Object.keys(treeData.value)) {
+      treeData.value[treeField] = []
+    }
+  }
 }
 const deleteLineClick = (treeField, index, treeData, row, noAddCallback) => {
   if (row.id) {
@@ -190,15 +224,17 @@ const deleteLineClick = (treeField, index, treeData, row, noAddCallback) => {
   emits('deleteLineClick', treeField, index, treeData, row, noAddCallback)
 }
 const addLineClick = (treeField, treeData, newLine, noAddCallback) => {
+  !changedFieldsVal[treeField] ? changedFieldsVal[treeField] = [] : null;
+  changedFieldsVal[treeField].push(newLine)
   emits('addLineClick', treeField, treeData, newLine, noAddCallback)
 }
 
 const saveWrite = async (savedDatas) => {
-  await callWrite({id: data.value.id, model}, savedDatas)
+  await callWrite({id: data.value.id, model, data: savedDatas})
   disabled.value = true;
 }
 const saveCreate = async (savedDatas) => {
-  const real_id = await callCreate({model, savedDatas})
+  const real_id = await callCreate({model, data: savedDatas})
   disabled.value = true;
   router.push({
     path: router.currentRoute.value.fullPath,

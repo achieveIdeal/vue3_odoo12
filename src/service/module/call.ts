@@ -145,11 +145,11 @@ export const callMethod = async (params) => {   // 处理非创建和编辑按�
     })
 }
 
-export function callWrite(params, data) {
+export function callWrite(params) {
     return callKw({
         model: params.model,
         method: 'write',
-        args: [params.id, data]
+        args: [params.id, params.data]
     })
 }
 

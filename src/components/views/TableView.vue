@@ -57,7 +57,7 @@
                    v-if="disabled"
                    size="small"
                    type="primary"
-                   @click="getDetail(scoped.row, scoped.$index, formViewInfo)"
+                   @click="getDetail(scoped.row, scoped.$index, formViewInfo, relation_field)"
         >查看详情
         </el-button>
         <el-button link
@@ -140,6 +140,9 @@ const props = defineProps({
   treeField: {
     type: String,
     default: 'self',
+  }, relation_field: {
+    type: String,
+    default: 'self',
   }, field: {
     type: String,
     default: 'self',
@@ -147,7 +150,7 @@ const props = defineProps({
   model: {
     type: String,
     default: '',
-  },  formModel: {
+  }, formModel: {
     type: String,
     default: '',
   },
@@ -173,8 +176,8 @@ const upload = ref<UploadInstance>();
 
 const emits = defineEmits(['getDetailClick', 'fieldOnchange', 'selectClick', 'pageChange', 'editClick', 'addLineClick', 'deleteLineClick', 'lineButtonClick', 'fieldOnchange'])
 
-const getDetail = async (data, index, formViewInfo) => {
-  emits('getDetailClick', data, index, formViewInfo)
+const getDetail = async (data, index, formViewInfo, relation_field) => {
+  emits('getDetailClick', data, index, formViewInfo, relation_field)
 }
 
 const handleSizeChange = () => {
@@ -264,10 +267,11 @@ const onAddItem = (treeField) => {
   const noAdd = () => {
     add_row = false;
   }
+  newLine[props.relation_field] = props.formData.id;
   !props.treeData[treeField] ? props.treeData[treeField] = [] : null;
   add_row && props.treeData[treeField].push(newLine);
   !props.formData[treeField] ? props.formData[treeField] = [] : null;
-  add_row && props.formData[treeField].push(0);
+  add_row && props.formData[treeField].push([0, 0, newLine]);
   emits('addLineClick', treeField, props.treeData[treeField], newLine, noAdd);
 }
 const handleCurrentChange = (treeField) => {

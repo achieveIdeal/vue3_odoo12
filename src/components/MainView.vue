@@ -5,6 +5,7 @@
         :isDialog="true"
         :index="index"
         :dataDialog="dialog.dataDialog"
+        :relation_field="dialog.relation_field"
         :actionDialog="dialog.actionDialog"
         :fieldViewInfoDialog="dialog.fieldViewInfoDialog"
         :formViewInfoDialog="dialog.formViewInfoDialog"
@@ -14,7 +15,6 @@
         @getDetailClick="getDetailClick"
         @getLineDetailClick="getLineDetailClick"
         @buttonClick="buttonClick"
-        @closeDialog="closeDialog"
         @deleteLineClick="deleteLineClick"
         @addLineClick="addLineClick"
     />
@@ -102,6 +102,15 @@ const loadAction = async (action_id, is_button) => {
 }
 
 const emits = defineEmits(['deleteLineClick', 'addLineClick'])
+
+// const dialogCreateClick = (data) => {
+//   console.log(dataDialog,'dataDialog');
+//   console.log(datas,'datas');
+//   for (const field of Object.keys(dataDialog || {})) {
+//     dataDialog[field] = '';
+//   }
+// }
+
 watch(route, (f, t) => {
   const vType = t.query.type
   curViewType.value = !vType ? 'tree' : 'form';
@@ -119,7 +128,6 @@ const addLineClick = (treeField, treeData, newLine, noAddCallback) => {
 
 const buttonClick = async (button, model, datas, selectRows) => {
   const curDialog = dialog_ref.value[dialog_ref.value.length - 1];
-  console.log(record_ref.value);
   if (button.attrs.type === 'action') {
     const action_id = parseInt(button.attrs.name);
     loadAction(action_id, true).then(res => {
@@ -138,20 +146,29 @@ const buttonClick = async (button, model, datas, selectRows) => {
     })
   } else if (button.attrs.type === 'object') {
     const curDialogData = dialogStack.value[dialog_ref.value.length - 1];
-    if (!curDialogData.dataDialog) {
+    if (!curDialogData?.dataDialog && !datas?.id) {
       datas.id = await callCreate({model, data: datas})
     }
     callKw({
       model: model,
       method: button.attrs.name,
       args: [datas.id],
-      kwargs: {context: {'active_id': curDialogData.active_ids[0], 'active_ids': curDialogData.active_ids}}
+      kwargs: {
+        context: {
+          'active_id': curDialogData?.active_ids[0] || datas.id,
+          'active_ids': curDialogData?.active_ids || selectRows.id
+        }
+      }
     }).then(res => {
-      curDialog.dialogVisible = false;
-      curDialogData.preDialogReload();
+      if (curDialog?.dialogVisible && res) {
+        curDialog.dialogVisible = false;
+        curDialogData.preDialogReload();
+      }
     })
   } else {
-    curDialog.dialogVisible = false;
+    if (curDialog?.dialogVisible) {
+      curDialog.dialogVisible = false;
+    }
   }
 }
 const getDetailClick = (data) => {
@@ -164,20 +181,15 @@ const getDetailClick = (data) => {
     }
   })
 }
-const dialogGetDetailClick = (data, index, formViewInfo) => {
-}
-const closeDialog = (e, index) => {
-  dialogStack.value[index].visible = false;
-}
-const dialogGetLineDetailClick = (data, index, formViewInfo) => {
-  console.log(data);
-}
-const getLineDetailClick = (data, index, formViewInfo) => {
+
+
+const getLineDetailClick = (dataLine, index, formViewInfo,relation_field) => {
   dialogStack.value.push({
     fieldViewInfoDialog: formViewInfo,
     archDialog: formViewInfo.arch,
     curViewTypeDialog: 'form',
-    dataDialog: data,
+    dataDialog: dataLine,
+    relation_field: relation_field,
     visible: true,
     actionDialog: {},
   })

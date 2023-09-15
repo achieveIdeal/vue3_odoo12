@@ -38,6 +38,7 @@
             :children="subChildren"
             :parent="children"
             :extras="extras"
+            :relation_field="relation_field"
             :formModel="formModel"
             :formData="formData"
             :viewType="viewType"
@@ -82,6 +83,7 @@
           :children="subChildren"
           :parent="children"
           :extras="extras"
+          :relation_field="relation_field"
           :activeTab="activeTab"
           :treeViewFields="treeViewFields"
           :data="data"
@@ -110,6 +112,7 @@
              :treeField="children.field"
              :model="viewFields[children.field].relation"
              :formModel="model"
+             :relation_field="viewFields[children.field].relation_field"
              :option="viewFields[children.field]"
              :readonly="parseDomain(children.attrs.readonly, data)"
              :disabled="disabled"
@@ -134,6 +137,7 @@
           :children="subChildren"
           :parent="children"
           :extras="extras"
+          :relation_field="relation_field"
           :treeViewFields="treeViewFields"
           :activeTab="activeTab"
           :formModel="formModel"
@@ -191,6 +195,7 @@
             :model="model"
             :data="data"
             :index="index"
+            :relation_field="relation_field"
             :treeField="treeField"
             :formModel="formModel"
             :formData="formData"
@@ -242,6 +247,9 @@ const props = defineProps({
     type: String,
     default: ''
   }, treeField: {
+    type: String,
+    default: ''
+  }, relation_field: {
     type: String,
     default: ''
   }, index: {
@@ -351,8 +359,8 @@ const handleButtonClick = (e, button) => {
   emits('handleButtonClick', button)
 }
 
-const getLineDetailClick = (data, index, formViewInfo) => {
-  emits('getLineDetailClick', data, index, formViewInfo)
+const getLineDetailClick = (data, index, formViewInfo, relation_field) => {
+  emits('getLineDetailClick', data, index, formViewInfo, relation_field)
 }
 
 const deleteLineClick = (treeField, index, treeData, row, noAddCallback) => {

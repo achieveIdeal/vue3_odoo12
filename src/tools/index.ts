@@ -50,7 +50,7 @@ const onchangeField = async (params: OnchangeParamsType, checkAll) => {
                 for (const data of treeDataCopy[treeField]) {
                     for (const field of Object.keys(data || {})) {
                         if (field === 'id') continue
-                        if (treeOptions[treeField][field].type === 'many2one') {
+                        if (treeOptions[treeField][field]?.type === 'many2one') {
                             data[field] = (data[field] || [])[0]
                         }
                     }
@@ -68,6 +68,7 @@ const onchangeField = async (params: OnchangeParamsType, checkAll) => {
         let changedData: { [prop: string]: Multiple } = {}
         for (let field of Object.keys(paramsDatas || {})) {
             if (field === 'id') continue;
+            if (!Object.keys(options || {}).includes(field)) continue;
             changedData[field] = paramsDatas[field];
             if (options[field].type === 'many2one') {
                 changedData[field] = (paramsDatas[field] || [false])[0];
@@ -132,8 +133,8 @@ const onchangeField = async (params: OnchangeParamsType, checkAll) => {
                     for (const field of Object.keys(newLines[index][2])) {
                         if (field === 'id') continue;
                         const value = newLines[index][2][field];
-                        if (['float', 'integer'].indexOf(options[changedField].type) !== -1) {
-                            datas[changedField] = 0;
+                        if (!value && ['float', 'integer'].includes(treeOptions[changedField][field].type)) {
+                            newLines[index][2][field] = 0;
                         } else if (!value && treeOptions[changedField][field].type !== 'boolean') {
                             newLines[index][2][field] = '';
                         }
