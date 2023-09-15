@@ -11,10 +11,13 @@
               treeField: treeField,
               datas: data,
               index: index,
+              formModel: formModel,
+              formData: formData,
               attributes: attrs,
+              options: treeField?treeViewFields[treeField]: viewFields,
               treeOptions: treeViewFields,
+              formOptions: viewFields,
               model: model,
-              options: viewFields,
               treeData: treeData
             })"
   >
@@ -50,6 +53,11 @@ const props = defineProps({
   }, index: {
     type: Number,
     default: 0
+  }, formModel: {
+    default: ''
+  }, formData:{
+    type: Object,
+    default: {}
   },
   data: {
     type: Object,

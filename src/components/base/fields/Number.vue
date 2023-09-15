@@ -11,11 +11,14 @@
               field: field,
               treeField: treeField,
               datas: data,
+              formModel: formModel,
               attributes: attrs,
+              formData: formData,
               model: model,
                index: index,
-              options: viewFields,
+               options: treeField?treeViewFields[treeField]: viewFields,
               treeOptions: treeViewFields,
+              formOptions: viewFields,
               treeData: treeData
             })"
   />
@@ -36,14 +39,19 @@ const props = defineProps({
     default: ''
   }, viewType: {
     default: 'form'
-  }, model: {
+  }, formModel: {
+    default: ''
+  },  model: {
     default: 'form'
   }, treeField: {
     type: String,
-    default: 'text'
+    default: ''
   }, index: {
     type: Number,
     default: 0
+  }, formData:{
+    type: Object,
+    default: {}
   },
   data: {
     type: Object,

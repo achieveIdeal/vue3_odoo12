@@ -40,7 +40,7 @@
 
 
 <script lang="ts" setup>
-import {callAction, callKw, callViews} from "../service/module/call";
+import {callAction, callCreate, callKw, callViews} from "../service/module/call";
 import {defineEmits, defineProps, ref, watch} from "vue";
 import {useRoute, useRouter} from "vue-router";
 import {formatArch} from "../tools";
@@ -116,20 +116,10 @@ const deleteLineClick = (treeField, index, treeData, row, noAddCallback) => {
 const addLineClick = (treeField, treeData, newLine, noAddCallback) => {
   emits('addLineClick', treeField, treeData, newLine, noAddCallback)
 }
-const main = () => {
-  loadAction(action.value.id || action_id.value).then(res => {
-    action_id.value = res.action.id;
-    action.value = res.action;
-    fieldViewInfo.value = res.fieldViewInfo;
-    searchViewInfo.value = res.searchViewInfo;
-    treeViewInfo.value = res.treeViewInfo;
-    formViewInfo.value = res.formViewInfo;
-    arch.value = res.arch;
-  });
-}
 
-const buttonClick = (button, model, datas, selectRows) => {
+const buttonClick = async (button, model, datas, selectRows) => {
   const curDialog = dialog_ref.value[dialog_ref.value.length - 1];
+  console.log(record_ref.value);
   if (button.attrs.type === 'action') {
     const action_id = parseInt(button.attrs.name);
     loadAction(action_id, true).then(res => {
@@ -138,21 +128,27 @@ const buttonClick = (button, model, datas, selectRows) => {
         archDialog: res.arch,
         curViewTypeDialog: res.viewType,
         searchViewInfoDialog: res.searchViewInfo,
-        dataDialog: datas,
+        dataDialog: null,
         actionDialog: res.action,
-        visible: true,
         formViewInfoDialog: res.formViewInfo,
+        active_ids: selectRows?.id || [datas.id],
+        preDialogReload: dialogStack.value[dialogStack.value.length - 1]?.preDialogReload
+            || record_ref.value.formview_ref.main
       })
     })
   } else if (button.attrs.type === 'object') {
     const curDialogData = dialogStack.value[dialog_ref.value.length - 1];
+    if (!curDialogData.dataDialog) {
+      datas.id = await callCreate({model, data: datas})
+    }
     callKw({
       model: model,
       method: button.attrs.name,
-      args: [curDialogData.visible ? 0 : datas.id],
-      kwargs: {context: {'active_id': datas.id, 'active_ids': selectRows?.id || [datas.id]}}
+      args: [datas.id],
+      kwargs: {context: {'active_id': curDialogData.active_ids[0], 'active_ids': curDialogData.active_ids}}
     }).then(res => {
       curDialog.dialogVisible = false;
+      curDialogData.preDialogReload();
     })
   } else {
     curDialog.dialogVisible = false;
@@ -187,6 +183,18 @@ const getLineDetailClick = (data, index, formViewInfo) => {
   })
 }
 
+
+const main = () => {
+  loadAction(action.value.id || action_id.value).then(res => {
+    action_id.value = res.action.id;
+    action.value = res.action;
+    fieldViewInfo.value = res.fieldViewInfo;
+    searchViewInfo.value = res.searchViewInfo;
+    treeViewInfo.value = res.treeViewInfo;
+    formViewInfo.value = res.formViewInfo;
+    arch.value = res.arch;
+  });
+}
 
 main()
 

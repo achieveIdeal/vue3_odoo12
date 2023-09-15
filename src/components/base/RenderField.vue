@@ -1,36 +1,45 @@
 <template>
-
   <el-form-item
-      v-if="!(parseDomain(viewFields[children.attrs?.name]?.invisible
+      v-if="!(parseDomain((!!treeField.length?treeViewFields[treeField]: viewFields)[children.attrs?.name]?.invisible
       || children.attrs?.invisible, data)
       ||children.attrs?.invisible) && children.tag==='field'"
       :style="{width: !Object.keys(treeViewFields).includes(children.attrs?.name)?'30%':'100%'}"
-      :prop="viewType==='form'?['formData',children.attrs?.name]:viewType==='tree'?['treeData',treeField,index, children.attrs.name]:[index,children.attrs.name]"
-      :label="viewType==='form' && !Object.keys(treeViewFields).includes(children.attrs?.name)? viewFields[children.attrs?.name]?.string:''"
-      :rules="viewFields[children.attrs.name]?.rules||[{
-        required: parseDomain(viewFields[children.attrs.name]?.required, data),
-        message: viewFields[children.attrs.name]?.string + '不能为空!',
+      :prop="viewType==='form'?['formData',children.attrs?.name]:viewType==='tree'
+        ?['treeData',treeField,index, children.attrs.name]:[index,children.attrs.name]"
+      :label="viewType==='form' && !Object.keys(treeViewFields).includes(children.attrs?.name)
+        ? (!!treeField.length?treeViewFields[treeField]: viewFields)[children.attrs?.name]?.string:''"
+      :rules="(!!treeField.length?treeViewFields[treeField]: viewFields)[children.attrs.name]?.rules||[{
+        required: parseDomain((!!treeField.length?treeViewFields[treeField]: viewFields)[children.attrs.name]?.required, data),
+        message: (!!treeField.length?treeViewFields[treeField]: viewFields)[children.attrs.name]?.string + '不能为空!',
         trigger: 'blur'
         }]">
-    <component :is="FIELD_VIEW_MAP[viewFields[children.attrs?.name]?.type]"
-               :data="data"
-               :model="model"
-               :attrs="children.attrs"
-               :viewType="viewType"
-               :treeData="treeData"
-               :treeViewFields="treeViewFields"
-               :viewFields="viewFields"
-               :field="children.attrs?.name"
-               :option="viewFields[children.attrs?.name]"
-               :readonly="!!parseDomain(viewFields[children.attrs?.name]?.readonly||children.attrs.readonly, data)"
-               :disabled="disabled"
-               :loading="loading"
+    <component
+        :is="FIELD_VIEW_MAP[(!!treeField.length?treeViewFields[treeField]: viewFields)[children.attrs?.name]?.type]"
+        v-if="Object.keys(data||{}).length"
+        :data="data"
+        :model="model"
+        :formModel="formModel"
+        :formData="formData"
+        :attrs="children.attrs"
+        :viewType="viewType"
+        :treeData="treeData"
+        :treeField="treeField"
+        :treeViewFields="treeViewFields"
+        :viewFields="viewFields"
+        :field="children.attrs?.name"
+        :option="(!!treeField.length?treeViewFields[treeField]: viewFields)[children.attrs?.name]"
+        :readonly="!!parseDomain((!!treeField.length?treeViewFields[treeField]: viewFields)[children.attrs?.name]?.readonly
+        ||children.attrs.readonly, data)"
+        :disabled="disabled"
+        :loading="loading"
     >
       <template v-if="((children.children || []))?.length" v-for="subChildren in (children.children || [])">
         <RenderField
             :children="subChildren"
             :parent="children"
             :extras="extras"
+            :formModel="formModel"
+            :formData="formData"
             :viewType="viewType"
             :treeViewFields="treeViewFields"
             :activeTab="activeTab"
@@ -56,6 +65,8 @@
              :data="data"
              :treeData="treeData"
              viewType="form"
+             :formModel="formModel"
+             :formData="formData"
              :model="model"
              :field="children.attrs?.name"
              :option="viewFields[children.attrs?.name]"
@@ -76,6 +87,8 @@
           :data="data"
           :index="index"
           :treeField="treeField"
+          :formModel="formModel"
+          :formData="formData"
           :model="model"
           :fields="fields"
           :treeData="treeData"
@@ -96,15 +109,17 @@
              :fields="fields[children.field]"
              :treeField="children.field"
              :model="viewFields[children.field].relation"
+             :formModel="model"
              :option="viewFields[children.field]"
              :readonly="parseDomain(children.attrs.readonly, data)"
              :disabled="disabled"
              :loading="loading"
+             :treeViewFields="treeViewFields"
+             :viewFields="viewFields"
              :treeData="treeData"
              :arch="children"
              :action="{res_model:viewFields[children.field].relation, limit:1000,domain:['|',['id', 'in', data[children.field] ||[]],
               [viewFields[children.field].relation_field, '=', data['id']]]}"
-             :viewFields="viewFields[children.field]?.views?.tree?.fields"
              :formViewInfo="{
                 arch:children.formViewInfo.arch,
                 base_model: viewFields[children.field].relation,
@@ -121,6 +136,8 @@
           :extras="extras"
           :treeViewFields="treeViewFields"
           :activeTab="activeTab"
+          :formModel="formModel"
+          :formData="formData"
           :data="data"
           :index="index"
           :treeField="treeField"
@@ -145,7 +162,7 @@
           <el-button :class="['btn-group',children.class]"
                      v-if="(!subChildren.attrs?.states
                      || (subChildren.attrs?.states||'')?.split(',').includes(data.state)
-                      && !parseDomain(subChildren.attrs.invisible, data))&&disabled"
+                      && !parseDomain(subChildren.attrs.invisible, data))&&(children.tag ==='footer' || disabled)"
                      @click="(e)=> handleButtonClick(e,subChildren)">
             {{ subChildren.attrs.string }}
           </el-button>
@@ -175,6 +192,8 @@
             :data="data"
             :index="index"
             :treeField="treeField"
+            :formModel="formModel"
+            :formData="formData"
             :fields="fields"
             :treeData="treeData"
             :treeViewFields="treeViewFields"
@@ -214,6 +233,8 @@ const props = defineProps({
   }, viewType: {
     type: String,
     default: ''
+  }, formModel: {
+    default: ''
   }, activeTab: {
     type: String,
     default: ''
@@ -242,6 +263,9 @@ const props = defineProps({
     default: {}
   },
   data: {
+    type: Object,
+    default: {}
+  }, formData: {
     type: Object,
     default: {}
   },

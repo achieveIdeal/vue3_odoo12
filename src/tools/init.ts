@@ -36,6 +36,8 @@ export const initFormData = (formData, formFieldsOption) => {
             formData[field] = '';
         } else if (isDigit(formFieldsOption[field]?.type) && !value) {
             formData[field] = 0;
+        } else if (!value) {
+            formData[field] = ''
         }
     }
     return formData
@@ -63,6 +65,8 @@ export const initTreeData = async (treeData, treeFieldsOption) => {
                 if (isDigit(treeFieldsOption[treeField][field]?.type) && !value) {
                     lineData[field] = 0
                 } else if (!isBool(treeFieldsOption[treeField][field]?.type) && !value) {
+                    lineData[field] = ''
+                } else if (!value) {
                     lineData[field] = ''
                 }
             }
@@ -229,7 +233,7 @@ export const data2OdooFormat = (data) => {
             formatData[field] = data[field];
         }
     }
-    for (const field of Object.keys(data['deleteFieldMap'])) {
+    for (const field of Object.keys(data['deleteFieldMap'] || {})) {
         formatData[field] = formatData[field].concat(data['deleteFieldMap'][field])
     }
     return formatData

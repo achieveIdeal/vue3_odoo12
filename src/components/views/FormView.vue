@@ -44,7 +44,6 @@ import {parseXMlToJson} from "../../tools";
 import {initFormData, initTreeData, setFormAttribute, setTreeAttribute} from "../../tools/init";
 
 const route = useRoute();
-let real_id = parseInt(route.query.id);
 const form_ref = ref('')
 
 const props = defineProps({
@@ -76,12 +75,20 @@ const props = defineProps({
   }
 })
 
+let data_id = 0;
+if (props.isDialog) {
+  data_id = props.data?.id
+} else {
+  data_id = parseInt(route.query.id)
+}
 watch(route, async (f, t) => {
-  const data_id = t.query.id;
-  if (data_id) {
-    real_id = parseInt(data_id);
-    await loadData(real_id)
+  let data_id = 0;
+  if (props.isDialog) {
+    data_id = props.data.id
+  } else {
+    data_id = parseInt(route.query.id)
   }
+  await loadData(data_id)
 })
 
 const fields = ref([]);
@@ -164,12 +171,15 @@ const getFields = async () => {
   await formatArch(arch)
   const fields = {self: []};
   const recursion = (arch, parent) => {
-    const treeFields = []
+    const treeFields = [];
     for (const children of arch.children instanceof Array ? arch.children : []) {
+      const fieldName = children.attrs?.name;
       if (arch.tag === 'tree') {
-        treeFields.push(children.attrs.name)
+        treeFields.push(fieldName);
+        treeViewFields.value[parent.attrs.name][fieldName].onchange = children.attrs.on_change
       } else if (children.tag === 'field') {
-        fields.self.push(children.attrs.name)
+        fields.self.push(fieldName);
+        props.viewFields[fieldName].onchange = children.attrs.on_change
       }
       recursion(children, arch)
     }
@@ -236,7 +246,7 @@ const emits = defineEmits(['buttonClick', 'getLineDetailClick', 'dataLoadedCallb
 const main = async () => {
   fields.value = await getFields();
   if (!props.data) {   // 加载详情时，不需要请求后端获取抬头数据
-    await loadData(real_id);
+    await loadData(data_id);
   } else {
     datas.value = props.data;
     for (const treeField of Object.keys(treeViewFields.value || {})) {
@@ -276,7 +286,7 @@ const fieldOnchange = (params, noChange) => {
   emits('fieldOnchange', params, noChange)
 }
 defineExpose({
-  form_ref
+  form_ref, main
 })
 </script>
 

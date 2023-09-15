@@ -1,6 +1,6 @@
 import {callNames, callOnchange, callFields, callRead, callSearchRead} from "../service/module/call";
 import {ElMessage} from "element-plus";
-import {initTreeData} from "./init";
+import {initFormData, initTreeData} from "./init";
 import axios from "axios";
 import mitt from "mitt";
 
@@ -35,40 +35,55 @@ const buildOnchangeSpecs = function (fieldsInfo, treeOption, fields) {
 const onchangeField = async (params: OnchangeParamsType, checkAll) => {
     let options = params.options;
     let field = params.field;
-    if (options[field]?.onchange) {
+    let treeField = params.treeField;
+    if (!!options[field].onchange) {
         let attributes = params.attributes
         let treeOptions = params.treeOptions;
         let datas = params.datas
         let treeData = params.treeData;
+        let formOptions = params.formOptions;
         let treeDataCopy = JSON.parse(JSON.stringify(treeData || {}))
         let paramsDatas = JSON.parse(JSON.stringify(datas))
-        for (const treeField of Object.keys(treeDataCopy || {})) {
-            paramsDatas[treeField] = []
-            for (const data of treeDataCopy[treeField]) {
-                const dataId = data.id;
-                if (dataId) {
-                    delete data['id'];  // 更新数据时，不能传id
-                    paramsDatas[treeField].push([1, dataId, data]);
-                } else {
-                    paramsDatas[treeField].push([0, 0, data])
+        if (!treeField) {
+            for (const treeField of Object.keys(treeDataCopy || {})) {
+                paramsDatas[treeField] = []
+                for (const data of treeDataCopy[treeField]) {
+                    for (const field of Object.keys(data || {})) {
+                        if (field === 'id') continue
+                        if (treeOptions[treeField][field].type === 'many2one') {
+                            data[field] = (data[field] || [])[0]
+                        }
+                    }
+                    const dataId = data.id;
+                    if (dataId) {
+                        delete data['id'];  // 更新数据时，不能传id
+                        paramsDatas[treeField].push([1, dataId, data]);
+                    } else {
+                        paramsDatas[treeField].push([0, 0, data])
+                    }
                 }
             }
         }
-        let onchange: { [prop: string]: '' | '1' };
+        let onchangeSpecs: { [prop: string]: '' | '1' };
         let changedData: { [prop: string]: Multiple } = {}
         for (let field of Object.keys(paramsDatas || {})) {
-            if (field === options[field].relation_field) {
-                changedData[field] = params.form.datas
-            } else {
-                changedData[field] = paramsDatas[field];
+            if (field === 'id') continue;
+            changedData[field] = paramsDatas[field];
+            if (options[field].type === 'many2one') {
+                changedData[field] = (paramsDatas[field] || [false])[0];
+            } else if (treeData[field]?.length) {
+                changedData[field] = paramsDatas[field]
             }
         }
-        onchange = buildOnchangeSpecs(options, treeOptions, Object.keys(options || {}))
+        if (!!treeField.length) {
+            changedData[formOptions[treeField].relation_field] = datas
+        }
+        onchangeSpecs = buildOnchangeSpecs(options, treeOptions, Object.keys(options || {}))
         const model = params.model;
         let request: RequestParamsType = {
             model: model,
             method: 'onchange',
-            args: [[datas.id || 0], changedData, field, onchange, {
+            args: [[datas.id || 0], changedData, field, onchangeSpecs, {
                 'lang': 'zh_CN',
                 'tz': false,
                 'uid': 1,
@@ -77,21 +92,11 @@ const onchangeField = async (params: OnchangeParamsType, checkAll) => {
             }],
             path: model + '/onchange'
         }
-        const res = await callOnchange(request)
-        if (res.error) {
-            ElMessage({
-
-                message: res.error.data.message,
-                type: 'error'
-            });
-            return false
-        }
-        const result = res.result;
+        const result = await callOnchange(request)
         const domain = result.domain;
         const value = result.value;
         if (result.warning) {
             ElMessage({
-
                 message: result.warning.message,
                 type: 'error'
             });
@@ -112,49 +117,61 @@ const onchangeField = async (params: OnchangeParamsType, checkAll) => {
             datas[changedField] = '';
         }
         for (let changedField of Object.keys(value || {})) {
-            const isChangeLine = value[changedField][0] instanceof Array && value[changedField][0][0] === 5
-            if (value[changedField] instanceof Array && !isChangeLine) {
-                !options[changedField].selection ? options[changedField].selection = [] : null;
-                options[changedField].selection.push(value[changedField]);
-                datas[changedField] = value[changedField][0];
-                continue
-            }
-            if (value[changedField] === false && options[changedField].type !== 'boolean') {
+            if (options[changedField].type !== 'boolean' && !value) {  // 处理抬头或某一行数据
                 datas[changedField] = '';
                 if (['float', 'integer'].indexOf(options[changedField].type) !== -1) {
                     datas[changedField] = 0;
                 }
-                continue
-            }
-            if (!!Object.keys(treeData || {}).length && Object.keys(treeData || {}).indexOf(changedField) !== -1) {
+            } else if (Object.keys(treeData || {}).includes(changedField)) {  // 除以一对多，多对多
                 const changeLines = [];
-                const newLines = value[changedField];
                 datas[changedField] = [];
+                const newLines = value[changedField];
                 for (let index = 1; index < newLines.length; index++) {
+                    newLines[index][2].id = newLines[index][1] || 0;
                     changeLines.push(newLines[index][2]);
                     for (const field of Object.keys(newLines[index][2])) {
-                        const value = newLines[index][2][field]
-                        if (value instanceof Array && value[0][0] === 5) {
-                            newLines[index][2][field] = [];
-                            if (['float', 'integer'].includes(treeOptions[field]?.type)) {
-                                newLines[index][2][field] = 0;
-                            }
+                        if (field === 'id') continue;
+                        const value = newLines[index][2][field];
+                        if (['float', 'integer'].indexOf(options[changedField].type) !== -1) {
+                            datas[changedField] = 0;
+                        } else if (!value && treeOptions[changedField][field].type !== 'boolean') {
+                            newLines[index][2][field] = '';
                         }
+                        params.field = field;
+                        params.treeField = changedField;
+                        params.index = index - 1;
+                        params.options = treeOptions[changedField];
+                        params.datas = newLines[index][2];
+                        eventBus.emit('fieldOnchange', params);
                     }
-
                 }
                 treeData[changedField] = changeLines;
                 initTreeData({}, treeData, treeOptions, datas);
                 continue
+            } else {
+                datas[changedField] = value[changedField];  // 其他字段
             }
-            datas[changedField] = value[changedField];
+            params.field = changedField;
+            params.treeField = treeField;
+            params.options = treeField ? treeOptions[treeField] : formOptions;
+            params.datas = datas;
+            eventBus.emit('fieldOnchange', params);
         }
+    }
+    if (!!treeField.length && params.formOptions[treeField].onchange) {
+        params.field = treeField
+        params.treeField = ''
+        params.model = params.formModel;
+        params.datas = params.formData;
+        params.options = params.formOptions;
+        onchangeField(params)
     }
 }
 
 const selectionMap = {}
 const searchFieldSelection = async (field, option: FieldOptionType, query: string, domain = [], limit, datas) => {
-    const domains = JSON.parse(JSON.stringify(option?.domain))
+    let selection = [];
+    const domains = JSON.parse(JSON.stringify(option?.domain || []))
     for (const domain of domains || []) {
         if (typeof domain[2] === 'string') {
             let self_value = domain[2].split('.');
@@ -171,8 +188,7 @@ const searchFieldSelection = async (field, option: FieldOptionType, query: strin
     const searchDomain = domain.length ? domain : domains.concat(domain) || []
     const searchUnique = field + query + searchDomain;
     if (selectionMap[searchUnique]?.length) {
-        option.selection = selectionMap[searchUnique];
-        return
+        return selectionMap[searchUnique];
     }
     const result = await callNames({
         model: option.relation,
@@ -184,21 +200,21 @@ const searchFieldSelection = async (field, option: FieldOptionType, query: strin
             'limit': limit || 10,
         }
     })
-    if (option.selection?.length && ['many2many', 'one2many'].includes(option.type)) {
+    if (selection?.length && ['many2many', 'one2many'].includes(option.type)) {
         const sameSelectId = [];
         const sameSelect = [];
-        for (const select of (result || []).concat(option.selection)) {
+        for (const select of (result || []).concat(selection)) {
             if (!sameSelectId.includes(select[0])) {
                 sameSelectId.push(select[0])
                 sameSelect.push(select)
             }
         }
-        option.selection = sameSelect
+        selection = sameSelect
     } else {
-        option.selection = result || [];
+        selection = result || [];
     }
-    selectionMap[searchUnique] = option.selection;
-    return true;
+    selectionMap[searchUnique] = selection;
+    return selection;
 }
 
 //  文件处理
@@ -647,7 +663,7 @@ export {
     getFileType, loadFormData, dateFtt, downLoadFileBold,
     base64ToBlobUrl, loadListData, readFile, parseXMlToJson,
     downLoadFile, getFieldOption, formatArch,
-    encodeFileToBase64,eventBus,
+    encodeFileToBase64, eventBus,
     parseDomain, loadActiveAction
 }
 

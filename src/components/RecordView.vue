@@ -4,9 +4,8 @@
   <el-header class="controller-panel">
     <!--    <MenuView v-if="hasMenus" :menus="menus" @menuClick="menuClick"/>-->
     <ButtonView
-        v-if="Object.keys(formData||{}).length"
         :disabled="disabled"
-        :params="{type: curViewType, id: formData.id, name: ''}"
+        :params="{type: curViewType, id: parseInt(route.query.id), name: ''}"
         :buttons="buttons"
         :data="curViewType==='form'?formData:selectRows"
         @editClick="editClick"
@@ -40,7 +39,7 @@
       />
       <ListView ref="listview_ref" v-if="curViewType==='tree' && Object.keys(arch).length" :action="action"
                 :arch="arch"
-                :disabled="disabled"
+                :disabled="true"
                 :loading="loading"
                 :extras="extras"
                 :model="fieldViewInfo.base_model"
@@ -60,12 +59,12 @@
 
 <script lang="ts" setup>
 import PagerHeader from '../components/views/PageHeader.vue'
-import {defineEmits, defineExpose, defineProps, ref} from "vue";
+import {defineEmits, defineExpose, defineProps, ref, watch} from "vue";
 import ListView from "./views/ListView.vue";
 import FormView from "./views/FormView.vue";
 import SearchView from '../components/views/SearchView.vue'
 import ButtonView from "./views/ButtonView.vue";
-import {data2OdooFormat, formatData, initButton, initListData} from "../tools/init";
+import {data2OdooFormat, initButton, initListData} from "../tools/init";
 import {
   callCreate,
   callMethod,
@@ -89,8 +88,6 @@ const loading = ref(false);
 const listview_ref = ref('');
 const formview_ref = ref('');
 const searchview_ref = ref('');
-const data_id = route.query.id;
-const disabled = ref(parseInt(data_id) !== 0);
 
 const props = defineProps({
   arch: {
@@ -122,7 +119,20 @@ const props = defineProps({
     default: {}
   },
 })
+let data_id = 0;
+if (props.isDialog) {
+  data_id = parseInt(props.dialog_data?.id);
+} else {
+  data_id = parseInt(route.query.id);
+}
+watch(route, () => {
+  disabled.value = !!parseInt(route.query.id) || !route.query.type
+})
 
+const disabled = ref(parseInt(data_id) !== 0 || props.curViewType === 'tree');
+if (props.isDialog && !props.dialog_data?.id) {
+  disabled.value = false;
+}
 let data = ref({});
 let listData = ref([]);
 let formData = ref({});
@@ -188,7 +198,7 @@ const saveWrite = async (savedDatas) => {
   disabled.value = true;
 }
 const saveCreate = async (savedDatas) => {
-  const real_id = await callCreate({model}, savedDatas)
+  const real_id = await callCreate({model, savedDatas})
   disabled.value = true;
   router.push({
     path: router.currentRoute.value.fullPath,
@@ -206,14 +216,11 @@ const saveClick = (formview_ref) => {  // 处理保存按钮，包括编辑保�
   if (!formEl) return
   formEl.validate((valid) => {
     if (valid) {
-      // changedFieldsVal
-      debugger
       let savedDatas = data2OdooFormat(changedFieldsVal);
       let noeSave = false;
       const noSave = () => {
         noeSave = true;
       }
-      debugger
       if (Object.keys(savedDatas).length && data.value.id) {
         emits('saveWriteClick', data.value, {savedDatas, saveWrite, noSave})
         !noeSave && saveWrite(savedDatas)
@@ -475,18 +482,26 @@ const lineButtonClick = (treeField, data, button) => {
 
 eventBus.on('fieldOnchange', (params) => {
   const field = params.field;
-  if (params.treeField) {
+  const datas = params.datas;
+  if (!!params.treeField && params.treeField != 'text') {
     const treeField = params.treeField;
     const index = params.index;
     !changedFieldsVal[treeField] ? changedFieldsVal[treeField] = [] : null;
     !changedFieldsVal[treeField][index] ? changedFieldsVal[treeField][index] = {} : null;
-    changedFieldsVal[treeField][index][field] = treeData.value[treeField][index][field];
-    if (treeData.value[treeField][index].id) {
-      changedFieldsVal[treeField][index].id = treeData.value[treeField][index].id;
+    changedFieldsVal[treeField][index][field] = datas[field];
+    if (datas.id) {
+      changedFieldsVal[treeField][index].id = datas.id;
+    }
+    if (params.options[field].type === 'many2one') {
+      changedFieldsVal[treeField][index][field] = (datas[field] || [''])[0];
     }
   } else {
-    changedFieldsVal[field] = data.value[field];
+    changedFieldsVal[field] = datas[field];
+    if (params.options[field].type === 'many2one') {
+      changedFieldsVal[field] = datas[field][0];
+    }
   }
+  console.log(changedFieldsVal, 'changedFieldsVal');
 })
 
 defineExpose({

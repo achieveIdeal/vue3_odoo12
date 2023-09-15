@@ -6,10 +6,14 @@
               field: field,
               datas: data,
               treeField: treeField,
+              formModel: formModel,
+              index: props.index,
+              formData: formData,
               attributes: attrs,
               model: model,
-              options: viewFields,
+              options: treeField?treeViewFields[treeField]: viewFields,
               treeOptions: treeViewFields,
+              formOptions: viewFields,
               treeData: treeData
             })"
             :maxlength="option.maxlength"/>
@@ -30,6 +34,8 @@ const props = defineProps({
     default: 'form'
   }, model: {
     default: ''
+  }, formModel: {
+    default: ''
   }, treeField: {
     type: String,
     default: 'text'
@@ -40,7 +46,10 @@ const props = defineProps({
   data: {
     type: Object,
     default: {}
-  }, treeData: {
+  },  formData:{
+    type: Object,
+    default: {}
+  },treeData: {
     type: Object,
     default: {}
   }, attrs: {

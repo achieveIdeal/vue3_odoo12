@@ -39,6 +39,11 @@ const props = defineProps({
   },index: {
     type: Number,
     default: 0
+  }, formModel: {
+    default: ''
+  }, formData:{
+    type: Object,
+    default: {}
   },
   data: {
     type: Object,

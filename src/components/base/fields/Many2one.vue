@@ -1,28 +1,17 @@
 <template>
   <el-select v-if="!(readonly || disabled)" class="form-input alien-left"
-             v-model="data[field]"
+             v-model="value_id"
              placeholder="请选择"
              clearable
              filterable
              remote
              :loading="loading"
-             @change="fieldOnchange({
-              field: field,
-              treeField: treeField,
-              datas: data,
-               index: index,
-              attributes: attrs,
-              treeOptions: treeViewFields,
-              model: model,
-              options: viewFields,
-              treeData: treeData
-            })"
              @focus="preSearchSelect(option)"
              @blur="()=>{}"
              :remote-method="searchSelection(option)"
   >
     <el-option
-        v-for="item in option.selection"
+        v-for="item in selection"
         :key="item[0]"
         :disabled="readonly  || disabled"
         :label="item[1]"
@@ -32,14 +21,14 @@
   <span :style="option.style"
         class="item-text" :class="{'border-bottom':  viewType==='form'}"
         v-else> {{
-      data[field]?.length ? data[field][1] : '　'
+      value_name
     }}</span>
   <slot></slot>
 </template>
 
 <script lang="ts" setup>
 import {onchangeField, eventBus, searchFieldSelection} from "../../../tools";
-import {ref} from "vue";
+import {computed, onMounted, ref} from "vue";
 
 const props = defineProps({
   field: {
@@ -48,9 +37,14 @@ const props = defineProps({
     default: 'form'
   }, model: {
     default: 'form'
-  },index: {
+  }, formModel: {
+    default: ''
+  }, index: {
     type: Number,
     default: 0
+  }, formData: {
+    type: Object,
+    default: {}
   },
   data: {
     type: Object,
@@ -92,25 +86,87 @@ const props = defineProps({
     default: true
   }
 })
+
+
+const value_id = computed({
+  get() {
+    if (props.data[props.field] instanceof Array) {
+      return props.data[props.field][0] || ''
+    }
+    return ''
+  },
+  set(value) {
+    props.data[props.field] = [];
+    if (!value) {
+      props.data[props.field] = value;
+    } else {
+      props.data[props.field][0] = value;
+      props.data[props.field][1] = selection.value.find(r => r[0] === value)[1];
+    }
+    const treeField = props.treeField
+    const viewFields = props.viewFields
+    const treeViewFields = props.treeViewFields
+    fieldOnchange({
+      field: props.field,
+      treeField: treeField,
+      datas: props.data,
+      formModel: props.formModel,
+      formData: props.formData,
+      index: props.index,
+      attributes: props.attrs,
+      options: treeField ? treeViewFields[treeField] : viewFields,
+      treeOptions: treeViewFields,
+      formOptions: viewFields,
+      model: props.model,
+      treeData: props.treeData
+    })
+  }
+})
+
+const selectVals = ref([])
+
+const selection = computed({
+  get() {
+    return selectVals.value.concat(!!props.data[props.field] && [props.data[props.field]] || [])
+  },
+  set(value) {
+    selectVals.value = value
+  }
+})
+
+const value_name = computed(() => {
+  const select = selection.value.find(r => r[0] === props.data[props.field][0]);
+  return select && select[1] || '　'
+})
+
+
 const loading = ref(false);
-const searchSelection = (option) => (query: string) => {
+
+const searchNames = async (option, query: string) => {
   loading.value = true;
-  searchFieldSelection(props.field, option, query, [], 100).then(r => {
-    loading.value = false;
-  }, props.data);
+  return searchFieldSelection(props.field, option, query, [], 100, props.data)
 }
+
+const searchSelection = (option) => (query) => {
+  searchNames(option, query).then(res => {
+    loading.value = false;
+    selection.value = res;
+  })
+}
+
 const preSearchSelect = async (option) => {
-  loading.value = true;
-  searchFieldSelection(props.field, option, '', [], 100).then(r => {
+  searchNames(option, '').then(res => {
     loading.value = false;
-  });
+    selection.value = res;
+  })
 }
-const fieldOnchange = (params) => {
+
+const fieldOnchange = async (params) => {
   let noChange = false;
   eventBus.emit('fieldOnchange', params, () => {
     noChange = true
   });
-  !noChange && onchangeField(params)
+  return !noChange && onchangeField(params)
 }
 
 </script>

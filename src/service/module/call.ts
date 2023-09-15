@@ -38,9 +38,11 @@ export function callFields(data) {
 }
 
 export function callKw(data) {
-    data.kwargs = {
-        ...data.kwargs,
-        'context': {'lang': 'zh_CN', 'tz': false, 'uid': 2, 'front': true, supplier_id, ...data.kwargs?.context}
+    if (data.method !== 'onchange') {
+        data.kwargs = {
+            ...data.kwargs,
+            'context': {'lang': 'zh_CN', 'tz': false, 'uid': 2, 'front': true, supplier_id, ...data.kwargs?.context}
+        }
     }
     return Request.post({
         url: '/front/dataset/call_kw/',
@@ -151,11 +153,11 @@ export function callWrite(params, data) {
     })
 }
 
-export function callCreate(params, data) {
+export function callCreate(params) {
     return callKw({
         model: params.model,
         method: 'create',
-        args: [data]
+        args: [params.data]
     })
 }
 

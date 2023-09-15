@@ -12,20 +12,24 @@
     <template v-for="children in arch.children">
       <el-table-column
           :key="children.attrs.name"
-          v-if="!(parseDomain(viewFields[children.attrs?.name]?.invisible, formData) ||  children.attrs?.invisible)"
-          :width="viewFields[children.attrs.name]?.width"
-          :label="viewFields[children.attrs.name]?.string">
+          v-if="!(parseDomain(treeViewFields[treeField][children.attrs?.name]?.invisible, formData) ||  children.attrs?.invisible)"
+          :width="treeViewFields[treeField][children.attrs.name]?.width"
+          :label="treeViewFields[treeField][children.attrs.name]?.string">
         <template #header>
-          <span>{{ viewFields[children.attrs.name]?.string }}</span>
+          <span>{{ treeViewFields[treeField][children.attrs.name]?.string }}</span>
         </template>
         <template #default="scoped">
           <RenderField :children="children"
                        :model="model"
+                       :formModel="formModel"
+                       :treeData="treeData"
+                       :formData="formData"
+                       :treeViewFields="treeViewFields"
+                       :viewFields="viewFields"
                        :treeField="treeField"
                        :index="scoped.$index"
                        :data="scoped.row"
                        viewType="tree"
-                       :viewFields="viewFields"
                        :disabled="disabled"
                        :loading="loading"
           />
@@ -112,7 +116,10 @@ const props = defineProps({
     type: Object || String,
     default: {}
   },
-  viewFields: {
+  treeViewFields: {
+    type: Object,
+    default: {}
+  }, viewFields: {
     type: Object,
     default: {}
   }, option: {
@@ -138,6 +145,9 @@ const props = defineProps({
     default: 'self',
   },
   model: {
+    type: String,
+    default: '',
+  },  formModel: {
     type: String,
     default: '',
   },
@@ -186,20 +196,20 @@ const getSummaries = (treeField, children) => (table) => {
   const sums = [];
   for (const data of table.data) {
     let index = 0;
-    const viewFields = props.viewFields
+    const treeViewFields = props.treeViewFields[treeField]
     for (const field of props.fields) {
       const fieldChild = children.find(r => r.attrs.name === field)
-      if (parseDomain(viewFields[field]?.invisible, {
+      if (parseDomain(treeViewFields[field]?.invisible, {
         ...props.formData,
         [treeField]: data
       }) || fieldChild.attrs.invisible) {
         continue
       }
       sums[index] = !sums[index] ? 0 : sums[index];
-      if (viewFields[field]?.sum && isDigit(viewFields[field]?.type)) {
-        sums[index] = (parseFloat(sums[index] || 0) + parseFloat(data[field] || 0)).toFixed(viewFields[field]?.precision ||
-            viewFields[field]?.digits &&
-            viewFields[field]?.digits?.length && viewFields[field]?.digits[1] || 0);
+      if (treeViewFields[field]?.sum && isDigit(treeViewFields[field]?.type)) {
+        sums[index] = (parseFloat(sums[index] || 0) + parseFloat(data[field] || 0)).toFixed(treeViewFields[field]?.precision ||
+            treeViewFields[field]?.digits &&
+            treeViewFields[field]?.digits?.length && treeViewFields[field]?.digits[1] || 0);
       } else {
         sums[index] = ''
       }
@@ -218,7 +228,7 @@ const handleTreeRowStyle = (treeField) => (row) => {
     info: '#606266'
   }
   let curColor = 'info'
-  let colors = props.viewFields.colors || {}
+  let colors = props.treeViewFields[treeField].colors || {}
   for (const color of Object.keys(colors)) {
     if (parseDomain(colors[color], row.row)) {
       curColor = color;
@@ -237,16 +247,16 @@ const handleDeleteLine = (index, treeField, row) => {  //  行删除
   }
   delete_row && props.treeData[treeField].splice(index, 1);
   delete_row && props.formData[treeField].splice(index, 1);
-  onchangeField({})
+  //onchangeField({})
   emits('deleteLineClick', treeField, index, props.treeData[treeField], row, noDelete);
 }
 const onAddItem = (treeField) => {
   const newLine = {}
   for (const field of props.fields) {
     newLine[field] = '';
-    if (['float', 'integer'].includes(props.viewFields[field]?.type)) {
+    if (['float', 'integer'].includes(props.treeViewFields[treeField][field]?.type)) {
       newLine[field] = 0
-    } else if (props.viewFields[field]?.type === 'boolean') {
+    } else if (props.treeViewFields[treeField][field]?.type === 'boolean') {
       newLine[field] = false;
     }
   }
@@ -254,8 +264,10 @@ const onAddItem = (treeField) => {
   const noAdd = () => {
     add_row = false;
   }
+  !props.treeData[treeField] ? props.treeData[treeField] = [] : null;
   add_row && props.treeData[treeField].push(newLine);
-  add_row && props.formData[treeField].push(0)
+  !props.formData[treeField] ? props.formData[treeField] = [] : null;
+  add_row && props.formData[treeField].push(0);
   emits('addLineClick', treeField, props.treeData[treeField], newLine, noAdd);
 }
 const handleCurrentChange = (treeField) => {

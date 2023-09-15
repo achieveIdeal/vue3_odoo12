@@ -16,8 +16,12 @@
               treeField: treeField,
               index: index,
               attributes: attrs,
+              formModel: formModel,
               datas: data,
+              formData: formData,
+              options: treeField?treeViewFields[treeField]: viewFields,
               treeOptions: treeViewFields,
+              formOptions: viewFields,
               model: model,
               options: viewFields,
               treeData: treeData
@@ -50,8 +54,8 @@
 </template>
 
 <script lang="ts" setup>
-import {onchangeField, searchFieldSelection,eventBus} from "../../../tools";
-import { ref} from "vue";
+import {onchangeField, searchFieldSelection, eventBus} from "../../../tools";
+import {ref} from "vue";
 
 const checkAll = ref(false);
 const props = defineProps({
@@ -64,9 +68,14 @@ const props = defineProps({
   }, treeField: {
     type: String,
     default: 'text'
-  },index: {
+  }, index: {
     type: Number,
     default: 0
+  }, formModel: {
+    default: ''
+  }, formData:{
+    type: Object,
+    default: {}
   },
   data: {
     type: Object,
