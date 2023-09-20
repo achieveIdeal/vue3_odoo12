@@ -652,6 +652,7 @@ const formatArch = (archRoot) => {
         }
     }
 }
+
 const parseXMlToJson = (xml_data) => {
     var parsedXML = new DOMParser().parseFromString(xml_data, "text/xml");
     const arch = parseElementToJSON(parsedXML.documentElement);

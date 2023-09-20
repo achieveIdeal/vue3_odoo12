@@ -11,6 +11,7 @@
         ref="tableview_ref"
         :action="action"
         :treeData="treeData"
+        :dataCount="dataCount"
         :model="model"
         :fields="fields['self']"
         :arch="arch"
@@ -23,8 +24,8 @@
         @selectClick="selectClick"
         @deleteLineClick="deleteLineClick"
         @addLineClick="addLineClick"
-        @fieldOnchange="fieldOnchange"
-
+        @pageSizeChange="pageSizeChange"
+        @pageChange="pageChange"
     />
   </el-form>
 </template>
@@ -67,7 +68,8 @@ const props = defineProps({
     default: true
   }
 })
-const emits = defineEmits(['getDetailClick', 'selectClick', 'fieldOnchange', 'dataLoadedCallback', 'deleteLineClick', 'addLineClick'])
+const emits = defineEmits(['getDetailClick', 'selectClick', 'fieldOnchange', 'dataLoadedCallback',
+  'deleteLineClick', 'addLineClick', 'pageSizeChange', 'pageChange'])
 
 const tableview_ref = ref('')
 const dataCount = ref(0);
@@ -78,7 +80,7 @@ const getFields = () => {
   const arch = props.arch;
   const fields = {self: []};
   const recursion = (arch) => {
-    for (const children of (arch.children instanceof Array?arch.children:[])) {
+    for (const children of (arch.children instanceof Array ? arch.children : [])) {
       if (children.tag === 'field') {
         fields.self.push(children.attrs.name)
       }
@@ -104,6 +106,7 @@ const main = async () => {
     domain: props.action.domain || [],
   }).then(async res => {
     dataCount.value = res.length || 0;
+    console.log(res.length);
     treeData.value['self'] = await initListData(res.records, props.viewFields);
     emits('dataLoadedCallback', treeData, ref({}), dataCount)
   })
@@ -114,10 +117,12 @@ const getDetailClick = (data, index) => {
   emits('getDetailClick', data, index)
 }
 
-const handleSizeChange = () => {
-
+const pageSizeChange = (treeField, size, curSize) => {
+  if (dataCount.value < size && curSize > dataCount.value) return;
+  emits('pageSizeChange', treeField, size, fields)
 }
-const handleCurrentChange = () => {
+const pageChange = (treeField, currentPage, pageSize, fields) => {
+  emits('pageChange', treeField, currentPage, pageSize, fields)
 }
 const selectClick = (rows) => {
   emits('selectClick', rows)

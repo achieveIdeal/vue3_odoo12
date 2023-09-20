@@ -78,9 +78,8 @@
   >添加一行
   </el-button>
   <el-pagination
-      hide-on-single-page
       v-model:current-page="currentPage"
-      :page-sizes="[10, 20, 50, 100, 200, 500,1000]"
+      :page-sizes="[10, 20, 50, 80, 100, 160,200, 500,1000]"
       v-model:page-size="pageSize"
       @size-change="handleSizeChange"
       class="list-pagination"
@@ -90,7 +89,7 @@
       background
       :total="dataCount || 0"
       @current-change="handleCurrentChange"
-      ref="paginationRef"
+      ref="pagination_ref"
   />
 </template>
 
@@ -111,6 +110,8 @@ const props = defineProps({
   }, treeData: {
     type: Object,
     default: {},
+  }, dataCount: {
+    type: Number,
   },
   arch: {
     type: Object || String,
@@ -167,21 +168,26 @@ const props = defineProps({
 })
 const pageSize = ref(props.action.limit);
 const dataLimit = ref(props.action.limit);
-const dataCount = ref((props.treeData[props.treeField] || []).length);
-
+const pagination_ref = ref({})
 const typeStore = useTypeStore();
 const isDigit = typeStore.isDigit;
 const upload = ref<UploadInstance>();
 
 
-const emits = defineEmits(['getDetailClick', 'fieldOnchange', 'selectClick', 'pageChange', 'editClick', 'addLineClick', 'deleteLineClick', 'lineButtonClick', 'fieldOnchange'])
+const emits = defineEmits(['getDetailClick', 'fieldOnchange', 'selectClick', 'pageChange',
+  'editClick', 'addLineClick', 'deleteLineClick', 'lineButtonClick', 'fieldOnchange', 'pageSizeChange'])
 
 const getDetail = async (data, index, formViewInfo, relation_field) => {
+  if (!!relation_field) {
+    data[relation_field] = props.formData.id;
+  }
   emits('getDetailClick', data, index, formViewInfo, relation_field)
 }
 
-const handleSizeChange = () => {
-
+const handleSizeChange = (size) => {
+  currentPage.value = 1;
+  const currentSize = pagination_ref.value.pageSize;
+  emits('pageSizeChange', props.treeField, size, currentSize);
 }
 
 const selectClick = (rows) => {
@@ -189,7 +195,7 @@ const selectClick = (rows) => {
 }
 
 let active = ref('')
-let currentPage = ref<number>(1)
+let currentPage = ref(1)
 
 
 let loading = ref(false)
@@ -219,7 +225,11 @@ const getSummaries = (treeField, children) => (table) => {
       index++;
     }
   }
-  sums[0] = sums[0] || '总计:'
+  if (props.treeField === 'self') {
+    sums[1] = sums[1] || '总计:'
+  } else {
+    sums[0] = sums[0] || '总计:'
+  }
   return sums
 }
 
@@ -250,9 +260,30 @@ const handleDeleteLine = (index, treeField, row) => {  //  行删除
   }
   delete_row && props.treeData[treeField].splice(index, 1);
   delete_row && props.formData[treeField].splice(index, 1);
-  //onchangeField({})
+  fieldOnchange({  // 删除行时需触发行字段的onchange
+    field: treeField,
+    treeField: '',
+    datas: props.formData,
+    formModel: props.formModel,
+    formData: props.formData,
+    attributes: props.treeViewFields[treeField],
+    options: props.viewFields,
+    treeOptions: props.treeViewFields,
+    formOptions: props.viewFields,
+    model: props.formModel,
+    treeData: props.treeData
+  })
   emits('deleteLineClick', treeField, index, props.treeData[treeField], row, noDelete);
 }
+
+const fieldOnchange = async (params) => {
+  let noChange = false;
+  eventBus.emit('fieldOnchange', params, () => {
+    noChange = true
+  });
+  return !noChange && onchangeField(params)
+}
+
 const onAddItem = (treeField) => {
   const newLine = {}
   for (const field of props.fields) {
@@ -274,15 +305,17 @@ const onAddItem = (treeField) => {
   add_row && props.formData[treeField].push([0, 0, newLine]);
   emits('addLineClick', treeField, props.treeData[treeField], newLine, noAdd);
 }
-const handleCurrentChange = (treeField) => {
-  emits('pageChange', currentPage.value, treeField);
+const handleCurrentChange = (currentPage) => {
+  emits('pageChange', props.treeField, currentPage, pageSize.value, props.fields);
 }
 
 const handleButtonClick = (field, row, button) => {
   emits('lineButtonClick', field, row, button);
 }
 
-defineExpose({})
+defineExpose({
+  pageSize, currentPage
+})
 </script>
 
 <style lang="less" scoped>

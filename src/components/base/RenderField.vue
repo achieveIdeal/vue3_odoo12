@@ -11,7 +11,7 @@
           ||children.attrs?.invisible
         )
       && children.tag==='field'"
-      :style="{width: !Object.keys(treeViewFields).includes(children.attrs?.name)?'30%':'100%'}"
+      :style="{width: !Object.keys(treeViewFields).includes(children.attrs?.name)?'30%':'100%',margin: viewType==='tree'?0:null}"
       :prop="viewType==='form'?['formData',children.attrs?.name]:viewType==='tree'
         ?['treeData',treeField,index, children.attrs.name]:[index,children.attrs.name]"
       :label="viewType==='form'

@@ -1,11 +1,11 @@
 <template>
   <el-button style="display: none" v-loading.fullscreen.lock="loading" element-loading-text="正在加载..."/>
   <PagerHeader :title="action.name" v-if="!isDialog"/>
-  <el-header class="controller-panel">
+  <el-header class="controller-panel" v-if="!isDialog || relation_field">
     <!--    <MenuView v-if="hasMenus" :menus="menus" @menuClick="menuClick"/>-->
     <ButtonView
         :disabled="disabled"
-        :params="{type: curViewType, id: parseInt(route.query.id), name: ''}"
+        :params="{type: curViewType, id: parseInt(route.query.id)}"
         :buttons="buttons"
         :data="curViewType==='form'?formData:selectRows"
         @editClick="editClick"
@@ -15,7 +15,7 @@
         @importClick="importClick"
         @exportClick="exportClick"
         @cancelClick="cancelClick"/>
-    <SearchView ref="searchview_ref" v-if="curViewType==='tree'" :searchViewInfo="searchViewInfo"
+    <SearchView ref="searchview_ref" class="search-view" v-if="curViewType==='tree'" :searchViewInfo="searchViewInfo"
                 @groupbyClick="groupbyClick"
                 @searchClick="searchClick"
     />
@@ -28,6 +28,7 @@
                 :data="dialog_data"
                 :extras="extras"
                 :disabled="disabled"
+                :relation_field="relation_field"
                 :loading="loading"
                 :model="fieldViewInfo.base_model"
                 :viewFields="fieldViewInfo.viewFields"
@@ -47,10 +48,12 @@
                 :formViewInfo="formViewInfo"
                 :viewFields="fieldViewInfo.viewFields"
                 @getDetailClick="getDetailClick"
+                @pageSizeChange="pageSizeChange"
                 @selectClick="selectClick"
                 @dataLoadedCallback="dataLoadedCallback"
                 @deleteLineClick="deleteLineClick"
                 @addLineClick="addLineClick"
+                @pageChange="pageChange"
       />
     </el-main>
   </el-container>
@@ -75,6 +78,7 @@ import {
 import router from "../router";
 import {useRoute} from "vue-router";
 import {eventBus} from "../tools";
+import {ElMessage} from "element-plus";
 
 eventBus.on('requestCallback', () => {
   loading.value = true;
@@ -148,14 +152,6 @@ const changedFieldsVal = {};
 
 const attrs = ref(props.arch.attrs);
 const model = props.fieldViewInfo.base_model;
-const dataLoadedCallback = (datas, treeDatas, countRef) => {
-  props.curViewType === 'form' ? data = datas : null;
-  props.curViewType === 'form' ? treeData = treeDatas : null;
-  props.curViewType === 'form' ? formData.value = datas.value : null;
-  props.curViewType === 'tree' ? listData = datas : null;
-  dataCount = countRef
-  dataCopy = {formData: JSON.parse(JSON.stringify(datas.value)), treeData: JSON.parse(JSON.stringify(treeDatas.value))};
-}
 const buttons = ref({
   buttonOptions: [{
     type: 'edit',
@@ -172,63 +168,86 @@ if (props.extras?.butons) {
 }
 const emits = defineEmits(['buttonClick', 'getDetailClick', 'getLineDetailClick', 'selectClick',
   'deleteLineClick', 'addLineClick', 'saveWriteClick', 'saveCreateClick', 'objectClick', 'dialogCreateClick',
-  'dialogCreateSaveClick'])
-
+  'dialogCreateSaveClick', 'pageChange', 'pageSizeChange'])
 const buttonClick = (button, model, datas) => {
   emits('buttonClick', button, model, datas, selectRows)
 }
+
 const getDetailClick = (data, index) => {
   emits('getDetailClick', data, index)
 }
-
-const getLineDetailClick = (dataLine, index, formViewInfo, relation_field) => {
-  emits('getLineDetailClick', dataLine, index, formViewInfo, relation_field)
+const searchClick = async () => {  // 搜索数据重置
+  const domain = searchview_ref?.value?.getDomain() || [];
+  const limit = listview_ref.value.tableview_ref?.pageSize || props.action.limit;
+  const offset = limit * ((listview_ref.value.tableview_ref?.currentPage || 1) - 1)
+  callSearchRead({
+    model: props.fieldViewInfo.base_model,
+    fields: Object.keys(props.fieldViewInfo.viewFields),
+    offset: offset,
+    limit: listview_ref.value.tableview_ref?.pageSize || props.action.limit,
+    domain: (props.action.domain || []).concat(domain),
+  }).then(async res => {
+    listData.value['self'] = await initListData(res.records, props.viewFields);
+    dataCount.value = res.length
+  })
 }
+
 const editClick = () => {
   disabled.value = false;
 }
 
-const cancelClick = () => {
-  disabled.value = true;
-  data.value = JSON.parse(JSON.stringify(dataCopy.formData));
-  treeData.value = JSON.parse(JSON.stringify(dataCopy.treeData));
-}
 const createClick = async () => {
   disabled.value = false;
   if (!props.isDialog) {
     router.push({
-      path: props.params.name,
+      path: router.currentRoute.value.fullPath,
       query: {
+        action_id: router.currentRoute.value.query.action_id,
         type: 'form',
         id: 0
       }
     })
   } else {
     const relation_field = props.relation_field;
-    changedFieldsVal[relation_field] = data.value[relation_field][0]
+    if (data.value[relation_field] instanceof Array) {
+      changedFieldsVal[relation_field] = data.value[relation_field][0]
+    } else if (typeof data.value[relation_field] === 'number') {
+      changedFieldsVal[relation_field] = data.value[relation_field]
+    }
     emits('dialogCreateClick', data, treeData, relation_field)
   }
 }
-const deleteLineClick = (treeField, index, treeData, row, noAddCallback) => {
-  if (row.id) {
-    if (!changedFieldsVal[treeField]) {
-      changedFieldsVal['deleteFieldMap'] = {};
-      changedFieldsVal['deleteFieldMap'][treeField] = [];
-    }
-    changedFieldsVal['deleteFieldMap'][treeField].push([2, row.id, false]);
+const objectClick = async (button) => {   // 处理非创建和编辑按钮点击
+  const data = props.curViewType === 'form' ? formData.value : selectRows.value
+  let ids = props.curViewType === 'form' ? [data.id] : data.id;
+  let send = true;
+  const noSend = () => {
+    send = false;
   }
-  emits('deleteLineClick', treeField, index, treeData, row, noAddCallback)
+  emits('objectClick', button, data, noSend);
+  if (!ids || !ids.length) {
+    ElMessage({
+      message: '请至少选择一条记录!',
+      type: 'error'
+    })
+    return false
+  }
+  send && await callMethod({
+    model: model,
+    method: button.method,
+    args: [ids]
+  })
 }
-const addLineClick = (treeField, treeData, newLine, noAddCallback) => {
-  !changedFieldsVal[treeField] ? changedFieldsVal[treeField] = [] : null;
-  changedFieldsVal[treeField].push(newLine)
-  emits('addLineClick', treeField, treeData, newLine, noAddCallback)
+const cancelClick = () => {
+  disabled.value = true;
+  data.value = JSON.parse(JSON.stringify(dataCopy.formData));
+  treeData.value = JSON.parse(JSON.stringify(dataCopy.treeData));
 }
-
 const saveWrite = async (savedDatas) => {
   await callWrite({id: data.value.id, model, data: savedDatas})
   disabled.value = true;
 }
+
 const saveCreate = async (savedDatas) => {
   const real_id = await callCreate({model, data: savedDatas})
   disabled.value = true;
@@ -246,7 +265,6 @@ const saveCreate = async (savedDatas) => {
     emits('dialogCreateSaveClick', real_id, data, treeData)
   }
 }
-
 const saveClick = (formview_ref) => {  // 处理保存按钮，包括编辑保存和创建保存
   const formEl = formview_ref.form_ref;
   formEl.validate()
@@ -280,43 +298,98 @@ const saveClick = (formview_ref) => {  // 处理保存按钮，包括编辑保�
     }
   })
 }
-
-const searchClick = async () => {  // 搜索数据重置
-  const domain = searchview_ref?.value?.getDomain() || [];
+const pageChange = (treeField, currentPage, pageSize, fields) => {
+  const domain = searchview_ref.value?.getDomain() || [];
   callSearchRead({
-    model: props.fieldViewInfo.base_model,
-    fields: Object.keys(props.fieldViewInfo.viewFields),
-    offset: 0,
-    limit: props.action.limit,
+    model: model,
+    fields: fields['self'],
+    offset: pageSize * (currentPage - 1),
+    limit: pageSize,
     domain: (props.action.domain || []).concat(domain),
   }).then(async res => {
-    listData.value['self'] = await initListData(res.records, props.viewFields);
-    dataCount.value = res.length
+    dataCount.value = res.length || 0;
+    listData.value['self'] = await initListData(res.records, props.fieldViewInfo.viewFields);
   })
+  emits('pageChange', treeField);
 }
-
-const objectClick = async (button) => {   // 处理非创建和编辑按钮点击
-  const data = props.curViewType === 'form' ? formData.value : selectRows.value
-  let ids = props.curViewType === 'form' ? [data.id] : data.id;
-  let send = true;
-  const noSend = () => {
-    send = false;
-  }
-  emits('objectClick', button, data, noSend);
-  if (!ids || !ids.length) {
-    ElMessage({
-      message: '请至少选择一条记录!',
-      type: 'error'
-    })
-    return false
-  }
-  send && await callMethod({
+const pageSizeChange = async (treeField, size, fields) => {
+  const domain = searchview_ref.value?.getDomain() || [];
+  callSearchRead({
     model: model,
-    method: button.method,
-    args: [ids]
+    fields: fields['self'],
+    offset: 0,
+    limit: size,
+    domain: (props.action.domain || []).concat(domain),
+  }).then(async res => {
+    dataCount.value = res.length || 0;
+    listData.value['self'] = await initListData(res.records, props.fieldViewInfo.viewFields);
+    emits('pageSizeChange', treeField);
   })
 }
 
+const addLineClick = (treeField, treeData, newLine, noAddCallback) => {
+    /*  添加行时调用
+  * treeField: 添加行所属表格的字段
+  * treeData: 添加行所属表格的数据总体
+  * newLine: 添加的行
+  * noAddCallback: 是否执行添加，noAddCallback()调用此函数不添加
+  * */
+  !changedFieldsVal[treeField] ? changedFieldsVal[treeField] = [] : null;
+  changedFieldsVal[treeField].push(newLine)
+  emits('addLineClick', treeField, treeData, newLine, noAddCallback)
+}
+
+const deleteLineClick = (treeField, index, treeData, row, noDelCallback) => {
+  /*  删除行时调用
+  * treeField: 删除行所属表格的字段
+  * index: 删除行索引
+  * treeData: 删除行所属表格的数据总体
+  * row: 删除的行
+  * noDelCallback: 是否执行删除，noAddCallback()调用此函数不删除
+  * */
+  if (row.id) {
+    if (!changedFieldsVal[treeField]) {
+      changedFieldsVal['deleteFieldMap'] = {};
+      changedFieldsVal['deleteFieldMap'][treeField] = [];
+    }
+    changedFieldsVal['deleteFieldMap'][treeField].push([2, row.id, false]);
+  }
+  emits('deleteLineClick', treeField, index, treeData, row, noDelCallback)
+}
+
+const lineButtonClick = (treeField, data, button) => {
+  /*  行自定义按钮点击时触发
+  * treeField: 触发按钮的表格字段
+  * data: 行数据
+  * button: 自定义按钮数据
+  * */
+  emits('lineButtonClick', datas, treeField, data, button, reload, loading);
+}
+const getLineDetailClick = (dataLine, index, formViewInfo, relation_field) => {
+  /* 获取表格某行详情时调用，在MainView中处理
+  * dataLine: 数据行
+  * index: 含索引
+  * formViewInfo: 行对应的视图数据
+  * relation_field: 关联抬头的字段
+  * */
+  emits('getLineDetailClick', dataLine, index, formViewInfo, relation_field)
+}
+
+const dataLoadedCallback = (datas, treeDatas, countRef) => {
+  /* 数据加载完成回调，拿到对应视图数据
+  * datas: 抬头数据
+  * treeDatas: 表格数据
+  * countRef: 列表页数组总数
+  * * */
+  props.curViewType === 'form' ? data = datas : null;   // 拿到表单书据，可以处理创建，编辑的数据同步
+  props.curViewType === 'form' ? treeData = treeDatas : null;  // 拿到表格数据，可以处理创建，编辑的数据同步
+  props.curViewType === 'form' ? formData.value = datas.value : null;  // 复制表单数据，处理按钮的显示与隐藏
+  props.curViewType === 'tree' ? listData = datas : null;  // 拿到列表数据，用于搜索分页数据同步
+  dataCount = countRef
+  dataCopy = {formData: JSON.parse(JSON.stringify(datas.value)), treeData: JSON.parse(JSON.stringify(treeDatas.value))};  // 数据备份，取消编辑回到原始状态
+}
+
+// --------------------------------------------待完善
 
 const getGroupChildren = async (row) => {
   const domain = searchview_ref?.value?.getDomain() || [];
@@ -513,9 +586,6 @@ const selectClick = (rows, listTable, toggleRowSelection) => {
   emits('selectClick', rows, reload, loading, toggleRowSelection)
 }
 
-const lineButtonClick = (treeField, data, button) => {
-  emits('lineButtonClick', datas, treeField, data, button, reload, loading);
-}
 
 eventBus.on('fieldOnchange', (params) => {
   const field = params.field;
@@ -538,7 +608,6 @@ eventBus.on('fieldOnchange', (params) => {
       changedFieldsVal[field] = datas[field][0];
     }
   }
-  console.log(changedFieldsVal, 'changedFieldsVal');
 })
 
 defineExpose({
@@ -566,6 +635,10 @@ defineExpose({
 
 .row-bg {
   width: 100%;
+}
+
+.search-view {
+  width: 50%;
 }
 
 .grid-content {

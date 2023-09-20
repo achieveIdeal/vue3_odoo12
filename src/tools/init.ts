@@ -80,26 +80,8 @@ export const initListData = async (listData, fieldsOption) => {
     for (let lineData of listData && listData.length ? listData : []) {
         for (let field of Object.keys(fieldsOption || {})) {
             let value = lineData[field];
-            let sameFlag = false;
-            if (isBool(fieldsOption[field]?.type)) {
-                // 跳过
-            } else if (is2One(fieldsOption[field]?.type)) {
-                !fieldsOption[field]['curSelect'] ? fieldsOption[field]['curSelect'] = [] : null;
-                for (let i of fieldsOption[field]['curSelect']) {
-                    if (i[0] === value[0] && i[1] === value[1]) {
-                        sameFlag = true;
-                    }
-                }
-                if (!sameFlag && value) {
-                    fieldsOption[field]['curSelect'].push(value)
-                }
-                fieldsOption[field].selection = fieldsOption[field]['curSelect'];
-                // lineData[field] = value[0];
-            } else if (isDigit(fieldsOption[field]?.type)) {
-                lineData[field] = parseFloat((lineData[field] || 0).toFixed(fieldsOption[field]?.precision
-                    || fieldsOption[field]?.digits?.length && fieldsOption[field]?.digits[1]))
-            } else if (!isBool(fieldsOption[field]?.type) && !value) {
-                lineData[field] = ''
+            if (!isBool(fieldsOption[field]?.type) && !value) {
+                lineData[field] = 0
             } else if (is2Many(fieldsOption[field]?.type) && !fieldsOption[field]?.listInvisible) {
                 if (lineData[field].length && !(lineData[field][0] instanceof Array)) {
                     await searchFieldSelection(fieldsOption[field], '', [['id', 'in', lineData[field]]], lineData[field].length)

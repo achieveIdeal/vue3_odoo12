@@ -57,6 +57,8 @@ const props = defineProps({
     type: Object,
   }, extras: {
     type: Object,
+  }, relation_field: {
+    type: String,
   },
   viewFields: {
     type: Object,
@@ -234,6 +236,9 @@ const loadData = async (data_id) => {
       datas.value[treeField] = []
     }
     emits('dataLoadedCallback', datas, treeData);
+  }
+  if (props.relation_field) {  // 如果时查看详情，保留关联字段的值
+    datas.value[props.relation_field] = props.data[props.relation_field]
   }
 }
 const datas = ref();  // 抬头数据

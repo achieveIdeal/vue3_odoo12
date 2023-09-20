@@ -104,20 +104,12 @@ const loadAction = async (action_id, is_button) => {
 
 const emits = defineEmits(['deleteLineClick', 'addLineClick'])
 
-// const dialogCreateClick = (data) => {
-//   console.log(dataDialog,'dataDialog');
-//   console.log(datas,'datas');
-//   for (const field of Object.keys(dataDialog || {})) {
-//     dataDialog[field] = '';
-//   }
-// }
-
 watch(route, (f, t) => {
   const vType = t.query.type
   curViewType.value = !vType ? 'tree' : 'form';
   fieldViewInfo.value = !vType ? treeViewInfo.value : formViewInfo.value;
   arch.value = fieldViewInfo.value.arch
-  formatArch(arch.value);
+  formatArch(arch.value);  // 格式化xml诗句为json
 })
 
 const deleteLineClick = (treeField, index, treeData, row, noAddCallback) => {
@@ -129,10 +121,10 @@ const addLineClick = (treeField, treeData, newLine, noAddCallback) => {
 
 const buttonClick = async (button, model, datas, selectRows) => {
   const curDialog = dialog_ref.value[dialog_ref.value.length - 1];
-  if (button.attrs.type === 'action') {
-    const action_id = parseInt(button.attrs.name);
+  if (button.attrs.type === 'action') {  // 类型为action的按钮点击时
+    const action_id = parseInt(button.attrs.name);  // 获取action id
     loadAction(action_id, true).then(res => {
-      dialogStack.value.push({
+      dialogStack.value.push({  // 向弹框栈里推入加载弹框需要的数据
         fieldViewInfoDialog: res.fieldViewInfo,
         archDialog: res.arch,
         curViewTypeDialog: res.viewType,
@@ -144,9 +136,9 @@ const buttonClick = async (button, model, datas, selectRows) => {
         preDialogReload: dialogStack.value.length ? record_ref.value.formview_ref.main : dialog_ref.value.record_ref?.formview_ref.main
       })
     })
-  } else if (button.attrs.type === 'object') {
+  } else if (button.attrs.type === 'object') {  // 类型为object的按钮点击时
     const curDialogData = dialogStack.value[dialog_ref.value.length - 1];
-    if (!curDialogData?.dataDialog && !datas?.id) {
+    if (!curDialogData?.dataDialog && !datas?.id) {  // 如果是弹框上的object，需调用创建
       datas.id = await callCreate({model, data: datas})
     }
     callKw({
@@ -160,9 +152,9 @@ const buttonClick = async (button, model, datas, selectRows) => {
         }
       }
     }).then(res => {
-      if (curDialog?.dialogVisible && res) {
+      if (curDialog?.dialogVisible && res) {  // 加载完成需隐藏弹框
         curDialog.dialogVisible = false;
-        curDialogData.preDialogReload();
+        curDialogData.preDialogReload();  // 重载前一个页面
       }
     })
   } else {
@@ -171,7 +163,9 @@ const buttonClick = async (button, model, datas, selectRows) => {
     }
   }
 }
-const getDetailClick = (data) => {
+
+
+const getDetailClick = (data) => {  // 列表页进入详情跳转
   router.push({
     path: router.currentRoute.value.fullPath,
     query: {
@@ -183,15 +177,14 @@ const getDetailClick = (data) => {
 }
 
 
-const getLineDetailClick = (dataLine, index, formViewInfo, relation_field) => {
+const getLineDetailClick = (dataLine, index, formViewInfo, relation_field) => {  // 加载行详情
   dialogStack.value.push({
-    fieldViewInfoDialog: formViewInfo,
-    archDialog: formViewInfo.arch,
-    curViewTypeDialog: 'form',
-    dataDialog: dataLine,
-    relation_field: relation_field,
-    visible: true,
-    actionDialog: {},
+    fieldViewInfoDialog: formViewInfo,  // 表单试图数据
+    archDialog: formViewInfo.arch,  // 详情xml数据
+    curViewTypeDialog: 'form',  // 加载详情视图为表单
+    dataDialog: dataLine, // 弹框的初始加载数据， 加载行详情时传
+    relation_field: relation_field,  // 关联的抬头字段
+    actionDialog: {},  // 详情弹框没有action
     preDialogReload: !dialogStack.value.length   // 重载前一个弹框或者界面
         ? record_ref.value.formview_ref.main
         : dialog_ref.value[dialog_ref.value.length - 1].record_ref?.formview_ref.main
@@ -201,13 +194,13 @@ const getLineDetailClick = (dataLine, index, formViewInfo, relation_field) => {
 
 const main = () => {
   loadAction(action.value.id || action_id.value).then(res => {
-    action_id.value = res.action.id;
-    action.value = res.action;
-    fieldViewInfo.value = res.fieldViewInfo;
-    searchViewInfo.value = res.searchViewInfo;
-    treeViewInfo.value = res.treeViewInfo;
-    formViewInfo.value = res.formViewInfo;
-    arch.value = res.arch;
+    action_id.value = res.action.id;  // odoo xml的action id
+    action.value = res.action;   // odoo返回的action参数
+    fieldViewInfo.value = res.fieldViewInfo;  // 当前视图的数据
+    searchViewInfo.value = res.searchViewInfo;  // 搜索框视图数据
+    treeViewInfo.value = res.treeViewInfo;  // 列表页驶入数据
+    formViewInfo.value = res.formViewInfo;  // 表单页试图数据
+    arch.value = res.arch;  // 当前页xml解析数据
   });
 }
 
