@@ -1,14 +1,24 @@
 <template>
-  <MainView :action_name="'e2yun_dpsrm_qweb_extends.srm_delivery_order_action'" :extras="extras"/>
+<div>
+    <MainView :action_name="'e2yun_dpsrm_supplier_info.action_supplier_info_form'" :extras="extras"/>
+  <button @click="handleChange"></button>
+</div>
+
 </template>
 
 <script lang="ts" setup>
 import MainView from "../components/MainView.vue";
 import {inject, ref, reactive} from "vue";
 import {dateFtt} from "../tools";
+import { useI18n } from '../hook/useI18n'
 
 const supplier_id = parseInt(inject('supplier_id') || 0);
 const loading = ref(false);
+
+
+function  handleChange(){
+
+}
 
 const extras = {
   buttons: [{

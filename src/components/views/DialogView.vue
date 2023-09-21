@@ -23,7 +23,6 @@
 <script lang="ts" setup>
 import RecordView from '../RecordView.vue'
 import {defineExpose, defineProps, ref} from "vue";
-import {defineEmits} from "vue/dist/vue";
 
 
 const props = defineProps({

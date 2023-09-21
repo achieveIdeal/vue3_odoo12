@@ -76,29 +76,35 @@ const dialogStack = ref([]);
 
 const dialog_ref = ref([]);
 
+const loadViews = async (action, res_views, is_button) => {
+  const views = await callViews(action.res_model, res_views)
+  let viewType = curViewType.value;
+  if (is_button) {
+    viewType = action.view_mode;
+  }
+  const fieldViewInfo = views.find(r => r.type === viewType);
+  const searchViewInfo = views.find(r => r.type === 'search');
+  const formViewInfo = views.find(r => r.type === 'form');
+  const treeViewInfo = views.find(r => r.type === 'tree' || r.type === 'list');
+  const arch = fieldViewInfo.arch
+  formatArch(arch)
+  return {
+    action,
+    viewType,
+    fieldViewInfo,
+    treeViewInfo,
+    searchViewInfo,
+    formViewInfo,
+    arch,
+  }
+}
+
 const loadAction = async (action_id, is_button) => {
   const action = await callAction(action_id);
+  const res_views = action.views?.length ? action.views : false;
+  res_views.push([false, 'search'])
   if (action.res_model) {
-    const views = await callViews(action.res_model, [[false, 'search'], [false, 'tree'], [false, 'form']])
-    let viewType = curViewType.value;
-    if (is_button) {
-      viewType = action.view_mode;
-    }
-    const fieldViewInfo = views.find(r => r.type === viewType);
-    const searchViewInfo = views.find(r => r.type === 'search');
-    const formViewInfo = views.find(r => r.type === 'form');
-    const treeViewInfo = views.find(r => r.type === 'tree' || r.type === 'list');
-    const arch = fieldViewInfo.arch
-    formatArch(arch)
-    return {
-      action,
-      viewType,
-      fieldViewInfo,
-      treeViewInfo,
-      searchViewInfo,
-      formViewInfo,
-      arch,
-    }
+    return await loadViews(action, res_views || [[false, 'search'], [false, 'tree'], [false, 'form']])
   }
 }
 
@@ -121,12 +127,14 @@ const addLineClick = (treeField, treeData, newLine, noAddCallback) => {
 
 const buttonClick = async (button, model, datas, selectRows) => {
   const curDialog = dialog_ref.value[dialog_ref.value.length - 1];
+  const curDialogData = dialogStack.value.filter(r=>r.visible)[dialogStack.value.filter(r=>r.visible) - 1];
   if (button.attrs.type === 'action') {  // 类型为action的按钮点击时
     const action_id = parseInt(button.attrs.name);  // 获取action id
     loadAction(action_id, true).then(res => {
       dialogStack.value.push({  // 向弹框栈里推入加载弹框需要的数据
         fieldViewInfoDialog: res.fieldViewInfo,
         archDialog: res.arch,
+        visible: true,
         curViewTypeDialog: res.viewType,
         searchViewInfoDialog: res.searchViewInfo,
         dataDialog: null,
@@ -137,13 +145,12 @@ const buttonClick = async (button, model, datas, selectRows) => {
       })
     })
   } else if (button.attrs.type === 'object') {  // 类型为object的按钮点击时
-    const curDialogData = dialogStack.value[dialog_ref.value.length - 1];
     if (!curDialogData?.dataDialog && !datas?.id) {  // 如果是弹框上的object，需调用创建
       datas.id = await callCreate({model, data: datas})
     }
     callKw({
       model: model,
-      method: button.attrs.name,
+      method: button.attrs.name || button.name,
       args: [datas.id],
       kwargs: {
         context: {
@@ -151,15 +158,31 @@ const buttonClick = async (button, model, datas, selectRows) => {
           'active_ids': curDialogData?.active_ids || selectRows.id
         }
       }
-    }).then(res => {
-      if (curDialog?.dialogVisible && res) {  // 加载完成需隐藏弹框
+    }).then(async res => {
+      if (res.type === 'ir.actions.act_window') {
+        const viewInfo = await loadViews(res, res.views, true)
+        dialogStack.value.push({
+          fieldViewInfoDialog: viewInfo.fieldViewInfo,
+          archDialog: viewInfo.arch,
+          curViewTypeDialog: viewInfo.viewType,
+          searchViewInfoDialog: viewInfo.searchViewInfo,
+          dataDialog: datas,
+          visible: true,
+          actionDialog: viewInfo.action,
+          formViewInfoDialog: viewInfo.formViewInfo,
+          active_ids: selectRows?.id || [datas.id],
+          preDialogReload: dialogStack.value.length ? record_ref.value.formview_ref.main : dialog_ref.value.record_ref?.formview_ref.main
+        })
+      } else if (curDialog?.dialogVisible && res) {  // 加载完成需隐藏弹框
         curDialog.dialogVisible = false;
+        curDialogData.visible = false;
         curDialogData.preDialogReload();  // 重载前一个页面
       }
     })
   } else {
     if (curDialog?.dialogVisible) {
       curDialog.dialogVisible = false;
+      curDialogData.visible = false;
     }
   }
 }
@@ -184,6 +207,7 @@ const getLineDetailClick = (dataLine, index, formViewInfo, relation_field) => { 
     curViewTypeDialog: 'form',  // 加载详情视图为表单
     dataDialog: dataLine, // 弹框的初始加载数据， 加载行详情时传
     relation_field: relation_field,  // 关联的抬头字段
+    visible: true,
     actionDialog: {},  // 详情弹框没有action
     preDialogReload: !dialogStack.value.length   // 重载前一个弹框或者界面
         ? record_ref.value.formview_ref.main

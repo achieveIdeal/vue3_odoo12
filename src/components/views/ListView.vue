@@ -32,7 +32,7 @@
 
 <script lang="ts" setup>
 import {defineEmits, defineExpose, defineProps, computed, ref, onMounted, watch} from "vue";
-import {callSearchRead} from "../../service/module/call";
+import {callParseDomain, callSearchRead} from "../../service/module/call";
 import {initListData, setFormAttribute} from "../../tools/init";
 import TableView from './TableView.vue'
 
@@ -103,7 +103,7 @@ const main = async () => {
     fields: Object.keys(props.viewFields),
     offset: 0,
     limit: props.action.limit,
-    domain: props.action.domain || [],
+    domain: await callParseDomain(props.action.domain)|| [],
   }).then(async res => {
     dataCount.value = res.length || 0;
     console.log(res.length);

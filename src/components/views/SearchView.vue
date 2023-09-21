@@ -211,7 +211,7 @@ const curDateRangeVal = ref('')
 const searchFields = [];
 
 const formatStr2JsonStr = (string) => {
-  return string.replaceAll('(', '[').replaceAll(')', ']').replaceAll("'", '"').replaceAll('uid', 2)
+  return string.replaceAll('(', '[').replaceAll(')', ']').replaceAll("'", '"')
 }
 
 const parseSearchViewInfo = async (searcher, searchFields, groupby, domainFilter) => {

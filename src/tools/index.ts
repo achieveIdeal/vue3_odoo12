@@ -639,13 +639,13 @@ const formatArch = (archRoot) => {
             ...JSON.parse(archRoot.attrs.modifiers),
             name: archRoot.attrs.name || archRoot.name,
         }
-        archRoot.attrs.create = JSON.parse(archRoot.attrs.create || 'true');
-        archRoot.attrs.create = JSON.parse(archRoot.attrs.edit || 'true');
-        archRoot.attrs.create = JSON.parse(archRoot.attrs.delete || 'true');
-        archRoot.attrs.create = JSON.parse(archRoot.attrs.import || 'true');
         delete archRoot.attrs.modifiers
         delete archRoot.attrs.attrs
     }
+    archRoot.attrs.create = JSON.parse(archRoot.attrs.create || 'false');
+    archRoot.attrs.edit = JSON.parse(archRoot.attrs.edit || 'false');
+    archRoot.attrs.delete = JSON.parse(archRoot.attrs.delete || 'false');
+    archRoot.attrs.import = JSON.parse(archRoot.attrs.import || 'false');
     if (archRoot.children?.length) {
         for (const children of archRoot.children) {
             formatArch(children)

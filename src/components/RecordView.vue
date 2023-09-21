@@ -79,6 +79,13 @@ import router from "../router";
 import {useRoute} from "vue-router";
 import {eventBus} from "../tools";
 import {ElMessage} from "element-plus";
+import {tFn, defaultLang} from "../hook/useI18n";
+
+let flag = true
+// function  handleChangLang (){  // 翻译切换
+//   defaultLang.value = flag?'en-US':'zh-CN'
+//   flag =!flag
+// }
 
 eventBus.on('requestCallback', () => {
   loading.value = true;
@@ -155,17 +162,32 @@ const model = props.fieldViewInfo.base_model;
 const buttons = ref({
   buttonOptions: [{
     type: 'edit',
-    text: '编辑',
+    text: '编辑', // tFn('base.page')  多语言翻译
     showType: ['form'],
+    attributes: {
+      invisible: !props.arch.attrs.edit
+    }
   }, {
     type: 'create',
     showType: ['tree', 'form'],
-    text: '创建'
-  },]
+    text: '创建',
+    attributes: {
+      invisible: !props.arch.attrs.create
+    }
+  }, {
+    type: 'import',
+    showType: ['tree', 'form'],
+    text: '导入',
+    attributes: {
+      invisible: !props.arch.attrs.import
+    }
+  },
+  ]
 });
-if (props.extras?.butons) {
+if (props.extras?.buttons) {
   buttons.value.buttonOptions = initButton(props.extras, props.curViewType);
 }
+
 const emits = defineEmits(['buttonClick', 'getDetailClick', 'getLineDetailClick', 'selectClick',
   'deleteLineClick', 'addLineClick', 'saveWriteClick', 'saveCreateClick', 'objectClick', 'dialogCreateClick',
   'dialogCreateSaveClick', 'pageChange', 'pageSizeChange'])
@@ -302,13 +324,13 @@ const pageChange = (treeField, currentPage, pageSize, fields) => {
   const domain = searchview_ref.value?.getDomain() || [];
   callSearchRead({
     model: model,
-    fields: fields['self'],
+    fields: fields[treeField],
     offset: pageSize * (currentPage - 1),
     limit: pageSize,
     domain: (props.action.domain || []).concat(domain),
   }).then(async res => {
     dataCount.value = res.length || 0;
-    listData.value['self'] = await initListData(res.records, props.fieldViewInfo.viewFields);
+    listData.value[treeField] = await initListData(res.records, props.fieldViewInfo.viewFields);
   })
   emits('pageChange', treeField);
 }
@@ -316,24 +338,24 @@ const pageSizeChange = async (treeField, size, fields) => {
   const domain = searchview_ref.value?.getDomain() || [];
   callSearchRead({
     model: model,
-    fields: fields['self'],
+    fields: fields[treeField],
     offset: 0,
     limit: size,
     domain: (props.action.domain || []).concat(domain),
   }).then(async res => {
     dataCount.value = res.length || 0;
-    listData.value['self'] = await initListData(res.records, props.fieldViewInfo.viewFields);
+    listData.value[treeField] = await initListData(res.records, props.fieldViewInfo.viewFields);
     emits('pageSizeChange', treeField);
   })
 }
 
 const addLineClick = (treeField, treeData, newLine, noAddCallback) => {
-    /*  添加行时调用
-  * treeField: 添加行所属表格的字段
-  * treeData: 添加行所属表格的数据总体
-  * newLine: 添加的行
-  * noAddCallback: 是否执行添加，noAddCallback()调用此函数不添加
-  * */
+  /*  添加行时调用
+* treeField: 添加行所属表格的字段
+* treeData: 添加行所属表格的数据总体
+* newLine: 添加的行
+* noAddCallback: 是否执行添加，noAddCallback()调用此函数不添加
+* */
   !changedFieldsVal[treeField] ? changedFieldsVal[treeField] = [] : null;
   changedFieldsVal[treeField].push(newLine)
   emits('addLineClick', treeField, treeData, newLine, noAddCallback)

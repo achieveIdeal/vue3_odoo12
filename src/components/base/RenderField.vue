@@ -86,6 +86,7 @@
             @getLineDetailClick="getLineDetailClick"
             @deleteLineClick="deleteLineClick"
             @addLineClick="addLineClick"
+            @lineButtonClick="lineButtonClick"
         />
       </template>
     </component>
@@ -130,6 +131,7 @@
           :viewFields="viewFields"
           @deleteLineClick="deleteLineClick"
           @addLineClick="addLineClick"
+          @lineButtonClick="lineButtonClick"
       />
     </template>
   </component>
@@ -159,6 +161,7 @@
              @getDetailClick="getLineDetailClick"
              @deleteLineClick="deleteLineClick"
              @addLineClick="addLineClick"
+             @lineButtonClick="lineButtonClick"
   >
     <template v-if="(children.children || [])?.length" v-for="subChildren in (children.children || [])">
       <RenderField
@@ -184,10 +187,12 @@
           :viewFields="viewFields"
           @deleteLineClick="deleteLineClick"
           @addLineClick="addLineClick"
+          @lineButtonClick="lineButtonClick"
       />
     </template>
   </component>
-  <component v-else-if="!(['field', 'form', 'tree'].includes(children.tag))" :is="createComponent(children, parent)">
+  <component v-else-if="!(['field', 'form', 'tree','button'].includes(children.tag))"
+             :is="createComponent(children, parent)">
     <template v-if="!parseDomain(children.attrs?.invisible, data)">
       <div v-if="(children.children || []).filter(r=>r.tag==='button')?.length">
         <template v-for="subChildren in (children.children || []).filter(r=>r.tag==='button')">
@@ -239,10 +244,19 @@
             @getLineDetailClick="getLineDetailClick"
             @deleteLineClick="deleteLineClick"
             @addLineClick="addLineClick"
+            @lineButtonClick="lineButtonClick"
         />
       </template>
     </template>
   </component>
+
+  <el-button :class="['btn-group',children.class]"
+             v-else-if="(children.tag==='button' && !children.attrs?.states
+                     || (children.attrs?.states||'')?.split(',').includes(data.state)
+                      && !parseDomain(children.attrs.invisible, data))&&disabled"
+             @click="()=> lineButtonClick(treeField,data,children, model)">
+    {{ children.attrs.string }}
+  </el-button>
 </template>
 
 <script lang="ts" setup>
@@ -361,7 +375,7 @@ const createComponent = (arch, parent) => {
           position: 'relative',
           width: '100%'
         };
-        if (!(parseDomain(props.viewFields[arch.children[0].attrs.name].invisible, props.data)
+        if (!(parseDomain(props.viewFields[arch.children[0].attrs.name]?.invisible, props.data)
             || parseDomain(arch.children[0].attrs?.invisible, props.data)
             || parseDomain(arch.attrs.invisible, props.data))) {
           return () => createVNode(
@@ -381,10 +395,14 @@ const createComponent = (arch, parent) => {
   });
 }
 
-const emits = defineEmits(['handleButtonClick', 'getLineDetailClick', 'deleteLineClick', 'addLineClick'])
+const emits = defineEmits(['handleButtonClick', 'getLineDetailClick', 'deleteLineClick', 'addLineClick',
+  'lineButtonClick'])
 const handleButtonClick = (e, button) => {
   e.stopPropagation();
-  emits('handleButtonClick', button)
+  emits('handleButtonClick')
+}
+const lineButtonClick = (field, row, button, model) => {
+  emits('lineButtonClick', field, row, button, model)
 }
 
 const getLineDetailClick = (data, index, formViewInfo, relation_field) => {

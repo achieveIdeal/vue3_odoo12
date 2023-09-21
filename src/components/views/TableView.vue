@@ -32,6 +32,7 @@
                        viewType="tree"
                        :disabled="disabled"
                        :loading="loading"
+                       @lineButtonClick="handleButtonClick"
           />
         </template>
       </el-table-column>
@@ -78,6 +79,7 @@
   >添加一行
   </el-button>
   <el-pagination
+      v-if="relation_field==='self'"
       v-model:current-page="currentPage"
       :page-sizes="[10, 20, 50, 80, 100, 160,200, 500,1000]"
       v-model:page-size="pageSize"
@@ -175,7 +177,8 @@ const upload = ref<UploadInstance>();
 
 
 const emits = defineEmits(['getDetailClick', 'fieldOnchange', 'selectClick', 'pageChange',
-  'editClick', 'addLineClick', 'deleteLineClick', 'lineButtonClick', 'fieldOnchange', 'pageSizeChange'])
+  'editClick', 'addLineClick', 'deleteLineClick', 'lineButtonClick', 'fieldOnchange', 'pageSizeChange',
+  'handleButtonClick'])
 
 const getDetail = async (data, index, formViewInfo, relation_field) => {
   if (!!relation_field) {
@@ -310,7 +313,7 @@ const handleCurrentChange = (currentPage) => {
 }
 
 const handleButtonClick = (field, row, button) => {
-  emits('lineButtonClick', field, row, button);
+  emits('lineButtonClick', field, row, button, props.model);
 }
 
 defineExpose({

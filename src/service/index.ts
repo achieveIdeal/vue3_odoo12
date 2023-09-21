@@ -13,7 +13,7 @@ class Request {
         // 每个instance都添加拦截器
         this.instance.interceptors.request.use(
             (config) => {
-                if(config.data.params.method !== 'name_search'){
+                if (config.data.params.method !== 'name_search') {
                     eventBus.emit('requestCallback', config)
                 }
                 return config;
@@ -33,7 +33,7 @@ class Request {
                     });
                     return false
                 }
-                return res.data.result ||{};
+                return res.data.result || {};
             },
             (err) => {
                 eventBus.emit('responseCallback', err)

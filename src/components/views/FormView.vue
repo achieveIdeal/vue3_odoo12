@@ -23,6 +23,7 @@
                    :viewFields="viewFields"
                    :treeViewFields="treeViewFields"
                    @handleButtonClick="buttonClick"
+                   @lineButtonClick="lineButtonClick"
                    @getLineDetailClick="getLineDetailClick"
                    @deleteLineClick="deleteLineClick"
                    @addLineClick="addLineClick"
@@ -177,7 +178,9 @@ const getFields = async () => {
       const fieldName = children.attrs?.name;
       if (arch.tag === 'tree') {
         treeFields.push(fieldName);
-        treeViewFields.value[parent.attrs.name][fieldName].onchange = children.attrs.on_change
+        if (treeViewFields.value[parent.attrs.name][fieldName]) {
+          treeViewFields.value[parent.attrs.name][fieldName].onchange = children.attrs.on_change
+        }
       } else if (children.tag === 'field') {
         fields.self.push(fieldName);
         props.viewFields[fieldName].onchange = children.attrs.on_change
@@ -256,6 +259,10 @@ main()
 
 const buttonClick = (button) => {
   emits('buttonClick', button, props.model, datas.value)
+}
+
+const lineButtonClick = (field, row, button, model) => {
+  emits('buttonClick', button, model, row)
 }
 const getLineDetailClick = (data, index, formViewInfo, relation_field) => {
   emits('getLineDetailClick', data, index, formViewInfo, relation_field)
