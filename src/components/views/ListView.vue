@@ -35,6 +35,7 @@ import {defineEmits, defineExpose, defineProps, computed, ref, onMounted, watch}
 import {callParseDomain, callSearchRead} from "../../service/module/call";
 import {initListData, setFormAttribute} from "../../tools/init";
 import TableView from './TableView.vue'
+import {eventBus} from "../../tools";
 
 const props = defineProps({
   model: {
@@ -98,16 +99,21 @@ const main = async () => {
   if (props.extras) {
     setFormAttribute(props.extras, props.viewFields)
   }
+  if (props.action.domain) {
+    props.action.domain = await callParseDomain(props.action.domain)
+  }
+  eventBus.emit('requestCallback')
   callSearchRead({
     model: props.model,
     fields: Object.keys(props.viewFields),
     offset: 0,
     limit: props.action.limit,
-    domain: await callParseDomain(props.action.domain)|| [],
+    domain: props.action.domain || [],
   }).then(async res => {
     dataCount.value = res.length || 0;
     console.log(res.length);
     treeData.value['self'] = await initListData(res.records, props.viewFields);
+    eventBus.emit('responseCallback')
     emits('dataLoadedCallback', treeData, ref({}), dataCount)
   })
 }

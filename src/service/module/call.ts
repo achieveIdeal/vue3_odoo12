@@ -92,6 +92,7 @@ export function callRead(data) {
 export function callSearchRead(data) {
     return Request.post({
         url: '/front/dataset/search_read/',
+        noLoading: true,
         data: {
             'jsonrpc': "2.0",
             'method': 'call',
@@ -271,6 +272,7 @@ export const loadMenus = (parent_id) => {
 
 export const callParseDomain = (domain) => {
     return Request.post({
+        noLoading: true,
         url: '/front/dataset/parse_domain',
         data: {
             'jsonrpc': "2.0",

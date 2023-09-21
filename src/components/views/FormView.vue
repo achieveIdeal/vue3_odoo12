@@ -40,7 +40,7 @@ import RenderField from '../../components/base/RenderField.vue'
 
 
 import {useRoute} from "vue-router";
-import {parseXMlToJson} from "../../tools";
+import {parseXMlToJson, eventBus} from "../../tools";
 import {initFormData, initTreeData, setFormAttribute, setTreeAttribute} from "../../tools/init";
 
 const route = useRoute();
@@ -196,6 +196,7 @@ const getFields = async () => {
 }
 
 const loadData = async (data_id) => {
+  eventBus.emit('requestCallback')
   if (data_id) {
     const res = await callRead({
       model: props.model,
@@ -240,6 +241,7 @@ const loadData = async (data_id) => {
     }
     emits('dataLoadedCallback', datas, treeData);
   }
+  eventBus.emit('responseCallback')
   if (props.relation_field) {  // 如果时查看详情，保留关联字段的值
     datas.value[props.relation_field] = props.data[props.relation_field]
   }
@@ -262,6 +264,7 @@ const buttonClick = (button) => {
 }
 
 const lineButtonClick = (field, row, button, model) => {
+  console.log(row);
   emits('buttonClick', button, model, row)
 }
 const getLineDetailClick = (data, index, formViewInfo, relation_field) => {

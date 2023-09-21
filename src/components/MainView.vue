@@ -24,6 +24,7 @@
       ref="record_ref"
       v-if="Object.keys(arch).length"
       :arch="arch"
+      :loaded_data="loaded_data"
       :action="action"
       :extras="extras"
       :curViewType="curViewType"
@@ -63,6 +64,9 @@ const router = useRouter();
 
 const curViewType = ref(route.query.type || 'tree');
 const action_id = ref(parseInt(route.query.action_id || '0') || props.action_name);
+const model = ref(route.query.model);
+const view_id = ref(parseInt(route.query.view_id));
+const loaded_data = ref({id: parseInt(route.query.id)})
 const record_ref = ref([])
 
 const action = ref({});
@@ -78,6 +82,7 @@ const dialog_ref = ref([]);
 
 const loadViews = async (action, res_views, is_button) => {
   const views = await callViews(action.res_model, res_views)
+  console.log(views);
   let viewType = curViewType.value;
   if (is_button) {
     viewType = action.view_mode;
@@ -102,7 +107,6 @@ const loadViews = async (action, res_views, is_button) => {
 const loadAction = async (action_id, is_button) => {
   const action = await callAction(action_id);
   const res_views = action.views?.length ? action.views : false;
-  res_views.push([false, 'search'])
   if (action.res_model) {
     return await loadViews(action, res_views || [[false, 'search'], [false, 'tree'], [false, 'form']])
   }
@@ -127,7 +131,7 @@ const addLineClick = (treeField, treeData, newLine, noAddCallback) => {
 
 const buttonClick = async (button, model, datas, selectRows) => {
   const curDialog = dialog_ref.value[dialog_ref.value.length - 1];
-  const curDialogData = dialogStack.value.filter(r=>r.visible)[dialogStack.value.filter(r=>r.visible) - 1];
+  const curDialogData = dialogStack.value.filter(r => r.visible)[dialogStack.value.filter(r => r.visible) - 1];
   if (button.attrs.type === 'action') {  // 类型为action的按钮点击时
     const action_id = parseInt(button.attrs.name);  // 获取action id
     loadAction(action_id, true).then(res => {
@@ -160,19 +164,34 @@ const buttonClick = async (button, model, datas, selectRows) => {
       }
     }).then(async res => {
       if (res.type === 'ir.actions.act_window') {
-        const viewInfo = await loadViews(res, res.views, true)
-        dialogStack.value.push({
-          fieldViewInfoDialog: viewInfo.fieldViewInfo,
-          archDialog: viewInfo.arch,
-          curViewTypeDialog: viewInfo.viewType,
-          searchViewInfoDialog: viewInfo.searchViewInfo,
-          dataDialog: datas,
-          visible: true,
-          actionDialog: viewInfo.action,
-          formViewInfoDialog: viewInfo.formViewInfo,
-          active_ids: selectRows?.id || [datas.id],
-          preDialogReload: dialogStack.value.length ? record_ref.value.formview_ref.main : dialog_ref.value.record_ref?.formview_ref.main
-        })
+        console.log(res, datas);
+        const viewInfo = await loadViews(res, res.views, true);
+        if (res.target === 'new') {
+          dialogStack.value.push({
+            fieldViewInfoDialog: viewInfo.fieldViewInfo,
+            archDialog: viewInfo.arch,
+            curViewTypeDialog: viewInfo.viewType,
+            searchViewInfoDialog: viewInfo.searchViewInfo,
+            dataDialog: {id: res.res_id},
+            visible: true,
+            actionDialog: viewInfo.action,
+            formViewInfoDialog: viewInfo.formViewInfo,
+            active_ids: selectRows?.id || [datas.id],
+            preDialogReload: dialogStack.value.length ? record_ref.value.formview_ref.main : dialog_ref.value.record_ref?.formview_ref.main
+          })
+        } else {
+          router.push({
+            path: '/action',
+            query: {
+              id: res.res_id,
+              name: res.name,
+              view_id: res.views[0][0],
+              model: res.res_model,
+              type: res.views[0][1]
+            }
+          })
+        }
+
       } else if (curDialog?.dialogVisible && res) {  // 加载完成需隐藏弹框
         curDialog.dialogVisible = false;
         curDialogData.visible = false;
@@ -217,15 +236,27 @@ const getLineDetailClick = (dataLine, index, formViewInfo, relation_field) => { 
 
 
 const main = () => {
-  loadAction(action.value.id || action_id.value).then(res => {
-    action_id.value = res.action.id;  // odoo xml的action id
-    action.value = res.action;   // odoo返回的action参数
-    fieldViewInfo.value = res.fieldViewInfo;  // 当前视图的数据
-    searchViewInfo.value = res.searchViewInfo;  // 搜索框视图数据
-    treeViewInfo.value = res.treeViewInfo;  // 列表页驶入数据
-    formViewInfo.value = res.formViewInfo;  // 表单页试图数据
-    arch.value = res.arch;  // 当前页xml解析数据
-  });
+  if (action.value.id || action_id.value) {
+    loadAction(action.value.id || action_id.value).then(res => {
+      action_id.value = res.action.id;  // odoo xml的action id
+      action.value = res.action;   // odoo返回的action参数
+      fieldViewInfo.value = res.fieldViewInfo;  // 当前视图的数据
+      searchViewInfo.value = res.searchViewInfo;  // 搜索框视图数据
+      treeViewInfo.value = res.treeViewInfo;  // 列表页驶入数据
+      formViewInfo.value = res.formViewInfo;  // 表单页试图数据
+      arch.value = res.arch;  // 当前页xml解析数据
+    });
+  } else {
+    loadViews({res_model: model.value}, [[view_id.value, curViewType.value]]).then(res => {
+      action_id.value = res.action.id;  // odoo xml的action id
+      action.value = res.action;   // odoo返回的action参数
+      fieldViewInfo.value = res.fieldViewInfo;  // 当前视图的数据
+      searchViewInfo.value = res.searchViewInfo;  // 搜索框视图数据
+      treeViewInfo.value = res.treeViewInfo;  // 列表页驶入数据
+      formViewInfo.value = res.formViewInfo;  // 表单页试图数据
+      arch.value = res.arch;  // 当前页xml解析数据
+    })
+  }
 }
 
 main()

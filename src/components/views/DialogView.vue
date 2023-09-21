@@ -3,7 +3,7 @@
     <RecordView
         ref="record_ref"
         :isDialog="true"
-        :dialog_data="dataDialog"
+        :loaded_data="dataDialog"
         :action="actionDialog"
         :relation_field="relation_field"
         :fieldViewInfo="fieldViewInfoDialog"

@@ -1,6 +1,7 @@
 <template>
+
   <el-button style="display: none" v-loading.fullscreen.lock="loading" element-loading-text="正在加载..."/>
-  <PagerHeader :title="action.name" v-if="!isDialog"/>
+  <PagerHeader :title="action.name || name" v-if="!isDialog"/>
   <el-header class="controller-panel" v-if="!isDialog || relation_field">
     <!--    <MenuView v-if="hasMenus" :menus="menus" @menuClick="menuClick"/>-->
     <ButtonView
@@ -15,7 +16,8 @@
         @importClick="importClick"
         @exportClick="exportClick"
         @cancelClick="cancelClick"/>
-    <SearchView ref="searchview_ref" class="search-view" v-if="curViewType==='tree'" :searchViewInfo="searchViewInfo"
+    <SearchView ref="searchview_ref" class="search-view" v-if="curViewType==='tree' && Object.keys(searchViewInfo||{}).length"
+                :searchViewInfo="searchViewInfo"
                 @groupbyClick="groupbyClick"
                 @searchClick="searchClick"
     />
@@ -25,7 +27,7 @@
       <FormView ref="formview_ref" v-if="curViewType==='form' &&Object.keys(arch).length"
                 :arch="arch"
                 :isDialog="isDialog"
-                :data="dialog_data"
+                :data="loaded_data"
                 :extras="extras"
                 :disabled="disabled"
                 :relation_field="relation_field"
@@ -107,7 +109,7 @@ const props = defineProps({
   }, action: {
     type: Object,
     default: {}
-  }, dialog_data: {
+  }, loaded_data: {
     type: Object,
   }, relation_field: {
     type: String,
@@ -134,8 +136,9 @@ const props = defineProps({
   },
 })
 let data_id = 0;
+const name = route.query.name;
 if (props.isDialog) {
-  data_id = parseInt(props.dialog_data?.id);
+  data_id = parseInt(props.loaded_data?.id);
 } else {
   data_id = parseInt(route.query.id);
 }
@@ -144,7 +147,7 @@ watch(route, () => {
 })
 
 const disabled = ref(parseInt(data_id) !== 0 || !route.query.type);
-if (props.isDialog && !props.dialog_data?.id) {
+if (props.isDialog && !props.loaded_data?.id) {
   disabled.value = false;
 }
 
