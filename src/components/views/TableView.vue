@@ -1,10 +1,13 @@
 <template>
-  <el-table :data="treeData[treeField]||[]" ref="listTable" stripe
+  <el-table :data="treeData[treeField]||[]" ref="table_ref" stripe
             lazy
             fit
             show-summary
+            :load="loadGroupDetail"
+            :tree-props="{ children: 'children', hasChildren: 'hasChildren' }"
             :summary-method="getSummaries(treeField,arch.children)"
             sum-text="总计"
+            @expand-change="expandChange"
             :row-style="handleTreeRowStyle(treeField)"
             @selection-change="selectClick"
             row-key="id">
@@ -55,7 +58,7 @@
 
       <template #default="scoped">
         <el-button link
-                   v-if="disabled"
+                   v-if="disabled && !scoped.row.__domain"
                    size="small"
                    type="primary"
                    @click="getDetail(scoped.row, scoped.$index, formViewInfo, relation_field)"
@@ -174,12 +177,31 @@ const pagination_ref = ref({})
 const typeStore = useTypeStore();
 const isDigit = typeStore.isDigit;
 const upload = ref<UploadInstance>();
-
+const table_ref = ref({})
 
 const emits = defineEmits(['getDetailClick', 'fieldOnchange', 'selectClick', 'pageChange',
   'editClick', 'addLineClick', 'deleteLineClick', 'lineButtonClick', 'fieldOnchange', 'pageSizeChange',
-  'handleButtonClick'])
+  'handleButtonClick', 'groupbyClick', 'loadGroupDetail'
+])
 
+let resolveCopy = {}
+let isLoadedGroupDetail = {};
+const loadGroupDetail = (row, treeNode, resolve) => {
+  isLoadedGroupDetail[row.id] = true;
+  resolveCopy[row.id] = resolve;
+  emits('loadGroupDetail', row, treeNode, resolve)
+}
+
+const expandChange = (row, expanded) => {
+  if (expanded) { // 当前是展开状态
+    if (isLoadedGroupDetail[row.id]) {
+      isLoadedGroupDetail[row.id] = false;
+    } else {
+      row.children = [];
+      loadGroupDetail(row, '', resolveCopy[row.id])
+    }
+  }
+}
 const getDetail = async (data, index, formViewInfo, relation_field) => {
   if (!!relation_field) {
     data[relation_field] = props.formData.id;
@@ -317,7 +339,7 @@ const handleButtonClick = (field, row, button) => {
 }
 
 defineExpose({
-  pageSize, currentPage
+  pageSize, currentPage, table_ref
 })
 </script>
 

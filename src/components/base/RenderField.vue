@@ -271,7 +271,7 @@ import {ElTabPane} from "element-plus";
 
 
 const route = useRoute();
-const tabsModel = ref("订单行")
+const tabsModel = ref("")
 
 const props = defineProps({
   children: {

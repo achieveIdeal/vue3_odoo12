@@ -16,7 +16,8 @@
         @importClick="importClick"
         @exportClick="exportClick"
         @cancelClick="cancelClick"/>
-    <SearchView ref="searchview_ref" class="search-view" v-if="curViewType==='tree' && Object.keys(searchViewInfo||{}).length"
+    <SearchView ref="searchview_ref" class="search-view"
+                v-if="curViewType==='tree' && Object.keys(searchViewInfo||{}).length"
                 :searchViewInfo="searchViewInfo"
                 @groupbyClick="groupbyClick"
                 @searchClick="searchClick"
@@ -56,6 +57,8 @@
                 @deleteLineClick="deleteLineClick"
                 @addLineClick="addLineClick"
                 @pageChange="pageChange"
+                @groupbyClick="groupbyClick"
+                @loadGroupDetail="loadGroupDetail"
       />
     </el-main>
   </el-container>
@@ -414,23 +417,20 @@ const dataLoadedCallback = (datas, treeDatas, countRef) => {
   dataCopy = {formData: JSON.parse(JSON.stringify(datas.value)), treeData: JSON.parse(JSON.stringify(treeDatas.value))};  // 数据备份，取消编辑回到原始状态
 }
 
-// --------------------------------------------待完善
-
 const getGroupChildren = async (row) => {
   const domain = searchview_ref?.value?.getDomain() || [];
   const count = row[Object.keys(row)[0]]
   const result = await callSearchRead({
-    model: params.model,
-    fields: params.fields,
-    offset: params.offset,
+    model: model,
+    fields: Object.keys(props.fieldViewInfo.viewFields),
+    offset: 0,
     limit: count,
-    domain: row.__domain.concat(params.domain).concat(domain),
-    sort: params.sort,
+    domain: row.__domain.concat(props.action.domain || []).concat(domain),
+    sort: 'id',
   })
-  emits('loadGroupDetail', row, result)
-  const records = await initListData(extras, result.result.records, props.fieldViewInfo.viewFields);
+  const records = await initListData(result.records, props.fieldViewInfo.viewFields);
   const diffRows = [];
-  const newRowIds = records.listData.map(r => r.id) || [];
+  const newRowIds = records.map(r => r.id) || [];
   if (row.children?.length) {
     for (const odlRow of row.children) {
       if (newRowIds.indexOf(odlRow.id) !== -1) {
@@ -439,7 +439,7 @@ const getGroupChildren = async (row) => {
     }
     return diffRows
   } else {
-    return records.listData
+    return records
   }
 }
 
@@ -447,51 +447,72 @@ const groupbyClick = (row, treeNode, resolve) => {
   const domain = searchview_ref.value?.getDomain();
   const childGroupby = row?.__context?.group_by
   const groupbys = childGroupby || searchview_ref.value.searchFacets.filter(r => r.groupby).map(r => r.groupby);
-  groupbyKey.value = groupbys;
-  params.groupby = groupbys;
-  loading.value = true;
   callReadGroup({
-    model: params.model,
-    domain: domain.concat(params.domain).concat(row?.__domain || []),
-    fields: params.fields,
+    model: model,
+    domain: domain.concat(props.action.domain || []).concat(row?.__domain || []),
+    fields: Object.keys(props.fieldViewInfo.viewFields),
     groupby: groupbys,
-    order_by: params.sort,
+    order_by: 'id',
   }).then(async res => {
-    groupbyData = res.result;
+    let groupbyData = res;
     let groupby = groupbys[0]
-    const groupbyOptions = options.formFieldsOption[groupby];
     for (const groupbyDetail of groupbyData) {
       groupbyDetail['hasChildren'] = true;
       const value = groupbyDetail[groupby] || '未定义'
       groupbyDetail['id'] = row.id ? row.id + value : value;
-      if (groupbyOptions?.type === 'selection') {
-        groupbyDetail[params.fields[0]] = groupbyOptions.selection.find(r => r[0] === value)[1] + '(' + groupbyDetail[groupby + '_count'] + ')';
-      } else if (groupbyOptions?.type === 'many2one') {
-        groupbyDetail[params.fields[0]] = groupbyDetail[groupby][1] + '(' + groupbyDetail[groupby + '_count'] + ')'
-      } else {
-        groupbyDetail[params.fields[0]] = groupbyDetail[groupby] + '(' + groupbyDetail[groupby + '_count'] + ')';
-      }
-      if (!childGroupby) {
-        groupbyDetail['children'] = await getGroupChildren(groupbyDetail);
-      }
-      groupbyDetail[groupby] = groupbyDetail[params.fields[0]]
+      groupbyDetail[Object.keys(props.fieldViewInfo.viewFields)[0]] = groupbyDetail[groupby]
     }
     if (childGroupby) {
       row.children = groupbyData;
       resolve(groupbyData);
     } else {
-      datas.listData = groupbyData;
-      params.count = groupbyData.length;
-      const listTable = getListViewExpose().listTable
-      for (const line of datas.listData) {
-        listTable.toggleRowExpansion(line, false);
+      console.log(props.arch);
+      props.arch.children.push({
+        "tag": "field",
+        "attrs": {
+          "name": groupby,
+          "readonly": true,
+          "create": false,
+          "edit": false,
+          "delete": false,
+          "import": false
+        },
+        "children": []
+      })
+      for (const line of groupbyData) {
+        listview_ref.value.tableview_ref.table_ref.toggleRowExpansion(line, false);
       }
-      listTable.clearSelection();
-      params.count = groupbyData.length;
+      listData.value['self'] = groupbyData;
+      dataCount.value = groupbyData.length;
     }
-    loading.value = false;
   })
 }
+
+const loadGroupDetail = async (row, treeNode, resolve) => {
+  const children = await getGroupChildren(row)
+  row.children = children;
+  resolve(children)
+}
+
+
+const selectClick = (rows, listTable, toggleRowSelection) => {
+  const dataVal = {};
+  for (const row of rows) {
+    for (const field of Object.keys(row)) {
+      !dataVal[field] ? dataVal[field] = [] : '';
+      dataVal[field].push(row[field])
+    }
+  }
+  selectRows.value = dataVal;
+  for (const button of buttons.value.buttonOptions) {
+    if (button.needRow) {
+      button.attributes.noRowInvisible = !rows.length;
+    }
+  }
+  emits('selectClick', rows, toggleRowSelection)
+}
+// --------------------------------------------待完善
+
 
 const sortByClick = (hasSort, field, sort) => {
   if (hasSort) {
@@ -499,12 +520,6 @@ const sortByClick = (hasSort, field, sort) => {
     searchClick();
   }
   emits('sortByClick', field, sort);
-}
-
-const loadGroupDetail = async (row, treeNode, resolve) => {
-  const children = await getGroupChildren(row)
-  row.children = children;
-  resolve(children)
 }
 
 const exportClick = () => {
@@ -592,23 +607,6 @@ const importClick = (result) => {
       })
     }
   })
-}
-
-const selectClick = (rows, listTable, toggleRowSelection) => {
-  const dataVal = {};
-  for (const row of rows) {
-    for (const field of Object.keys(row)) {
-      !dataVal[field] ? dataVal[field] = [] : '';
-      dataVal[field].push(row[field])
-    }
-  }
-  selectRows.value = dataVal;
-  for (const button of buttons.buttonOptions) {
-    if (button.needRow) {
-      button.attributes.noRowInvisible = !rows.length;
-    }
-  }
-  emits('selectClick', rows, reload, loading, toggleRowSelection)
 }
 
 

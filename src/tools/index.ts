@@ -642,10 +642,12 @@ const formatArch = (archRoot) => {
         delete archRoot.attrs.modifiers
         delete archRoot.attrs.attrs
     }
-    archRoot.attrs.create = JSON.parse(archRoot.attrs.create || 'false');
-    archRoot.attrs.edit = JSON.parse(archRoot.attrs.edit || 'false');
-    archRoot.attrs.delete = JSON.parse(archRoot.attrs.delete || 'false');
-    archRoot.attrs.import = JSON.parse(archRoot.attrs.import || 'false');
+    if (['tree', 'form'].includes(archRoot.tag)) {
+        archRoot.attrs.create = JSON.parse(archRoot.attrs.create || 'false');
+        archRoot.attrs.edit = JSON.parse(archRoot.attrs.edit || 'false');
+        archRoot.attrs.delete = JSON.parse(archRoot.attrs.delete || 'false');
+        archRoot.attrs.import = JSON.parse(archRoot.attrs.import || 'false');
+    }
     if (archRoot.children?.length) {
         for (const children of archRoot.children) {
             formatArch(children)

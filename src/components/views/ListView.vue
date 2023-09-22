@@ -26,6 +26,7 @@
         @addLineClick="addLineClick"
         @pageSizeChange="pageSizeChange"
         @pageChange="pageChange"
+        @loadGroupDetail="loadGroupDetail"
     />
   </el-form>
 </template>
@@ -144,6 +145,13 @@ const fieldOnchange = (params, noChange) => {
   emits('fieldOnchange', params, noChange)
 }
 
+const loadGroupDetail = (row, treeNode, resolve) => {
+  if (row.__context?.group_by) {
+    emits('groupbyClick', row, treeNode, resolve)
+  } else {
+    emits('loadGroupDetail', row, treeNode, resolve)
+  }
+}
 defineExpose({
   tableview_ref, treeData: treeData['self']
 })

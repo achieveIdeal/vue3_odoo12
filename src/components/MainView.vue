@@ -107,6 +107,10 @@ const loadViews = async (action, res_views, is_button) => {
 const loadAction = async (action_id, is_button) => {
   const action = await callAction(action_id);
   const res_views = action.views?.length ? action.views : false;
+  const search = res_views.find(r=>r[1]==='search')
+  if(!search){
+    res_views.push([false, 'search'])
+  }
   if (action.res_model) {
     return await loadViews(action, res_views || [[false, 'search'], [false, 'tree'], [false, 'form']])
   }
@@ -164,7 +168,6 @@ const buttonClick = async (button, model, datas, selectRows) => {
       }
     }).then(async res => {
       if (res.type === 'ir.actions.act_window') {
-        console.log(res, datas);
         const viewInfo = await loadViews(res, res.views, true);
         if (res.target === 'new') {
           dialogStack.value.push({
@@ -174,7 +177,7 @@ const buttonClick = async (button, model, datas, selectRows) => {
             searchViewInfoDialog: viewInfo.searchViewInfo,
             dataDialog: {id: res.res_id},
             visible: true,
-            actionDialog: viewInfo.action,
+            actionDialog: res,
             formViewInfoDialog: viewInfo.formViewInfo,
             active_ids: selectRows?.id || [datas.id],
             preDialogReload: dialogStack.value.length ? record_ref.value.formview_ref.main : dialog_ref.value.record_ref?.formview_ref.main
@@ -191,7 +194,6 @@ const buttonClick = async (button, model, datas, selectRows) => {
             }
           })
         }
-
       } else if (curDialog?.dialogVisible && res) {  // 加载完成需隐藏弹框
         curDialog.dialogVisible = false;
         curDialogData.visible = false;

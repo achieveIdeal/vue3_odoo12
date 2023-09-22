@@ -94,7 +94,7 @@ watch(route, async (f, t) => {
 })
 
 const fields = ref([]);
-const activeTab = computed(
+const activeTab = computed(  // 打开弹窗后会变
     () => {
       const viewFields = props.viewFields
       for (const field of Object.keys(viewFields)) {
@@ -128,7 +128,7 @@ const formatArch = async (arch) => {
         formView.arch = typeof formArch === "string" ? parseXMlToJson(props.viewFields[children.attrs?.name]?.views?.form?.arch) : formArch;
         formView.base_model = model
       } else {
-        const res = await callKw({   // 若为定义form,请求后端获取form
+        const res = await callKw({   // 若未定义form,请求后端获取form
           model: model,
           method: 'load_views',
           args: [[[false, 'form']]]
