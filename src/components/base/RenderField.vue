@@ -399,7 +399,7 @@ const emits = defineEmits(['handleButtonClick', 'getLineDetailClick', 'deleteLin
   'lineButtonClick'])
 const handleButtonClick = (e, button) => {
   e.stopPropagation();
-  emits('handleButtonClick')
+  emits('handleButtonClick', button)
 }
 const lineButtonClick = (field, row, button, model) => {
   emits('lineButtonClick', field, row, button, model)

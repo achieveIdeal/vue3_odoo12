@@ -71,7 +71,7 @@ const props = defineProps({
   }
 })
 const emits = defineEmits(['getDetailClick', 'selectClick', 'fieldOnchange', 'dataLoadedCallback',
-  'deleteLineClick', 'addLineClick', 'pageSizeChange', 'pageChange'])
+  'deleteLineClick', 'addLineClick', 'pageSizeChange', 'pageChange','groupbyClick', 'loadGroupDetail'])
 
 const tableview_ref = ref('')
 const dataCount = ref(0);
@@ -100,8 +100,10 @@ const main = async () => {
   if (props.extras) {
     setFormAttribute(props.extras, props.viewFields)
   }
-  if (props.action.domain) {
-    props.action.domain = await callParseDomain(props.action.domain)
+  console.log(props.action);
+  if (!(props.action.domain instanceof Array)) {
+    const domain = await callParseDomain(props.action.domain);
+    props.action.domain = domain
   }
   eventBus.emit('requestCallback')
   callSearchRead({

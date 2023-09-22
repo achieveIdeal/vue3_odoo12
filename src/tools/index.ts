@@ -1,11 +1,10 @@
-import {callNames, callOnchange, callFields, callRead, callSearchRead} from "../service/module/call";
+import {callNames, callOnchange, callParseDomain} from "../service/module/call";
 import {ElMessage} from "element-plus";
-import {initFormData, initTreeData} from "./init";
+import {initTreeData} from "./init";
 import axios from "axios";
 import mitt from "mitt";
 
 const eventBus = mitt()
-// 请求数据
 
 const appElement = document.getElementById('app');
 const supplier_id = parseInt(appElement.dataset['supplier_id'] || 0)
@@ -22,7 +21,7 @@ const buildOnchangeSpecs = function (fieldsInfo, treeOption, fields) {
         for (const name of fields) {
             var field = fieldsInfo[name];
             var key = prefix + name;
-            specs[key] = (field.onchange) || "";
+            specs[key] = (field.on_change) || "";
             if ((treeOption || {})[name]) {
                 generateSpecs(treeOption[name], Object.keys(treeOption[name] || {}), key + '.');
             }
@@ -36,7 +35,7 @@ const onchangeField = async (params: OnchangeParamsType, checkAll) => {
     let options = params.options;
     let field = params.field;
     let treeField = params.treeField;
-    if (!!options[field].onchange) {
+    if (!!options[field].on_change) {
         let attributes = params.attributes
         let treeOptions = params.treeOptions;
         let datas = params.datas
@@ -159,7 +158,7 @@ const onchangeField = async (params: OnchangeParamsType, checkAll) => {
             eventBus.emit('fieldOnchange', params);
         }
     }
-    if (!!treeField.length && params.formOptions[treeField].onchange) {
+    if (!!treeField.length && params.formOptions[treeField].on_change) {
         params.field = treeField
         params.treeField = ''
         params.model = params.formModel;
@@ -172,7 +171,10 @@ const onchangeField = async (params: OnchangeParamsType, checkAll) => {
 const selectionMap = {}
 const searchFieldSelection = async (field, option: FieldOptionType, query: string, domain = [], limit, datas) => {
     let selection = [];
-    const domains = JSON.parse(JSON.stringify(option?.domain || []))
+    let domains = [];
+    if (!!option.domain.length) {
+        domains = JSON.parse(JSON.stringify(await callParseDomain(option?.domain) || []))
+    }
     for (const domain of domains || []) {
         if (typeof domain[2] === 'string') {
             let self_value = domain[2].split('.');
@@ -374,7 +376,6 @@ const parseDomain = (domains, data) => {
                 domainStack.splice(index + 1, 1);
                 domainStack.splice(index + 1, 1);
                 domainStack[index] = domain
-                continue
             } else {
                 throw Error('domain不合法!')
             }

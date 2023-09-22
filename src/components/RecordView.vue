@@ -84,7 +84,7 @@ import router from "../router";
 import {useRoute} from "vue-router";
 import {eventBus} from "../tools";
 import {ElMessage} from "element-plus";
-import {tFn, defaultLang} from "../hook/useI18n";
+// import {tFn, defaultLang} from "../hook/useI18n";
 
 let flag = true
 // function  handleChangLang (){  // 翻译切换
@@ -146,7 +146,7 @@ if (props.isDialog) {
   data_id = parseInt(route.query.id);
 }
 watch(route, () => {
-  disabled.value = !!parseInt(route.query.id) || !route.query.type
+  disabled.value = !!parseInt(route.query.id) || !route.query.type;
 })
 
 const disabled = ref(parseInt(data_id) !== 0 || !route.query.type);
@@ -466,19 +466,6 @@ const groupbyClick = (row, treeNode, resolve) => {
       row.children = groupbyData;
       resolve(groupbyData);
     } else {
-      console.log(props.arch);
-      props.arch.children.push({
-        "tag": "field",
-        "attrs": {
-          "name": groupby,
-          "readonly": true,
-          "create": false,
-          "edit": false,
-          "delete": false,
-          "import": false
-        },
-        "children": []
-      })
       for (const line of groupbyData) {
         listview_ref.value.tableview_ref.table_ref.toggleRowExpansion(line, false);
       }
@@ -493,7 +480,6 @@ const loadGroupDetail = async (row, treeNode, resolve) => {
   row.children = children;
   resolve(children)
 }
-
 
 const selectClick = (rows, listTable, toggleRowSelection) => {
   const dataVal = {};
@@ -511,6 +497,30 @@ const selectClick = (rows, listTable, toggleRowSelection) => {
   }
   emits('selectClick', rows, toggleRowSelection)
 }
+
+eventBus.on('fieldOnchange', (params) => {
+  const field = params.field;
+  const datas = params.datas;
+  if (!!params.treeField && params.treeField != 'text') {
+    const treeField = params.treeField;
+    const index = params.index;
+    !changedFieldsVal[treeField] ? changedFieldsVal[treeField] = [] : null;
+    !changedFieldsVal[treeField][index] ? changedFieldsVal[treeField][index] = {} : null;
+    changedFieldsVal[treeField][index][field] = datas[field];
+    if (datas.id) {
+      changedFieldsVal[treeField][index].id = datas.id;
+    }
+    if (params.options[field].type === 'many2one') {
+      changedFieldsVal[treeField][index][field] = (datas[field] || [''])[0];
+    }
+  } else {
+    changedFieldsVal[field] = datas[field];
+    if (params.options[field].type === 'many2one') {
+      changedFieldsVal[field] = datas[field][0];
+    }
+  }
+})
+
 // --------------------------------------------待完善
 
 
@@ -609,29 +619,6 @@ const importClick = (result) => {
   })
 }
 
-
-eventBus.on('fieldOnchange', (params) => {
-  const field = params.field;
-  const datas = params.datas;
-  if (!!params.treeField && params.treeField != 'text') {
-    const treeField = params.treeField;
-    const index = params.index;
-    !changedFieldsVal[treeField] ? changedFieldsVal[treeField] = [] : null;
-    !changedFieldsVal[treeField][index] ? changedFieldsVal[treeField][index] = {} : null;
-    changedFieldsVal[treeField][index][field] = datas[field];
-    if (datas.id) {
-      changedFieldsVal[treeField][index].id = datas.id;
-    }
-    if (params.options[field].type === 'many2one') {
-      changedFieldsVal[treeField][index][field] = (datas[field] || [''])[0];
-    }
-  } else {
-    changedFieldsVal[field] = datas[field];
-    if (params.options[field].type === 'many2one') {
-      changedFieldsVal[field] = datas[field][0];
-    }
-  }
-})
 
 defineExpose({
   formview_ref, listview_ref, data

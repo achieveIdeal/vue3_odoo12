@@ -183,7 +183,9 @@ const getFields = async () => {
         }
       } else if (children.tag === 'field') {
         fields.self.push(fieldName);
-        props.viewFields[fieldName].onchange = children.attrs.on_change
+        for (const attr of Object.keys(children.attrs || {})) {
+          props.viewFields[fieldName][attr] = children.attrs[attr]
+        }
       }
       recursion(children, arch)
     }
@@ -264,7 +266,6 @@ const buttonClick = (button) => {
 }
 
 const lineButtonClick = (field, row, button, model) => {
-  console.log(row);
   emits('buttonClick', button, model, row)
 }
 const getLineDetailClick = (data, index, formViewInfo, relation_field) => {
