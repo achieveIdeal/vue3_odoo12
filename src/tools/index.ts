@@ -1,4 +1,4 @@
-import {callNames, callOnchange, callParseDomain} from "../service/module/call";
+import {callFields, callNames, callOnchange, callParseDomain} from "../service/module/call";
 import {ElMessage} from "element-plus";
 import {initTreeData} from "./init";
 import axios from "axios";
@@ -172,7 +172,7 @@ const selectionMap = {}
 const searchFieldSelection = async (field, option: FieldOptionType, query: string, domain = [], limit, datas) => {
     let selection = [];
     let domains = [];
-    if (!!option.domain.length) {
+    if (!!option.domain?.length) {
         domains = JSON.parse(JSON.stringify(await callParseDomain(option?.domain) || []))
     }
     for (const domain of domains || []) {
@@ -661,6 +661,138 @@ const parseXMlToJson = (xml_data) => {
     const arch = parseElementToJSON(parsedXML.documentElement);
     formatArch(arch)
     return arch;
+}
+
+
+const generateFormArch = (fields, tables) => {
+    const group = {
+        tag: 'group',
+        attrs: {},
+        children: []
+    }
+    const header = {
+        tag: 'header',
+        attrs: {},
+        children: [{
+            tag:'button',
+            attrs:{states:'隐藏该按钮'},
+        }]
+    }
+    if (fields.includes('state')) {
+        header.children.push({
+            tag: 'field',
+            attrs: {name: 'state'},
+            children: []
+        })
+    }
+    const arch = {
+        tag: 'form',
+        attrs: {},
+        children: [header, group]
+    };
+
+    function generate(arch, fields, tables) {
+        if (fields.length) {
+            for (const field of fields) {
+                if (Object.keys(tables || {}).includes(field)) continue;
+                if (field === 'state') continue;
+                arch.children.push({
+                    tag: 'field',
+                    attrs: {name: field},
+                    children: []
+                })
+            }
+        }
+        if (Object.keys(tables || {}).length) {
+            const notebook = {
+                tag: 'notebook',
+                attrs: {},
+                children: []
+            }
+            for (const treeField of Object.keys(tables || {})) {
+                notebook.children.push({
+                    tag: 'page',
+                    attrs: {string: tables[treeField].title || ''},
+                    children: [{
+                        tag: 'field',
+                        attrs: {name: treeField},
+                        children: [{
+                            tag: 'tree',
+                            attrs: {},
+                            children: generateTreeArch(tables[treeField].fields)
+                        }]
+                    }]
+                })
+            }
+            arch.children.push(notebook)
+        }
+    }
+
+    generate(group, fields, tables)
+    return arch
+}
+
+const generateTreeArch = (fields) => {
+    const arch = {
+        tag: 'tree',
+        attrs: {},
+        children: []
+    };
+    if (fields.length) {
+        for (const field of fields) {
+            arch.children.push({
+                tag: 'field',
+                attrs: {name: field},
+                children: []
+            })
+        }
+    }
+    return arch
+}
+
+export const generateFormView = async (params) => {
+    const options = await callFields({
+        model: params.model,
+        args: [0, params.fields.concat(Object.keys(params.tables || {}))]
+    })
+    for (const treeField of Object.keys(params.tables || {})) {
+        !options[treeField].views ? options[treeField].views = {} : null;
+        options[treeField].views.form = await generateFormView(params.tables[treeField])
+        options[treeField].views.tree = await generateTreeView(params.tables[treeField])
+    }
+
+    return {
+        viewFields: options,
+        fields: options,
+        res_model: params.model,
+        base_model: params.model,
+        arch: generateFormArch(params.fields, params.tables)
+    }
+}
+
+
+export const generateTreeView = async (params) => {
+    const options = await callFields({
+        model: params.model,
+        args: [0, params.fields.concat(Object.keys(params.tables || {}))]
+    })
+    return {
+        viewFields: options,
+        fields: options,
+        res_model: params.model,
+        base_model: params.model,
+        arch: await generateTreeArch(params.fields, params.tables)
+    }
+}
+
+
+export const generateViews = async (params) => {
+    const formViewInfo = await generateFormView(params);
+    const treeViewInfo = await generateTreeView(params);
+    return {
+        formViewInfo,
+        treeViewInfo
+    }
 }
 
 export {

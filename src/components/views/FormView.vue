@@ -108,6 +108,7 @@ const activeTab = computed(  // 打开弹窗后会变
 const treeViewFields = computed(() => {
   const viewFields = props.viewFields;
   const treeOption = {};
+  console.log(viewFields);
   for (const field of Object.keys(viewFields)) {
     if (Object.keys(viewFields[field]?.views || {}).length) {
       treeOption[field] = viewFields[field]?.views?.tree?.fields
@@ -176,7 +177,7 @@ const getFields = async () => {
     const treeFields = [];
     for (const children of arch.children instanceof Array ? arch.children : []) {
       const fieldName = children.attrs?.name;
-      if (arch.tag === 'tree') {
+      if (arch.tag === 'tree' && Object.keys(treeViewFields.value||{}).length) {
         treeFields.push(fieldName);
         if (treeViewFields.value[parent.attrs.name][fieldName]) {
           treeViewFields.value[parent.attrs.name][fieldName].onchange = children.attrs.on_change
@@ -189,7 +190,7 @@ const getFields = async () => {
       }
       recursion(children, arch)
     }
-    if (arch.tag === 'tree') {
+    if (arch.tag === 'tree' && Object.keys(treeViewFields.value||{}).length) {
       fields[parent.attrs.name] = treeFields;
     }
   }

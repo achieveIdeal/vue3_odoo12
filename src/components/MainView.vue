@@ -45,7 +45,7 @@
 import {callAction, callCreate, callKw, callViews} from "../service/module/call";
 import {defineEmits, defineProps, ref, watch} from "vue";
 import {useRoute, useRouter} from "vue-router";
-import {formatArch} from "../tools";
+import {formatArch, generateViews} from "../tools";
 import RecordView from '../components/RecordView.vue'
 import DialogView from './views/DialogView.vue'
 
@@ -56,6 +56,9 @@ const props = defineProps({
   },
   extras: {
     default: {}
+  },
+  params: {
+    type: Object
   }
 })
 
@@ -105,13 +108,14 @@ const loadViews = async (action, res_views, is_button) => {
 
 const loadAction = async (action_id, is_button) => {
   const action = await callAction(action_id);
+  console.log(action);
   const res_views = action.views?.length ? action.views : false;
   const search = res_views.find(r => r[1] === 'search')
   if (!search) {
     res_views.push([false, 'search'])
   }
   if (action.res_model) {
-    return await loadViews(action, res_views || [[false, 'search'], [false, 'tree'], [false, 'form']])
+    return await loadViews(action, res_views || [[false, 'search'], [false, 'tree'], [false, 'form']], is_button)
   }
 }
 
@@ -261,7 +265,22 @@ const getLineDetailClick = (dataLine, index, formViewInfo, relation_field) => { 
 
 
 const main = () => {
-  if (action.value.id || action_id.value) {
+  if (props.params) {
+    generateViews(props.params).then(res => {
+      const vType = route.query.type
+      formViewInfo.value = res.formViewInfo;
+      fieldViewInfo.value = !vType ? treeViewInfo.value : formViewInfo.value;
+      treeViewInfo.value = res.treeViewInfo;
+      arch.value = fieldViewInfo.value.arch;  // 当前页xml解析数据
+      console.log(arch.value);
+      action.value = {
+        res_model: props.params.model,
+        domain: props.params.domain,
+        limit: 80
+      }
+    })
+    // searchViewInfo.value = res.searchViewInfo;  // 搜索框视图数据
+  } else if (action.value.id || action_id.value) {
     loadAction(action.value.id || action_id.value).then(res => {
       action_id.value = res.action.id;  // odoo xml的action id
       action.value = res.action;   // odoo返回的action参数

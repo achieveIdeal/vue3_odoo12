@@ -1,8 +1,8 @@
 <template>
-<div>
-    <MainView :action_name="'e2yun_dpsrm_qweb_extends.srm_delivery_order_action'" :extras="extras"/>
-  <button @click="handleChange"></button>
-</div>
+  <div>
+    <MainView :params="params" :action_name="'e2yun_dpsrm_qweb_extends.srm_delivery_order_action'" :extras="extras"/>
+    <button @click="handleChange"></button>
+  </div>
 
 </template>
 
@@ -10,15 +10,42 @@
 import MainView from "../components/MainView.vue";
 import {inject, ref, reactive} from "vue";
 import {dateFtt} from "../tools";
-import { useI18n } from '../hook/useI18n'
+import {useI18n} from '../hook/useI18n'
+import {callFields} from "../service/module/call";
 
 const supplier_id = parseInt(inject('supplier_id') || 0);
 const loading = ref(false);
 
 
-function  handleChange(){
+function handleChange() {
 
 }
+
+const params = reactive({
+  title: '交货单',
+  name: 'delivery_order',
+  width: '30%',
+  domain: [],
+  model: 'srm.delivery.order',
+  fields:
+      ['name', 'partner_id', 'expect_date', 'state', 'factory_id', 'comment', 'car_info_ids', 'product_id', 'purchase_order', 'is_sync_shipment'],
+  tables: {
+    line_ids: {
+      title: '交货订单行',
+      limit: 100,
+      model: 'srm.delivery.order.line',
+      fields: ['product_id', 'material_code', 'material_name', 'planned_quantity', 'delivery_quantity',
+        'receive_quantity', 'material_uom', 'purchase_order', 'uom_id', 'origin_plan_publish_id']
+    },
+    car_info_ids: {
+      title: '车辆信息',
+      limit: 100,
+      model: 'car.info',
+      fields: [ 'sequence', 'order_id', 'car_number', 'driver', 'phone', 'product_ids', 'is_panel',
+        'arrived_date',]
+    }
+  }
+})
 
 const extras = {
   buttons: [{

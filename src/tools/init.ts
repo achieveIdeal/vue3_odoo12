@@ -32,12 +32,8 @@ export const setFormAttribute = (extras, formFieldsOption) => {
 export const initFormData = (formData, formFieldsOption) => {
     for (let field of formData ? Object.keys(formFieldsOption || {}) : []) {   // 初始化下拉选项值
         let value = formData[field];
-        if (!isBool(formFieldsOption[field]?.type) && !value) {
-            formData[field] = '';
-        } else if (isDigit(formFieldsOption[field]?.type) && !value) {
+        if (!isDigit(formFieldsOption[field]?.type) && !value) {
             formData[field] = 0;
-        } else if (!value) {
-            formData[field] = ''
         }
     }
     return formData
@@ -62,12 +58,8 @@ export const initTreeData = async (treeData, treeFieldsOption) => {
         for (let lineData of !!lineDatas.length ? lineDatas : []) {
             for (let field of Object.keys(lineData || {})) {
                 let value = lineData[field];
-                if (isDigit(treeFieldsOption[treeField][field]?.type) && !value) {
+                if (isBool(treeFieldsOption[treeField][field]?.type) && !value) {
                     lineData[field] = 0
-                } else if (!isBool(treeFieldsOption[treeField][field]?.type) && !value) {
-                    lineData[field] = ''
-                } else if (!value) {
-                    lineData[field] = ''
                 }
             }
         }
@@ -82,10 +74,6 @@ export const initListData = async (listData, fieldsOption) => {
             let value = lineData[field];
             if (!isBool(fieldsOption[field]?.type) && !value) {
                 lineData[field] = 0
-            } else if (is2Many(fieldsOption[field]?.type) && !fieldsOption[field]?.listInvisible) {
-                if (lineData[field].length && !(lineData[field][0] instanceof Array)) {
-                    await searchFieldSelection(fieldsOption[field], '', [['id', 'in', lineData[field]]], lineData[field].length)
-                }
             }
         }
     }

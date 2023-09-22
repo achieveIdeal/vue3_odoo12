@@ -327,7 +327,10 @@ const saveClick = (formview_ref) => {  // 处理保存按钮，包括编辑保�
   })
 }
 const pageChange = (treeField, currentPage, pageSize, fields) => {
-  const domain = searchview_ref.value?.getDomain() || [];
+  let domain = []
+  if (searchview_ref.value) {
+    domain = searchview_ref.value?.getDomain() || [];
+  }
   callSearchRead({
     model: model,
     fields: fields[treeField],
@@ -341,7 +344,10 @@ const pageChange = (treeField, currentPage, pageSize, fields) => {
   emits('pageChange', treeField);
 }
 const pageSizeChange = async (treeField, size, fields) => {
-  const domain = searchview_ref.value?.getDomain() || [];
+  let domain = []
+  if (searchview_ref.value) {
+    domain = searchview_ref.value?.getDomain() || [];
+  }
   callSearchRead({
     model: model,
     fields: fields[treeField],
@@ -444,7 +450,10 @@ const getGroupChildren = async (row) => {
 }
 
 const groupbyClick = (row, treeNode, resolve) => {
-  const domain = searchview_ref.value?.getDomain();
+  let domain = []
+  if (searchview_ref.value) {
+    domain = searchview_ref.value?.getDomain() || [];
+  }
   const childGroupby = row?.__context?.group_by
   const groupbys = childGroupby || searchview_ref.value.searchFacets.filter(r => r.groupby).map(r => r.groupby);
   callReadGroup({
