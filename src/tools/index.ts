@@ -247,10 +247,12 @@ const contentTypeMap: Map<string, string> = new Map([
     ['.xls', 'application/vnd.ms-excel'],
     ['.xlsx', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'],
 ]);
+
 const getFileType = (filename: string): string | undefined => {
     const extension = '.' + filename.split('.').pop();
     return contentTypeMap.get(extension.toLowerCase());
 };
+
 const base64ToBlobUrl = (base64: string, filename: string): Promise<string> => {
     if (!base64.length) {
         throw new Error('The base64 string is empty.');
@@ -272,6 +274,7 @@ const base64ToBlobUrl = (base64: string, filename: string): Promise<string> => {
         reader.readAsArrayBuffer(new Blob([byteArray]));
     });
 };
+
 const downLoadFile = (base64File: string, filename: string) => async () => {
     if (base64File.length) {
         try {
@@ -290,6 +293,7 @@ const downLoadFile = (base64File: string, filename: string) => async () => {
         }
     }
 };
+
 const encodeFileToBase64 = async (file) => {
     return new Promise((resolve, reject) => {
         const reader = new FileReader();
@@ -363,6 +367,7 @@ const getDomainVal = (domains, data) => {
     }
     return domainsCopy
 }
+
 const parseDomain = (domains, data) => {
     if (!(domains instanceof Array && domains.length
         && (['|', '&'].indexOf(domains[0]) !== -1 || domains[0].length === 3))) return domains
@@ -394,7 +399,7 @@ const parseDomain = (domains, data) => {
     return domainStack.every(item => Boolean(item));
 }
 
-
+// 时间
 const dateFtt = (fmt, date) => {
     var o = {
         "M+": date.getMonth() + 1, //月份
@@ -420,7 +425,6 @@ const dateFtt = (fmt, date) => {
             );
     return fmt;
 }
-
 
 const getDateTypeValue = (type) => {
     let date = new Date();
@@ -557,6 +561,8 @@ const loadActiveAction = (menu) => {
     }
 }
 
+
+//  解析xml
 const jsonifyStr = (str) => {
     if (!str) {
         return 'false'
@@ -663,7 +669,7 @@ const parseXMlToJson = (xml_data) => {
     return arch;
 }
 
-
+// 生成解析后的xml数据
 const generateFormArch = (fields, tables) => {
     const group = {
         tag: 'group',
@@ -674,8 +680,8 @@ const generateFormArch = (fields, tables) => {
         tag: 'header',
         attrs: {},
         children: [{
-            tag:'button',
-            attrs:{states:'隐藏该按钮'},
+            tag: 'button',
+            attrs: {states: '隐藏该按钮'},
         }]
     }
     if (fields.includes('state')) {
@@ -785,7 +791,6 @@ export const generateTreeView = async (params) => {
     }
 }
 
-
 export const generateViews = async (params) => {
     const formViewInfo = await generateFormView(params);
     const treeViewInfo = await generateTreeView(params);
@@ -797,10 +802,10 @@ export const generateViews = async (params) => {
 
 export {
     searchFieldSelection, onchangeField, getDateTypeValue,
-    getFileType, loadFormData, dateFtt, downLoadFileBold,
-    base64ToBlobUrl, loadListData, readFile, parseXMlToJson,
-    downLoadFile, getFieldOption, formatArch,
-    encodeFileToBase64, eventBus,
+    getFileType, dateFtt, downLoadFileBold,
+    base64ToBlobUrl, readFile, parseXMlToJson,
+    downLoadFile, formatArch,
+    encodeFileToBase64,
     parseDomain, loadActiveAction
 }
 

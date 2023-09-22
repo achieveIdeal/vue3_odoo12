@@ -46,11 +46,3 @@ export const useMenusStore = defineStore('menus', {
         }
     }
 })
-import Attachment from '../components/fields/Attachment.vue'
-import Boolean from '../components/fields/Boolean.vue'
-import Character from '../components/fields/Character.vue'
-import Image from '../components/fields/Image.vue'
-import Many2one from '../components/fields/Many2one.vue'
-import Number from '../components/fields/Number.vue'
-import Selection from '../components/fields/Selection.vue'
-import ToMany from '../components/fields/ToMany.vue'

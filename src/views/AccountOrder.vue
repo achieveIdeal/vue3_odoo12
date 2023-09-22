@@ -10,8 +10,6 @@
 import MainView from "../components/MainView.vue";
 import {inject, ref, reactive} from "vue";
 import {dateFtt} from "../tools";
-import {useI18n} from '../hook/useI18n'
-import {callFields} from "../service/module/call";
 
 const supplier_id = parseInt(inject('supplier_id') || 0);
 const loading = ref(false);
