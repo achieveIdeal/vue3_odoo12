@@ -2,7 +2,6 @@
   <template v-for="(dialog, index) in dialogStack" :key="index">
     <DialogView
         ref="dialog_ref"
-        :isDialog="true"
         :index="index"
         :dataDialog="dialog.dataDialog"
         :preDialogReload="dialog.preDialogReload"
@@ -272,7 +271,6 @@ const main = () => {
       treeViewInfo.value = res.treeViewInfo;
       fieldViewInfo.value = !vType ? treeViewInfo.value : formViewInfo.value;
       arch.value = fieldViewInfo.value.arch;  // 当前页xml解析数据
-      console.log(arch.value);
       action.value = {
         res_model: props.params.model,
         domain: props.params.domain,
