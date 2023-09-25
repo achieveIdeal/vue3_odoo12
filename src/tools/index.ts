@@ -805,7 +805,7 @@ export {
     getFileType, dateFtt, downLoadFileBold,
     base64ToBlobUrl, readFile, parseXMlToJson,
     downLoadFile, formatArch,
-    encodeFileToBase64,
+    encodeFileToBase64,eventBus,
     parseDomain, loadActiveAction
 }
 

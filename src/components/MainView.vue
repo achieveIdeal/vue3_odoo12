@@ -22,7 +22,7 @@
   </template>
   <RecordView
       ref="record_ref"
-      v-if="Object.keys(arch).length"
+      v-if="Object.keys(arch ||{}).length"
       :arch="arch"
       :loaded_data="loaded_data"
       :action="action"
@@ -269,8 +269,8 @@ const main = () => {
     generateViews(props.params).then(res => {
       const vType = route.query.type
       formViewInfo.value = res.formViewInfo;
-      fieldViewInfo.value = !vType ? treeViewInfo.value : formViewInfo.value;
       treeViewInfo.value = res.treeViewInfo;
+      fieldViewInfo.value = !vType ? treeViewInfo.value : formViewInfo.value;
       arch.value = fieldViewInfo.value.arch;  // 当前页xml解析数据
       console.log(arch.value);
       action.value = {
