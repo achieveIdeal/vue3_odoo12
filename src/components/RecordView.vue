@@ -415,7 +415,7 @@ const dataLoadedCallback = (datas, treeDatas, countRef) => {
   * treeDatas: 表格数据
   * countRef: 列表页数组总数
   * * */
-  props.curViewType === 'form' ? data = datas : null;   // 拿到表单书据，可以处理创建，编辑的数据同步
+  props.curViewType === 'form' ? data = datas : null;   // 拿到表单数据，可以处理创建，编辑的数据同步
   props.curViewType === 'form' ? treeData = treeDatas : null;  // 拿到表格数据，可以处理创建，编辑的数据同步
   props.curViewType === 'form' ? formData.value = datas.value : null;  // 复制表单数据，处理按钮的显示与隐藏
   props.curViewType === 'tree' ? listData = datas : null;  // 拿到列表数据，用于搜索分页数据同步
