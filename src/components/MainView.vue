@@ -277,7 +277,7 @@ const main = () => {
         limit: 80
       }
     })
-    // searchViewInfo.value = res.searchViewInfo;  // 搜索框视图数据
+    // searchViewInfo.value = res.searchViewInfo;  // todo 搜索框视图数据
   } else if (action.value.id || action_id.value) {
     loadAction(action.value.id || action_id.value).then(res => {
       action_id.value = res.action.id;  // odoo xml的action id
