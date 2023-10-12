@@ -35,6 +35,7 @@
       @buttonClick="buttonClick"
       @deleteLineClick="deleteLineClick"
       @addLineClick="addLineClick"
+      @actionItemClick="buttonClick"
 
   />
 </template>
@@ -107,7 +108,6 @@ const loadViews = async (action, res_views, is_button) => {
 
 const loadAction = async (action_id, is_button) => {
   const action = await callAction(action_id);
-  console.log(action);
   const res_views = action.views?.length ? action.views : false;
   const search = res_views.find(r => r[1] === 'search')
   if (!search) {
@@ -136,19 +136,26 @@ const addLineClick = (treeField, treeData, newLine, noAddCallback) => {
 }
 
 const buttonClick = async (button, model, datas, selectRows) => {
-  console.log(button);
   let curDialog = dialog_ref.value[dialog_ref.value.length - 1];
+  let curDialogData = dialogStack.value[dialogStack.value.length - 1];
   const dialogId = button.attrs?.name;
-  let curDialogData = dialogStack.value.find(r => r.dialogId === dialogId);
   if (button.attrs.type === 'action') {  // 类型为action的按钮点击时
+    let curDialogData = dialogStack.value.find(r => r.dialogId === dialogId);
+    if (curDialogData) {  // 重复打开相同弹框  需更新其active_ids
+      curDialogData.active_ids = selectRows?.id || [datas.id]
+    }
     const action_id = parseInt(button.attrs.name);  // 获取action id
     let index = dialogStack.value.indexOf(curDialogData)
-    if (index !== -1) {
+    if (index !== -1) {   //  找到已存在的dialog显示
       curDialog = dialog_ref.value[index]
       curDialog.dialogVisible = true;
       return true;
     }
     loadAction(action_id, true).then(res => {
+      let preDialogReload = record_ref.value.formview_ref?.main || record_ref.value.listview_ref?.main;
+      if (dialogStack.value.length) {
+        preDialogReload = dialog_ref.value.record_ref?.formview_ref.main;
+      }
       dialogStack.value.push({  // 向弹框栈里推入加载弹框需要的数据
         dialogId: dialogId,
         fieldViewInfoDialog: res.fieldViewInfo,
@@ -159,7 +166,7 @@ const buttonClick = async (button, model, datas, selectRows) => {
         actionDialog: res.action,
         formViewInfoDialog: res.formViewInfo,
         active_ids: selectRows?.id || [datas.id],
-        preDialogReload: dialogStack.value.length ? record_ref.value.formview_ref.main : dialog_ref.value.record_ref?.formview_ref.main
+        preDialogReload: preDialogReload
       })
     })
   } else if (button.attrs.type === 'object') {  // 类型为object的按钮点击时
@@ -173,14 +180,15 @@ const buttonClick = async (button, model, datas, selectRows) => {
       args: [datas.id],
       kwargs: {
         context: {
-          'active_id': curDialogData?.active_ids[0] || datas.id,
+          'active_id': curDialogData?.active_ids[0] || (datas || selectRows).id,
           'active_ids': curDialogData?.active_ids || selectRows.id
         }
       }
     }).then(async res => {
       let dialogId = res?.res_id + res?.res_model;
-      let curDialogData = dialogStack.value.find(r => r.dialogId === dialogId);
+      let curDialogData = dialogStack.value[dialogStack.value.length - 1];
       if (res.type === 'ir.actions.act_window') {  // 返回action时
+        let curDialogData = dialogStack.value.find(r => r.dialogId === dialogId);
         const viewInfo = await loadViews(res, res.views, true);
         if (res.target === 'new') {
           let index = dialogStack.value.indexOf(curDialogData)
@@ -189,6 +197,9 @@ const buttonClick = async (button, model, datas, selectRows) => {
             curDialog.dialogVisible = true;
             return true;
           }
+          const preDialogReload = dialogStack.value.length
+              ? (record_ref.value.formview_ref.main || record_ref.value.listview_ref?.main)
+              : dialog_ref.value.record_ref?.formview_ref.main
           dialogStack.value.push({  // 弹框
             dialogId: dialogId,
             fieldViewInfoDialog: viewInfo.fieldViewInfo,
@@ -199,7 +210,7 @@ const buttonClick = async (button, model, datas, selectRows) => {
             actionDialog: res,
             formViewInfoDialog: viewInfo.formViewInfo,
             active_ids: selectRows?.id || [datas.id],
-            preDialogReload: dialogStack.value.length ? record_ref.value.formview_ref.main : dialog_ref.value.record_ref?.formview_ref.main
+            preDialogReload: preDialogReload
           })
         } else {  // 替换当前界面
           router.push({
@@ -215,7 +226,6 @@ const buttonClick = async (button, model, datas, selectRows) => {
         }
       } else if (curDialog?.dialogVisible && res) {  // 加载完成需隐藏弹框
         curDialog.dialogVisible = false;
-        curDialogData.visible = false;
         curDialogData.preDialogReload();  // 重载前一个页面
       }
     })

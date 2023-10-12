@@ -1,6 +1,6 @@
 <template>
   <el-form
-      v-if="Object.keys(datas||{}).length"
+      v-if="Object.keys(datas||{}).length || isDialog"
       ref="form_ref"
       :inline="true"
       :model="{formData:datas, treeData}"
@@ -9,8 +9,7 @@
       class="form-inline">
     <template v-for="children in arch.children"
               :key="children.attrs.name">
-      <RenderField v-if="Object.keys(treeData||{}).length || !Object.keys(treeViewFields||{}).length"
-                   :children="children"
+      <RenderField :children="children"
                    :data="datas"
                    :treeData="treeData"
                    :model="model"
@@ -177,7 +176,7 @@ const getFields = async () => {
     const treeFields = [];
     for (const children of arch.children instanceof Array ? arch.children : []) {
       const fieldName = children.attrs?.name;
-      if (arch.tag === 'tree' && Object.keys(treeViewFields.value||{}).length) {
+      if (arch.tag === 'tree' && Object.keys(treeViewFields.value || {}).length) {
         treeFields.push(fieldName);
         if (treeViewFields.value[parent.attrs.name][fieldName]) {
           treeViewFields.value[parent.attrs.name][fieldName].onchange = children.attrs.on_change
@@ -190,7 +189,7 @@ const getFields = async () => {
       }
       recursion(children, arch)
     }
-    if (arch.tag === 'tree' && Object.keys(treeViewFields.value||{}).length) {
+    if (arch.tag === 'tree' && Object.keys(treeViewFields.value || {}).length) {
       fields[parent.attrs.name] = treeFields;
     }
   }

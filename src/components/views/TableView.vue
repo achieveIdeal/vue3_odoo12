@@ -19,7 +19,13 @@
           :width="treeViewFields[treeField][children.attrs.name]?.width"
           :label="treeViewFields[treeField][children.attrs.name]?.string">
         <template #header>
-          <span>{{ treeViewFields[treeField][children.attrs.name]?.string }}</span>
+          <span v-if="parseDomain(treeViewFields[treeField][children.attrs.name]?.required, formData)"
+                style="color: red;">*</span>
+          <span
+              :class="{'pulldown':sortArrow[children.attrs.name]==='desc' && showArrow[children.attrs.name], 'pullup': sortArrow[children.attrs.name]==='asc' && showArrow[children.attrs.name]}"
+              @click="sortByClick(children.attrs.name)">{{
+              treeViewFields[treeField][children.attrs.name]?.string
+            }}</span>
         </template>
         <template #default="scoped">
           <RenderField :children="children"
@@ -181,7 +187,7 @@ const table_ref = ref({})
 
 const emits = defineEmits(['getDetailClick', 'fieldOnchange', 'selectClick', 'pageChange',
   'editClick', 'addLineClick', 'deleteLineClick', 'lineButtonClick', 'fieldOnchange', 'pageSizeChange',
-  'handleButtonClick', 'groupbyClick', 'loadGroupDetail'
+  'handleButtonClick', 'groupbyClick', 'loadGroupDetail', 'sortByClick'
 ])
 
 let resolveCopy = {}
@@ -338,6 +344,28 @@ const handleButtonClick = (field, row, button) => {
   emits('lineButtonClick', field, row, button, props.model);
 }
 
+let timer;
+const sortArrow = ref({})
+const showArrow = ref({});
+const sortByClick = (field) => {
+  timer ? clearTimeout(timer) : null;
+  for (const field of Object.keys(showArrow.value)) {
+    showArrow.value[field] = false;
+  }
+  showArrow.value[field] = true;
+  !sortArrow.value[field] ? sortArrow.value[field] = 'desc' : null;
+  if (sortArrow.value[field] === 'desc') {
+    sortArrow.value[field] = 'asc';
+  } else if (sortArrow.value[field] === 'asc') {
+    sortArrow.value[field] = 'desc';
+  }
+  timer = setTimeout(() => {
+    showArrow.value[field] = false;
+  }, 1000)
+  emits('sortByClick', field, sortArrow.value[field]);
+}
+
+
 defineExpose({
   pageSize, currentPage, table_ref
 })
@@ -357,4 +385,33 @@ defineExpose({
   table-layout: auto;
 }
 
+.pulldown, .pullup {
+  cursor: pointer;
+}
+
+.pulldown::after {
+  display: inline-block;
+  width: 0;
+  height: 0;
+  margin-left: 0.255em;
+  vertical-align: 0.255em;
+  content: "";
+  border-top: 0.3em solid;
+  border-right: 0.3em solid transparent;
+  border-bottom: 0;
+  border-left: 0.3em solid transparent;
+}
+
+.pullup::after {
+  display: inline-block;
+  width: 0;
+  height: 0;
+  margin-left: 0.255em;
+  vertical-align: 0.255em;
+  content: "";
+  border-top: 0;
+  border-right: 0.3em solid transparent;
+  border-bottom: 0.3em solid;
+  border-left: 0.3em solid transparent;
+}
 </style>

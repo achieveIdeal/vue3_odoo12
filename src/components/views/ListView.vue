@@ -27,6 +27,7 @@
         @pageSizeChange="pageSizeChange"
         @pageChange="pageChange"
         @loadGroupDetail="loadGroupDetail"
+        @sortByClick="sortByClick"
     />
   </el-form>
 </template>
@@ -58,6 +59,9 @@ const props = defineProps({
   }, formViewInfo: {
     type: Object,
     default: {}
+  }, fieldViewInfo: {
+    type: Object,
+    default: {}
   },
   disabled: {
     type: Boolean,
@@ -70,8 +74,9 @@ const props = defineProps({
     default: true
   }
 })
+console.log(props.fieldViewInfo.toolbar);
 const emits = defineEmits(['getDetailClick', 'selectClick', 'fieldOnchange', 'dataLoadedCallback',
-  'deleteLineClick', 'addLineClick', 'pageSizeChange', 'pageChange','groupbyClick', 'loadGroupDetail'])
+  'deleteLineClick', 'addLineClick', 'pageSizeChange', 'pageChange', 'groupbyClick', 'loadGroupDetail', 'sortByClick'])
 
 const tableview_ref = ref('')
 const dataCount = ref(0);
@@ -110,6 +115,7 @@ const main = async () => {
     model: props.model,
     fields: Object.keys(props.viewFields),
     offset: 0,
+    sort: props.arch.attrs?.default_order,
     limit: props.action.limit,
     domain: props.action.domain || [],
   }).then(async res => {
@@ -147,6 +153,10 @@ const fieldOnchange = (params, noChange) => {
   emits('fieldOnchange', params, noChange)
 }
 
+const sortByClick = (field, sort_method) => {
+  emits('sortByClick', field, sort_method)
+}
+
 const loadGroupDetail = (row, treeNode, resolve) => {
   if (row.__context?.group_by) {
     emits('groupbyClick', row, treeNode, resolve)
@@ -155,7 +165,7 @@ const loadGroupDetail = (row, treeNode, resolve) => {
   }
 }
 defineExpose({
-  tableview_ref, treeData: treeData['self']
+  tableview_ref, treeData: treeData['self'], main
 })
 </script>
 

@@ -219,6 +219,8 @@
         <template v-else-if="!subChildren.tag">
           {{ subChildren }}
         </template>
+        <template v-else>
+        </template>
         <RenderField
             v-else
             :children="subChildren"

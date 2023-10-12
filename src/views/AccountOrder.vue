@@ -1,6 +1,6 @@
 <template>
   <div>
-    <MainView :params="params" :action_name="'e2yun_dpsrm_qweb_extends.srm_delivery_order_action'" :extras="extras"/>
+    <MainView  :action_name="'e2yun_dpsrm_qweb_extends.srm_delivery_order_action'" :extras="extras"/>
     <button @click="handleChange"></button>
   </div>
 

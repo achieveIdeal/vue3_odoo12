@@ -19,7 +19,10 @@
     <SearchView ref="searchview_ref" class="search-view"
                 v-if="curViewType==='tree' && Object.keys(searchViewInfo||{}).length"
                 :searchViewInfo="searchViewInfo"
+                :toolbar="toolbar"
+                :showActionBar="showActionBar"
                 @groupbyClick="groupbyClick"
+                @actionItemClick="actionItemClick"
                 @searchClick="searchClick"
     />
   </el-header>
@@ -46,6 +49,7 @@
                 :disabled="true"
                 :loading="loading"
                 :extras="extras"
+                :fieldViewInfo="fieldViewInfo"
                 :model="fieldViewInfo.base_model"
                 :isDialog="isDialog"
                 :formViewInfo="formViewInfo"
@@ -58,6 +62,7 @@
                 @addLineClick="addLineClick"
                 @pageChange="pageChange"
                 @groupbyClick="groupbyClick"
+                @sortByClick="sortByClick"
                 @loadGroupDetail="loadGroupDetail"
       />
     </el-main>
@@ -74,7 +79,7 @@ import SearchView from '../components/views/SearchView.vue'
 import ButtonView from "./views/ButtonView.vue";
 import {data2OdooFormat, initButton, initListData} from "../tools/init";
 import {
-  callCreate,
+  callCreate, callKw,
   callMethod,
   callReadGroup,
   callSearchRead,
@@ -82,7 +87,7 @@ import {
 } from "../service/module/call";
 import router from "../router";
 import {useRoute} from "vue-router";
-import {eventBus} from "../tools";
+import {downLoadFileBold, eventBus} from "../tools";
 import {ElMessage} from "element-plus";
 // import {tFn, defaultLang} from "../hook/useI18n";
 
@@ -101,6 +106,7 @@ eventBus.on('responseCallback', () => {
 
 const route = useRoute();
 const loading = ref(false);
+const showActionBar = ref(false);
 const listview_ref = ref('');
 const formview_ref = ref('');
 const searchview_ref = ref('');
@@ -163,6 +169,7 @@ let dataCopy = {};
 let dataCount = ref();
 const changedFieldsVal = {};
 
+const toolbar = props.fieldViewInfo.toolbar
 const attrs = ref(props.arch.attrs);
 const model = props.fieldViewInfo.base_model;
 const buttons = ref({
@@ -196,9 +203,9 @@ if (props.extras?.buttons) {
 
 const emits = defineEmits(['buttonClick', 'getDetailClick', 'getLineDetailClick', 'selectClick',
   'deleteLineClick', 'addLineClick', 'saveWriteClick', 'saveCreateClick', 'objectClick', 'dialogCreateClick',
-  'dialogCreateSaveClick', 'pageChange', 'pageSizeChange'])
+  'dialogCreateSaveClick', 'pageChange', 'pageSizeChange', 'sortByClick', 'actionItemClick'])
 const buttonClick = (button, model, datas) => {
-  emits('buttonClick', button, model, datas, selectRows)
+  emits('buttonClick', button, model, datas, selectRows.value)
 }
 
 const getDetailClick = (data, index) => {
@@ -212,6 +219,7 @@ const searchClick = async () => {  // 搜索数据重置
     model: props.fieldViewInfo.base_model,
     fields: Object.keys(props.fieldViewInfo.viewFields),
     offset: offset,
+    sort: props.arch.attrs.default_order || 'id desc',
     limit: listview_ref.value.tableview_ref?.pageSize || props.action.limit,
     domain: (props.action.domain || []).concat(domain),
   }).then(async res => {
@@ -490,23 +498,6 @@ const loadGroupDetail = async (row, treeNode, resolve) => {
   resolve(children)
 }
 
-const selectClick = (rows, listTable, toggleRowSelection) => {
-  const dataVal = {};
-  for (const row of rows) {
-    for (const field of Object.keys(row)) {
-      !dataVal[field] ? dataVal[field] = [] : '';
-      dataVal[field].push(row[field])
-    }
-  }
-  selectRows.value = dataVal;
-  for (const button of buttons.value.buttonOptions) {
-    if (button.needRow) {
-      button.attributes.noRowInvisible = !rows.length;
-    }
-  }
-  emits('selectClick', rows, toggleRowSelection)
-}
-
 eventBus.on('fieldOnchange', (params) => {
   const field = params.field;
   const datas = params.datas;
@@ -530,44 +521,50 @@ eventBus.on('fieldOnchange', (params) => {
   }
 })
 
+const sortByClick = (field, sort_method) => {
+  props.arch.attrs.default_order = field + ' ' + sort_method;
+  searchClick();
+  emits('sortByClick', field, sort_method);
+}
+const actionItemClick = (actionOption) => {
+  actionOption.attrs = {}
+  actionOption.attrs.type = 'action'
+  actionOption.attrs.name = actionOption.id
+  emits('actionItemClick', actionOption, actionOption.res_model, {}, selectRows.value);
+}
+
+
 // --------------------------------------------待完善
 
 
-const sortByClick = (hasSort, field, sort) => {
-  if (hasSort) {
-    params.sort = field + ' ' + sort;
-    searchClick();
+const selectClick = (rows, listTable, toggleRowSelection) => {
+  const dataVal = {};
+  for (const row of rows) {
+    for (const field of Object.keys(row)) {
+      !dataVal[field] ? dataVal[field] = [] : '';
+      dataVal[field].push(row[field])
+    }
   }
-  emits('sortByClick', field, sort);
+  selectRows.value = dataVal;
+  for (const button of buttons.value.buttonOptions) {
+    if (button.needRow) {
+      button.attributes.noRowInvisible = !rows.length;
+    }
+  }
+  showActionBar.value = !!rows.length;
+  emits('selectClick', rows, toggleRowSelection)
 }
 
+
 const exportClick = () => {
-  const listViewExpose = getListViewExpose();
-  const rows = listViewExpose.listTable?.getSelectionRows() || []
-  const model = params.model;
+  const rows = listview_ref.value.tableview_ref.table_ref?.getSelectionRows() || [];
   const exportFields = [];
   const headers = [];
   const datas = [];
-  for (const field of params.exportFields || params.listFields || params.fields) {
-    if (params.exportFields?.length || !parseDomain(options.formFieldsOption[field]?.invisible, datas.formData)) {
-      headers.push(options.formFieldsOption[field]?.string);
-      exportFields.push(field);
-    }
-  }
   for (const row of rows.filter(r => !r.hasChildren)) {
     const line = []
     for (const field of exportFields) {
-      if (['many2one', 'selection'].includes(options.formFieldsOption[field]?.type)) {
-        const value = (options.formFieldsOption[field].selection?.length ?
-            options.formFieldsOption[field].selection : []).find(r => r[0] === row[field])[1]
-        line.push(value);
-      } else if (['many2many', 'one2many'].includes(options.formFieldsOption[field]?.type)) {
-        const value = (options.formFieldsOption[field].selection?.length ?
-            options.formFieldsOption[field].selection : []).filter(r => (row[field]?.length ? row[field] : []).includes(r[0]))[1]
-        line.push(value);
-      } else {
-        line.push(row[field]);
-      }
+      line.push(row[field]);
     }
     datas.push(line)
   }
@@ -584,7 +581,7 @@ const exportClick = () => {
     },
     responseType: 'blob'
   }).then(async res => {  // 请求成功后处理流
-    downLoadFileBold(res, params.title, 'xls');
+    downLoadFileBold(res, 'export', 'xls');
     loading.value = false;
   })
 }
@@ -599,12 +596,11 @@ const importClick = (result) => {
     return false;
   }
   loading.value = true;
-  callButton({
-    model: params.model,
+  callKw({
+    model: model,
     method: 'load',
     args: [importFields, result]
-  }).then(res => {
-    const result = res.result;
+  }).then(result => {
     const ids = result.ids;
     const messages = result.messages
     loading.value = false;
@@ -613,7 +609,7 @@ const importClick = (result) => {
         message: '导入成功',
         type: 'success'
       })
-      reload();
+      searchClick();
     } else {
       let errors = [];
       for (const message of messages) {

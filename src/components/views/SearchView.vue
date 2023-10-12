@@ -22,7 +22,23 @@
     </div>
     <div class="cp_right">
       <div class="button-group search_options" role="search">
-        <div style="">
+        <div>
+          <div class="button-group pulldown" v-if="showActionBar">
+            <button aria-expanded="false" data-boundary="viewport" data-flip="false" data-toggle="pulldown"
+                    @click="toggleShowAction"
+                    class="pulldown_toggler_button button-normal pulldown-title filter-item" tabindex="-1">
+              动作
+            </button>
+            <div v-show="showAction" class="pulldown-menu" role="menu">
+              <div class="menu_item" data-id="__filter__10" v-for="actionOption of toolbarActions"
+                   :key="actionOption.id" @click="actionItemClick(actionOption)">
+                <a href="javascript:void(0)" role="menuitemcheckbox" aria-checked="false"
+                   class="pulldown-element filter-item">
+                  {{ actionOption.name }}
+                </a>
+              </div>
+            </div>
+          </div>
           <div class="button-group pulldown" v-if="filterOptions.length">
             <button aria-expanded="false" data-boundary="viewport" data-flip="false" data-toggle="pulldown"
                     @click="toggleShowFilter"
@@ -117,6 +133,9 @@ const props = defineProps({
   searchViewInfo: {
     type: Object,
     default: {}
+  }, toolbar: {
+    type: Object,
+    default: {}
   },
   isDialog: {
     type: Boolean,
@@ -125,6 +144,9 @@ const props = defineProps({
   model: {
     type: String,
     default: ''
+  }, showActionBar: {
+    type: Boolean,
+    default: false
   },
   groupbyDefault: {
     type: Object,
@@ -133,6 +155,7 @@ const props = defineProps({
 })
 
 const searcher = {};
+const toolbarActions = props.toolbar.action
 const groupby = [];
 const domainFilter = [];
 
@@ -187,7 +210,7 @@ const dateRangeSelect = {
 }
 
 const searchInputValue = ref('');
-const emits = defineEmits(['groupbyClick', 'searchClick']);
+const emits = defineEmits(['groupbyClick', 'searchClick', 'actionItemClick']);
 const showSelects = ref(false);
 const searchFacets = ref([]);
 const searchItems = ref([]);
@@ -196,6 +219,7 @@ const searchItemRef = ref({});
 const showFilter = ref(false);
 const showGroupby = ref(false);
 const showDateRange = ref(false);
+const showAction = ref(false);
 
 const filterOptions = ref([]);
 const groupbyOptions = ref([]);
@@ -399,21 +423,32 @@ const hideSearchWidget = () => {
   showGroupby.value = false;
   showDateRange.value = false;
   showSelects.value = false;
+  showAction.value = false;
+}
+
+const toggleShowAction = () => {
+  showAction.value = !showAction.value;
+  showFilter.value = false;
+  showGroupby.value = false;
+  showDateRange.value = false;
 }
 
 const toggleShowFilter = () => {
   showFilter.value = !showFilter.value;
   showGroupby.value = false;
+  showAction.value = false;
   showDateRange.value = false;
 }
 const toggleShowGroupby = () => {
   showFilter.value = false;
   showDateRange.value = false;
+  showAction.value = false;
   showGroupby.value = !showGroupby.value;
 }
 const toggleShowDateRange = () => {
   showFilter.value = false;
   showGroupby.value = false;
+  showAction.value = false;
   showDateRange.value = !showDateRange.value;
 }
 
@@ -472,6 +507,10 @@ watch(curDateRangeField, () => {
   curDateRangeVal.value = '';
 })
 
+
+const actionItemClick = (actionOption) => {
+  emits('actionItemClick', actionOption)
+}
 const groupbyItemClick = (groupbyOption) => {
   const field = groupbyOption.groupby;
   if (checkedGroupItem.value.indexOf(field) === -1) {
@@ -563,6 +602,7 @@ const removeSearchItem = (searchFacet) => {
   }
   doSearch()
 }
+
 
 document.onclick = e => {
   const classNames = (e.target.className.length ? e.target.className : '').split(' ');
