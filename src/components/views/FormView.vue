@@ -34,7 +34,7 @@
 <script lang="ts" setup>
 
 import {computed, defineEmits, defineExpose, defineProps, onMounted, ref, watch} from "vue";
-import {callKw, callRead, callSearchRead} from "../../service/module/call";
+import {callKw, callParseDomain, callRead, callSearchRead} from "../../service/module/call";
 import RenderField from '../../components/base/RenderField.vue'
 
 
@@ -82,8 +82,8 @@ if (props.isDialog) {
 } else {
   data_id = parseInt(route.query.id)
 }
-watch(route, async (f, t) => {
-  let data_id = 0;
+watch(route, async (f, t) => {  // 路由发生改变，加载对应路由的数据
+  let data_id;
   if (props.isDialog) {
     data_id = props.data?.id
   } else {
@@ -107,7 +107,6 @@ const activeTab = computed(  // 打开弹窗后会变
 const treeViewFields = computed(() => {
   const viewFields = props.viewFields;
   const treeOption = {};
-  console.log(viewFields);
   for (const field of Object.keys(viewFields)) {
     if (Object.keys(viewFields[field]?.views || {}).length) {
       treeOption[field] = viewFields[field]?.views?.tree?.fields
@@ -117,6 +116,9 @@ const treeViewFields = computed(() => {
 })
 
 const formatArch = async (arch) => {
+  /*
+  * 格式化arch，将arch转为js数据，如果没有定义tree或form视图，请求后端加载默认的tree或form视图
+  * */
   for (const children of (arch.children instanceof Array ? arch.children : [])) {
     if (Object.keys(props.viewFields[children.attrs?.name]?.views || {}).length) {
       let formView = props.viewFields[children.attrs?.name]?.views?.form;
@@ -156,7 +158,7 @@ const formatArch = async (arch) => {
         }
         props.viewFields[children.attrs.name].views.tree = treeView
       }
-      children.children = [{
+      children.children = [{  // 将获取的视图数据保存到当前的children在加载界面时渲染这些数据
         ...treeView.arch,
         formViewInfo: formView,
         field: children.attrs?.name,
@@ -172,7 +174,7 @@ const getFields = async () => {
   const arch = props.arch;
   await formatArch(arch)
   const fields = {self: []};
-  const recursion = (arch, parent) => {
+  const recursion = async (arch, parent) => {
     const treeFields = [];
     for (const children of arch.children instanceof Array ? arch.children : []) {
       const fieldName = children.attrs?.name;
@@ -183,17 +185,20 @@ const getFields = async () => {
         }
       } else if (children.tag === 'field') {
         fields.self.push(fieldName);
-        for (const attr of Object.keys(children.attrs || {})) {
+        for (const attr of Object.keys(children.attrs || {})) {  // 将xml中的attr都同步到viewFields中
           props.viewFields[fieldName][attr] = children.attrs[attr]
+          if (attr === 'domain') {
+            props.viewFields[fieldName][attr] = await callParseDomain(children.attrs[attr])
+          }
         }
       }
       recursion(children, arch)
     }
     if (arch.tag === 'tree' && Object.keys(treeViewFields.value || {}).length) {
-      fields[parent.attrs.name] = treeFields;
+      fields[parent.attrs.name] = treeFields;  // 保存一对多关联字段的字段属性
     }
   }
-  recursion(arch)
+  await recursion(arch)
   return fields
 }
 
@@ -207,12 +212,13 @@ const loadData = async (data_id) => {
     datas.value = initFormData(res[0], props.viewFields);
     const treeViewFieldsInfo = {};
     for (const treeField of Object.keys(treeViewFields.value || {})) {
-      setTreeAttribute(treeField, props.extras, treeViewFields.value);
+      setTreeAttribute(treeField, props.extras, treeViewFields.value);  // 将自定义的字段属性同步到viewFields中
       const res = await callSearchRead({
         model: props.viewFields[treeField].relation,
         fields: Object.keys(treeViewFields.value[treeField]),
         offset: 0,
-        limit: 100,
+        sort: props.viewFields[treeField]?.views?.tree?.arch?.attrs?.default_order || 'id',
+        limit: props.viewFields[treeField]?.views?.tree?.arch?.attrs?.limit || 100,
         domain: ['|', ['id', 'in', datas.value[treeField] || []],
           [props.viewFields[treeField].relation_field, '=', datas.value['id']]],
       })

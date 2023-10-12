@@ -173,7 +173,7 @@ const searchFieldSelection = async (field, option: FieldOptionType, query: strin
     let selection = [];
     let domains = [];
     if (!!option.domain?.length) {
-        domains = JSON.parse(JSON.stringify(await callParseDomain(option?.domain) || []))
+        domains = JSON.parse(JSON.stringify(option?.domain|| []))
     }
     for (const domain of domains || []) {
         if (typeof domain[2] === 'string') {

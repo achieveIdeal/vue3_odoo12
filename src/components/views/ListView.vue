@@ -116,7 +116,7 @@ const main = async () => {
     fields: Object.keys(props.viewFields),
     offset: 0,
     sort: props.arch.attrs?.default_order,
-    limit: props.action.limit,
+    limit: props.action.limit || props.arch.attrs.limit,
     domain: props.action.domain || [],
   }).then(async res => {
     dataCount.value = res.length || 0;

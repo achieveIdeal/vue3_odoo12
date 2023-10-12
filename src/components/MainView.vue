@@ -1,4 +1,5 @@
 <template>
+  <el-button style="display: none" v-loading.fullscreen.lock="loading" element-loading-text="正在加载..."/>
   <template v-for="(dialog, index) in dialogStack" :key="index">
     <DialogView
         ref="dialog_ref"
@@ -62,6 +63,7 @@ const props = defineProps({
   }
 })
 
+const loading = ref(false);
 const route = useRoute();
 const router = useRouter();
 
@@ -124,7 +126,9 @@ watch(route, (f, t) => {
   const vType = t.query.type
   curViewType.value = !vType ? 'tree' : 'form';
   fieldViewInfo.value = !vType ? treeViewInfo.value : formViewInfo.value;
-  arch.value = fieldViewInfo.value.arch
+  arch.value = fieldViewInfo.value.arch;
+  dialog_ref.value = [];
+  dialogStack.value = [];
   formatArch(arch.value);  // 格式化xml诗句为json
 })
 
@@ -174,6 +178,7 @@ const buttonClick = async (button, model, datas, selectRows) => {
       datas.id = await callCreate({model, data: datas})
     }
     // button.context todo 传递context
+    loading.value = true;
     callKw({
       model: model,
       method: button.attrs.name || button.name,
@@ -185,6 +190,7 @@ const buttonClick = async (button, model, datas, selectRows) => {
         }
       }
     }).then(async res => {
+      loading.value = false
       let dialogId = res?.res_id + res?.res_model;
       let curDialogData = dialogStack.value[dialogStack.value.length - 1];
       if (res.type === 'ir.actions.act_window') {  // 返回action时

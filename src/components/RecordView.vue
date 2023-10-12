@@ -1,5 +1,4 @@
 <template>
-
   <el-button style="display: none" v-loading.fullscreen.lock="loading" element-loading-text="正在加载..."/>
   <PagerHeader :title="action.name || name" v-if="!isDialog"/>
   <el-header class="controller-panel" v-if="!isDialog || relation_field">
@@ -96,7 +95,6 @@ let flag = true
 //   defaultLang.value = flag?'en-US':'zh-CN'
 //   flag =!flag
 // }
-
 eventBus.on('requestCallback', () => {
   loading.value = true;
 })
@@ -152,9 +150,9 @@ if (props.isDialog) {
   data_id = parseInt(route.query.id);
 }
 watch(route, () => {
+  showActionBar.value = false;
   disabled.value = !!parseInt(route.query.id) || !route.query.type;
 })
-
 const disabled = ref(parseInt(data_id) !== 0 || !route.query.type);
 if (props.isDialog && !props.loaded_data?.id) {
   disabled.value = false;
@@ -220,7 +218,7 @@ const searchClick = async () => {  // 搜索数据重置
     fields: Object.keys(props.fieldViewInfo.viewFields),
     offset: offset,
     sort: props.arch.attrs.default_order || 'id desc',
-    limit: listview_ref.value.tableview_ref?.pageSize || props.action.limit,
+    limit: listview_ref.value.tableview_ref?.pageSize || props.action.limit || props.arch.attrs.limit,
     domain: (props.action.domain || []).concat(domain),
   }).then(async res => {
     listData.value['self'] = await initListData(res.records, props.viewFields);

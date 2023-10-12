@@ -92,7 +92,6 @@ export function callRead(data) {
 export function callSearchRead(data) {
     return Request.post({
         url: '/front/dataset/search_read/',
-        noLoading: true,
         data: {
             'jsonrpc': "2.0",
             'method': 'call',

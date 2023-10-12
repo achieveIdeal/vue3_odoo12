@@ -10,6 +10,7 @@
             @expand-change="expandChange"
             :row-style="handleTreeRowStyle(treeField)"
             @selection-change="selectClick"
+            height="calc(100vh - 170px)"
             row-key="id">
     <el-table-column v-if="treeField==='self'" fixed type="selection" width="55"/>
     <template v-for="children in arch.children">
@@ -348,6 +349,8 @@ let timer;
 const sortArrow = ref({})
 const showArrow = ref({});
 const sortByClick = (field) => {
+  if (!props.treeViewFields['self']) return
+  if (['text', 'binary'].includes(props.treeViewFields['self'][field].type)) return
   timer ? clearTimeout(timer) : null;
   for (const field of Object.keys(showArrow.value)) {
     showArrow.value[field] = false;
@@ -361,7 +364,7 @@ const sortByClick = (field) => {
   }
   timer = setTimeout(() => {
     showArrow.value[field] = false;
-  }, 1000)
+  }, 1500)
   emits('sortByClick', field, sortArrow.value[field]);
 }
 
