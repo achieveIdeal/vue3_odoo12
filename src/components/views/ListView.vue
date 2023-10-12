@@ -10,6 +10,7 @@
     <TableView
         ref="tableview_ref"
         :action="action"
+        :isDialog="isDialog"
         :treeData="treeData"
         :dataCount="dataCount"
         :model="model"

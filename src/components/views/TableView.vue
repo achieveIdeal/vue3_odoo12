@@ -10,7 +10,7 @@
             @expand-change="expandChange"
             :row-style="handleTreeRowStyle(treeField)"
             @selection-change="selectClick"
-            height="calc(100vh - 170px)"
+            :height="!isDialog&&'calc(100vh - 170px)'"
             row-key="id">
     <el-table-column v-if="treeField==='self'" fixed type="selection" width="55"/>
     <template v-for="children in arch.children">
@@ -113,6 +113,9 @@ import {useTypeStore} from "../../store";
 
 const props = defineProps({
   action: {
+    type: Object,
+    default: {},
+  },  isDialog: {
     type: Object,
     default: {},
   },
