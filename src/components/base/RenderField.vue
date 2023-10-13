@@ -375,10 +375,22 @@ const createComponent = (arch, parent) => {
         );
       }
       if (tag === 'group' && arch.attrs.string) {
+        newProps.style = {
+          ...newProps.style,
+          border: '1px solid #eef1fa',
+          paddingLeft: '12px',
+          paddingRight: '12px'
+        };
         return () => createVNode(
             ElTabs,
             {...newProps, 'modelValue': tabsModel.value},
-            [createVNode('h3', {}, arch.attrs.string), slots.default && slots.default()]
+            [createVNode('h4', {
+              style:{
+                color:'#808283',
+                paddingTop:'0',
+                paddingBottom: '13px',
+                borderBottom: '1px solid #eef1fa'
+              }}, arch.attrs.string), slots.default && slots.default()]
         );
       }
       if (tag === 'page') {
