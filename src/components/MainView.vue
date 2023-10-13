@@ -255,7 +255,7 @@ const handleObjectButton = async (button, res_model, curDialog_ref, curDialogDat
     kwargs: {
       context: {
         'active_id': curDialogData?.active_ids.length ? curDialogData?.active_ids[0] : (datas || selectRows).id,
-        'active_ids': curDialogData?.active_ids || selectRows.id,
+        'active_ids': curDialogData?.active_ids || selectRows.id || [datas.id],
         ...context
       }
     }
