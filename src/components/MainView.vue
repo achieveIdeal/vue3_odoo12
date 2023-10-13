@@ -141,21 +141,24 @@ const addLineClick = (treeField, treeData, newLine, noAddCallback) => {
 
 
 const evalContext = (context, data) => {
-  /*
-  * 解析绑定的context
-  * */
-  if (!context) return
+  if (!context) return;
   const regex = /'([^']+)'\s*:\s*([^,]+)/g;
   const replacedData = context.replace(regex, (match, key, value) => {
     const trimmedValue = value.trim();
-    let replacement = data.hasOwnProperty(trimmedValue) ? data[trimmedValue] : trimmedValue;
-    if (fieldViewInfo.value.viewFields[trimmedValue].type === 'many2one') {
-      return '"' + key + '"' + ':' + replacement[0]
+    let replacement = trimmedValue;
+    if (data.hasOwnProperty(trimmedValue)) {
+      replacement = data[trimmedValue];
+      if (fieldViewInfo.value.viewFields[trimmedValue].type === 'many2one') {
+        return `"${key}": ${replacement[0]}`;
+      }
+      return `"${key}": "${replacement}"`;
     }
-    return '"' + key + '"' + ':' + '"' + replacement + '"'
-  })
-  return JSON.parse(replacedData.replace(/\s*,\s*}/g, '}'));
-}
+    return `"${key}": ${replacement}`;
+  });
+  const fixedData = replacedData.replace(/'/g, '"');
+  return JSON.parse(fixedData.replace(/\s*,\s*}/g, '}'));
+};
+
 
 const handleActionButton = (button, res_model, curDialog_ref, dialogId, datas, selectRows) => {
   /*
@@ -202,17 +205,17 @@ const handleActionButton = (button, res_model, curDialog_ref, dialogId, datas, s
 
 
 const handleObjectButton = async (button, res_model, curDialog_ref, curDialogData, datas, selectRows) => {
-    /*
-  * 处理类型未action的按钮点击时间
-  * button: 点击的按钮参数
-  * res_model: 迪纳基的按钮所属的模型
-  * curDialog_ref: 最前弹框的ref引用
-  * dialogId: 弹框的唯一标识
-  * datas: form数据
-  * selectRows： 选中行数据
-  * */
+  /*
+* 处理类型未action的按钮点击时间
+* button: 点击的按钮参数
+* res_model: 迪纳基的按钮所属的模型
+* curDialog_ref: 最前弹框的ref引用
+* dialogId: 弹框的唯一标识
+* datas: form数据
+* selectRows： 选中行数据
+* */
   if (!curDialogData?.dataDialog && !datas?.id) {  // 如果是弹框上的object，需调用创建
-    datas.id = await callCreate({res_model, data: datas})
+    datas.id = await callCreate({model: res_model, data: datas})
   }
   let context = {};  //  按钮上绑定的context
   let buttonContext;

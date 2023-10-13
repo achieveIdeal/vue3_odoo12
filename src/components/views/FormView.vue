@@ -13,6 +13,7 @@
                    :data="datas"
                    :treeData="treeData"
                    :model="model"
+                   :isDialog="isDialog"
                    :extras="extras"
                    :fields="fields"
                    :activeTab="activeTab"
@@ -49,6 +50,9 @@ const props = defineProps({
   model: {
     type: String,
     default: '',
+  }, data_id: {
+    type: Number,
+    default: 0,
   },
   arch: {
     type: Object,
@@ -69,27 +73,11 @@ const props = defineProps({
     default: true
   }, isDialog: {
     type: Boolean,
-    default: true
+    default: false
   }, loading: {
     type: Boolean,
     default: true
   }
-})
-
-let data_id = 0;
-if (props.isDialog) {
-  data_id = props.data?.id
-} else {
-  data_id = parseInt(route.query.id)
-}
-watch(route, async (f, t) => {  // 路由发生改变，加载对应路由的数据
-  let data_id;
-  if (props.isDialog) {
-    data_id = props.data?.id
-  } else {
-    data_id = parseInt(route.query.id)
-  }
-  await loadData(data_id)
 })
 
 const fields = ref([]);
@@ -262,7 +250,7 @@ if (props.extras) {
 const emits = defineEmits(['buttonClick', 'getLineDetailClick', 'dataLoadedCallback', 'deleteLineClick', 'addLineClick']);
 const main = async () => {
   fields.value = await getFields();
-  await loadData(props.data?.id || data_id);
+  await loadData(props.data?.id || props.data_id);
 }
 
 main()

@@ -66,6 +66,7 @@
             :children="subChildren"
             :parent="children"
             :extras="extras"
+            :isDialog="isDialog"
             :relation_field="relation_field"
             :formModel="formModel"
             :formData="formData"
@@ -111,6 +112,7 @@
       <RenderField
           :children="subChildren"
           :parent="children"
+          :isDialog="isDialog"
           :extras="extras"
           :relation_field="relation_field"
           :activeTab="activeTab"
@@ -137,6 +139,7 @@
   </component>
   <component v-else-if="children.tag==='tree'" :is="TableView"
              :formData="data"
+             :isDialog="isDialog"
              :attributes="extras?.attributes?extras?.attributes[children.field]:{}"
              :fields="fields[children.field]"
              :treeField="children.field"
@@ -166,6 +169,7 @@
     <template v-if="(children.children || [])?.length" v-for="subChildren in (children.children || [])">
       <RenderField
           :children="subChildren"
+          :isDialog="isDialog"
           :parent="children"
           :extras="extras"
           :relation_field="relation_field"
@@ -224,6 +228,7 @@
         <RenderField
             v-else
             :children="subChildren"
+            :isDialog="isDialog"
             :parent="children"
             :extras="extras"
             :activeTab="activeTab"
@@ -298,6 +303,9 @@ const props = defineProps({
     default: ''
   }, index: {
     type: Number,
+  }, isDialog: {
+    type: Boolean,
+    default: false
   },
   parent: {
     type: Object,

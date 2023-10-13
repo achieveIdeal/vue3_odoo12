@@ -29,6 +29,7 @@
     <el-main class="main-container">
       <FormView ref="formview_ref" v-if="curViewType==='form' &&Object.keys(arch).length"
                 :arch="arch"
+                :data_id="data_id"
                 :isDialog="isDialog"
                 :data="loaded_data"
                 :extras="extras"
@@ -142,16 +143,18 @@ const props = defineProps({
     default: {}
   },
 })
-let data_id = 0;
+let data_id = ref(0);
 const name = route.query.name;
 if (props.isDialog) {
-  data_id = parseInt(props.loaded_data?.id);
+  data_id.value = parseInt(props.loaded_data?.id);
 } else {
-  data_id = parseInt(route.query.id);
+  data_id.value = parseInt(route.query.id);
 }
 watch(route, () => {
   showActionBar.value = false;
   disabled.value = !!parseInt(route.query.id) || !route.query.type;
+  data_id.value = parseInt(route.query.id);
+
 })
 const disabled = ref(parseInt(data_id) !== 0 || !route.query.type);
 if (props.isDialog && !props.loaded_data?.id) {
