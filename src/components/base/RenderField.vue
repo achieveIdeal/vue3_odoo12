@@ -154,7 +154,7 @@
              :viewFields="viewFields"
              :treeData="treeData"
              :arch="children"
-             :action="{res_model:viewFields[children.field].relation, limit:1000,domain:['|',['id', 'in', data[children.field] ||[]],
+             :action="{res_model:viewFields[children.field].relation, domain:['|',['id', 'in', data[children.field] ||[]],
               [viewFields[children.field].relation_field, '=', data['id']]]}"
              :formViewInfo="{
                 arch:children.formViewInfo.arch,

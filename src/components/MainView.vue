@@ -130,6 +130,7 @@ watch(route, (f, t) => {
   dialog_ref.value = [];
   dialogStack.value = [];
   formatArch(arch.value);  // 格式化xml诗句为json
+
 })
 
 const deleteLineClick = (treeField, index, treeData, row, noAddCallback) => {

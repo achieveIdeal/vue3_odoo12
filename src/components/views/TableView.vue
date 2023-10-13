@@ -182,8 +182,8 @@ const props = defineProps({
     default: []
   }
 })
-const pageSize = ref(props.action.limit);
-const dataLimit = ref(props.action.limit);
+const pageSize = ref(props.action.limit || 80);
+const dataLimit = ref(props.action.limit || 80);
 const pagination_ref = ref({})
 const typeStore = useTypeStore();
 const isDigit = typeStore.isDigit;

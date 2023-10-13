@@ -154,8 +154,8 @@ watch(route, () => {
   showActionBar.value = false;
   disabled.value = !!parseInt(route.query.id) || !route.query.type;
   data_id.value = parseInt(route.query.id);
-
 })
+
 const disabled = ref(parseInt(data_id) !== 0 || !route.query.type);
 if (props.isDialog && !props.loaded_data?.id) {
   disabled.value = false;

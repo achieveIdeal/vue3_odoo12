@@ -75,7 +75,6 @@ const props = defineProps({
     default: true
   }
 })
-console.log(props.fieldViewInfo.toolbar);
 const emits = defineEmits(['getDetailClick', 'selectClick', 'fieldOnchange', 'dataLoadedCallback',
   'deleteLineClick', 'addLineClick', 'pageSizeChange', 'pageChange', 'groupbyClick', 'loadGroupDetail', 'sortByClick'])
 
@@ -106,10 +105,8 @@ const main = async () => {
   if (props.extras) {
     setFormAttribute(props.extras, props.viewFields)
   }
-  console.log(props.action);
   if (!(props.action.domain instanceof Array)) {
-    const domain = await callParseDomain(props.action.domain);
-    props.action.domain = domain
+    props.action.domain = await callParseDomain(props.action.domain);
   }
   eventBus.emit('requestCallback')
   callSearchRead({
@@ -121,7 +118,6 @@ const main = async () => {
     domain: props.action.domain || [],
   }).then(async res => {
     dataCount.value = res.length || 0;
-    console.log(res.length);
     treeData.value['self'] = await initListData(res.records, props.viewFields);
     eventBus.emit('responseCallback')
     emits('dataLoadedCallback', treeData, ref({}), dataCount)

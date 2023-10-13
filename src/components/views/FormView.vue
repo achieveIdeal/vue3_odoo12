@@ -250,10 +250,14 @@ if (props.extras) {
 const emits = defineEmits(['buttonClick', 'getLineDetailClick', 'dataLoadedCallback', 'deleteLineClick', 'addLineClick']);
 const main = async () => {
   fields.value = await getFields();
-  await loadData(props.data?.id || props.data_id);
+  await loadData(props.data_id || props.data?.id);
 }
 
 main()
+
+watch(route, () => {
+  main();
+})
 
 const buttonClick = (button) => {
   emits('buttonClick', button, props.model, datas.value)
