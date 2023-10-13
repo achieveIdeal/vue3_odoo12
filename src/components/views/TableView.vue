@@ -10,13 +10,13 @@
             @expand-change="expandChange"
             :row-style="handleTreeRowStyle(treeField)"
             @selection-change="selectClick"
-            :height="isDialog?null:'calc(100vh - 170px)'"
+            :height="isDialog||relation_field!=='self'?null:'calc(100vh - 170px)'"
             row-key="id">
     <el-table-column v-if="treeField==='self'" fixed type="selection" width="55"/>
     <template v-for="children in arch.children">
       <el-table-column
           :key="children.attrs.name"
-          v-if="!(parseDomain(treeViewFields[treeField][children.attrs?.name]?.invisible, formData) ||  children.attrs?.invisible)"
+          v-if="!(parseDomain(treeViewFields[treeField][children.attrs?.name]?.invisible, formData))"
           :width="treeViewFields[treeField][children.attrs.name]?.width"
           :label="treeViewFields[treeField][children.attrs.name]?.string">
         <template #header>

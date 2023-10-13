@@ -43,7 +43,7 @@
 
 
 <script lang="ts" setup>
-import {callAction, callCreate, callKw, callViews} from "../service/module/call";
+import {callAction, callCreate, callKw, callMethod, callViews} from "../service/module/call";
 import {defineEmits, defineProps, ref, watch} from "vue";
 import {useRoute, useRouter} from "vue-router";
 import {formatArch, generateViews} from "../tools";
@@ -204,6 +204,26 @@ const handleActionButton = (button, res_model, curDialog_ref, dialogId, datas, s
   })
 }
 
+const checkDialogData = (res_model, curDialog_ref, curDialogData, datas) => {
+  console.log(curDialogData, 'curDialogData');
+  return new Promise((resolve, reject) => {
+    const formEl = curDialog_ref?.record_ref.formview_ref.form_ref;
+    if (!formEl) {
+      resolve(true);
+      return
+    }
+    if (curDialogData?.dataDialog?.id || datas?.id) {
+      resolve(true)
+      return
+    }
+    formEl.validate(async (valid) => {
+      if (valid && !curDialogData?.dataDialog?.id && !datas?.id) {  // 如果是弹框上的object，需调用创建
+        datas.id = await callCreate({model: res_model, data: datas})
+      }
+      resolve(valid)
+    })
+  })
+}
 
 const handleObjectButton = async (button, res_model, curDialog_ref, curDialogData, datas, selectRows) => {
   /*
@@ -215,12 +235,11 @@ const handleObjectButton = async (button, res_model, curDialog_ref, curDialogDat
 * datas: form数据
 * selectRows： 选中行数据
 * */
-  if (!curDialogData?.dataDialog && !datas?.id) {  // 如果是弹框上的object，需调用创建
-    datas.id = await callCreate({model: res_model, data: datas})
-  }
+  const isValid = await checkDialogData(res_model, curDialog_ref, curDialogData, datas)
+  if (!isValid) return
   let context = {};  //  按钮上绑定的context
   let buttonContext;
-  if (curDialogData.context) {
+  if (curDialogData?.context) {
     context = curDialogData.context
   }
   if (button.attrs.context) {
@@ -229,7 +248,6 @@ const handleObjectButton = async (button, res_model, curDialog_ref, curDialogDat
       context[field] = buttonContext[field]
     }
   }
-  loading.value = true;
   callKw({
     model: res_model,
     method: button.attrs.name || button.name,
@@ -242,7 +260,6 @@ const handleObjectButton = async (button, res_model, curDialog_ref, curDialogDat
       }
     }
   }).then(async res => {
-    loading.value = false
     let dialogId = res?.res_id + res?.res_model;
     let curDialogData = dialogStack.value[dialogStack.value.length - 1];
     if (res.type === 'ir.actions.act_window') {  // 返回action时
@@ -253,11 +270,14 @@ const handleObjectButton = async (button, res_model, curDialog_ref, curDialogDat
         if (index !== -1) {
           curDialog_ref = dialog_ref.value[index]
           curDialog_ref.dialogVisible = true;
+          curDialogData.dataDialog.id = null;
+          curDialog_ref.record_ref?.setDataEmpty();
           return true;
         }
-        const preDialogReload = dialogStack.value.length
-            ? (record_ref.value.formview_ref.main || record_ref.value.listview_ref?.main)
-            : dialog_ref.value.record_ref?.formview_ref.main
+        let preDialogReload = record_ref.value.formview_ref?.main || record_ref.value.listview_ref?.main;
+        if (dialogStack.value.length) {
+          preDialogReload = dialog_ref.value.record_ref?.formview_ref.main;
+        }
         dialogStack.value.push({  // 弹框
           dialogId: dialogId,
           fieldViewInfoDialog: viewInfo.fieldViewInfo,
@@ -285,6 +305,8 @@ const handleObjectButton = async (button, res_model, curDialog_ref, curDialogDat
     } else if (curDialog_ref?.dialogVisible && res) {  // 加载完成需隐藏弹框
       curDialog_ref.dialogVisible = false;
       curDialogData.preDialogReload();  // 重载前一个页面
+    } else if (res.type === 'ir.actions.act_url') {
+      window.open(res.url, '_blank')
     }
   })
 }
@@ -323,6 +345,10 @@ const getLineDetailClick = (dataLine, index, formViewInfo, relation_field) => { 
     curDialog_ref.dialogVisible = true;
     return true;
   }
+  let preDialogReload = record_ref.value.formview_ref?.main || record_ref.value.listview_ref?.main;
+  if (dialogStack.value.length) {
+    preDialogReload = dialog_ref.value.record_ref?.formview_ref.main;
+  }
   dialogStack.value.push({
     dialogId: dialogId,
     fieldViewInfoDialog: formViewInfo,  // 表单试图数据
@@ -331,9 +357,7 @@ const getLineDetailClick = (dataLine, index, formViewInfo, relation_field) => { 
     dataDialog: dataLine, // 弹框的初始加载数据， 加载行详情时传
     relation_field: relation_field,  // 关联的抬头字段
     actionDialog: {},  // 详情弹框没有action
-    preDialogReload: !dialogStack.value.length   // 重载前一个弹框或者界面
-        ? record_ref.value.formview_ref.main
-        : dialog_ref.value[dialog_ref.value.length - 1].record_ref?.formview_ref.main
+    preDialogReload: preDialogReload
   })
 }
 

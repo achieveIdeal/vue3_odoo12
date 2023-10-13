@@ -1,15 +1,6 @@
 <template>
   <el-form-item
-      v-if="!(
-        parseDomain(
-          (
-            !!treeField.length
-            ?treeViewFields[treeField]
-            : viewFields
-          )[children.attrs?.name]?.invisible
-          || children.attrs?.invisible, data)
-          ||children.attrs?.invisible
-        )
+      v-if="!parseDomain(children.attrs?.invisible, data)
       && children.tag==='field'"
       :style="{width: !Object.keys(treeViewFields).includes(children.attrs?.name)?'30%':'100%',margin: viewType==='tree'?0:null}"
       :prop="viewType==='form'?['formData',children.attrs?.name]:viewType==='tree'
@@ -87,6 +78,7 @@
             @getLineDetailClick="getLineDetailClick"
             @deleteLineClick="deleteLineClick"
             @addLineClick="addLineClick"
+            @handleButtonClick="handleButtonClick"
             @lineButtonClick="lineButtonClick"
         />
       </template>
@@ -134,6 +126,7 @@
           @deleteLineClick="deleteLineClick"
           @addLineClick="addLineClick"
           @lineButtonClick="lineButtonClick"
+          @handleButtonClick="handleButtonClick"
       />
     </template>
   </component>
@@ -192,6 +185,7 @@
           @deleteLineClick="deleteLineClick"
           @addLineClick="addLineClick"
           @lineButtonClick="lineButtonClick"
+          @handleButtonClick="handleButtonClick"
       />
     </template>
   </component>
@@ -204,7 +198,7 @@
                      v-if="(!subChildren.attrs?.states
                      || (subChildren.attrs?.states||'')?.split(',').includes(data.state)
                       && !parseDomain(subChildren.attrs.invisible, data))&&(children.tag ==='footer' || disabled)"
-                     @click="(e)=> handleButtonClick(e,subChildren)">
+                     @click="()=> handleButtonClick(subChildren)">
             {{ subChildren.attrs.string }}
           </el-button>
         </template>
@@ -252,6 +246,7 @@
             @deleteLineClick="deleteLineClick"
             @addLineClick="addLineClick"
             @lineButtonClick="lineButtonClick"
+            @handleButtonClick="handleButtonClick"
         />
       </template>
     </template>
@@ -379,6 +374,13 @@ const createComponent = (arch, parent) => {
             () => slots.default && slots.default()
         );
       }
+      if (tag === 'group' && arch.attrs.string) {
+        return () => createVNode(
+            ElTabs,
+            {...newProps, 'modelValue': tabsModel.value},
+            [createVNode('h3', {}, arch.attrs.string), slots.default && slots.default()]
+        );
+      }
       if (tag === 'page') {
         newProps.style = {
           ...newProps.style,
@@ -407,8 +409,7 @@ const createComponent = (arch, parent) => {
 
 const emits = defineEmits(['handleButtonClick', 'getLineDetailClick', 'deleteLineClick', 'addLineClick',
   'lineButtonClick'])
-const handleButtonClick = (e, button) => {
-  e.stopPropagation();
+const handleButtonClick = (button) => {
   emits('handleButtonClick', button)
 }
 const lineButtonClick = (field, row, button, model) => {

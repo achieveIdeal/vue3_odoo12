@@ -28,7 +28,7 @@ class Request {
                 eventBus.emit('responseCallback', res)
                 if (res.data.error) {
                     ElMessage({
-                        message: res.data.error.data.message,
+                        message: res.data.error.data.message.replace('None', ''),
                         type: 'error'
                     });
                     return false

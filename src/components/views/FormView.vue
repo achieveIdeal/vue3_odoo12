@@ -169,7 +169,13 @@ const getFields = async () => {
       if (arch.tag === 'tree' && Object.keys(treeViewFields.value || {}).length) {
         treeFields.push(fieldName);
         if (treeViewFields.value[parent.attrs.name][fieldName]) {
-          treeViewFields.value[parent.attrs.name][fieldName].onchange = children.attrs.on_change
+          treeViewFields.value[parent.attrs.name][fieldName].on_change = children.attrs.on_change
+        }
+        for (const attr of Object.keys(children.attrs || {})) {  // 将xml中的attr都同步到viewFields中
+          treeViewFields.value[parent.attrs.name][fieldName][attr] = children.attrs[attr]
+          if (attr === 'domain') {
+            treeViewFields.value[parent.attrs.name][fieldName][attr] = await callParseDomain(children.attrs[attr])
+          }
         }
       } else if (children.tag === 'field') {
         fields.self.push(fieldName);

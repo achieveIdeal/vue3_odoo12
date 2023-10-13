@@ -304,7 +304,6 @@ const saveCreate = async (savedDatas) => {
 }
 const saveClick = (formview_ref) => {  // 处理保存按钮，包括编辑保存和创建保存
   const formEl = formview_ref.form_ref;
-  formEl.validate()
   if (!formEl) return
   formEl.validate((valid) => {
     if (valid) {
@@ -625,9 +624,14 @@ const importClick = (result) => {
   })
 }
 
+const setDataEmpty = () => {
+  for (const field of Object.keys(data.value)) {
+    data.value[field] = null
+  }
+}
 
 defineExpose({
-  formview_ref, listview_ref, data
+  formview_ref, listview_ref, data, setDataEmpty
 })
 </script>
 

@@ -6,7 +6,7 @@
         :data-index="field"
         action="#"
         :limit="1"
-        :file-list="data[option[field]?.filename]?[{name: data[option[field].filename]}]:[]"
+        :file-list="data[filenameField]?[{name: data[filenameField]}]:[]"
         :list-type="option.list_type?.split(',')"
         :on-change="handleFileChange(field)"
         :on-remove="handleFileRemove(field)"
@@ -26,7 +26,7 @@
 <script lang="ts" setup>
 
 import {ref} from "vue";
-import {onchangeField, downLoadFile, encodeFileToBase64,eventBus} from "../../../tools";
+import {onchangeField, downLoadFile, encodeFileToBase64, eventBus} from "../../../tools";
 
 const props = defineProps({
   field: {
@@ -57,7 +57,7 @@ const props = defineProps({
   type: {
     type: String,
     default: 'text'
-  },  treeField: {
+  }, treeField: {
     type: String,
     default: 'text'
   },
@@ -73,19 +73,23 @@ const props = defineProps({
     default: true
   }
 })
-
+const filenameField = ref(props.option.filename);
 const handleFileRemove = (field) => () => {
   const curFile = upload.value.find(r => {
     return r.$attrs['data-index'] === field
   })
-  props.datas[field] = ''
-  props.datas[props.options[field].filename] = ''
+  props.data[field] = ''
+  props.data[filenameField.value] = ''
   curFile!.clearFiles()
 }
 const handleFileChange = (field) => async (files) => {
-  const file = files as UploadRawFile;
-  props.datas[field] = await encodeFileToBase64(file.raw);
-  props.datas[props.options[field].filename] = file.name
+  props.data[field] = await encodeFileToBase64(files.raw);
+  if (filenameField.value) {
+    props.data[filenameField.value] = files.name
+  } else {
+    filenameField.value = (props.index||0) + (props.treeField||'self') + field
+    props.data[filenameField.value] = files.name
+  }
   // fieldOnchange()
 }
 const handleExceed: UploadProps['onExceed'] = (field) => (files) => {
