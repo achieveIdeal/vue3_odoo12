@@ -81,7 +81,7 @@ const props = defineProps({
 })
 
 const fields = ref([]);
-const activeTab = computed(  // 打开弹窗后会变
+const activeTab = computed(  //todo: 打开弹窗后会变
     () => {
       const viewFields = props.viewFields
       for (const field of Object.keys(viewFields)) {
@@ -191,7 +191,6 @@ const getFields = async () => {
 }
 
 const loadData = async (data_id) => {
-  eventBus.emit('requestCallback')
   if (data_id) {
     const res = await callRead({
       model: props.model,
@@ -237,7 +236,6 @@ const loadData = async (data_id) => {
     }
     emits('dataLoadedCallback', datas, treeData);
   }
-  eventBus.emit('responseCallback')
   if (props.relation_field) {  // 如果时查看详情，保留关联字段的值
     datas.value[props.relation_field] = props.data[props.relation_field]
   }
