@@ -4,13 +4,13 @@
             fit
             show-summary
             :load="loadGroupDetail"
-            :tree-props="{ children: 'children', hasChildren: 'hasChildren' }"
+            :tree-props="{children: 'children', hasChildren: 'hasChildren'}"
             :summary-method="getSummaries(treeField,arch.children)"
             sum-text="总计"
             @expand-change="expandChange"
             :row-style="handleTreeRowStyle(treeField)"
             @selection-change="selectClick"
-            :height="!isDialog&&'calc(100vh - 170px)'"
+            :height="!isDialog&&'calc(100vh - 170px)'||null"
             row-key="id">
     <el-table-column v-if="treeField==='self'" fixed type="selection" width="55"/>
     <template v-for="children in arch.children">
@@ -23,7 +23,8 @@
           <span v-if="parseDomain(treeViewFields[treeField][children.attrs.name]?.required, formData)"
                 style="color: red;">*</span>
           <span
-              :class="{'pulldown':sortArrow[children.attrs.name]==='desc' && showArrow[children.attrs.name], 'pullup': sortArrow[children.attrs.name]==='asc' && showArrow[children.attrs.name]}"
+              :class="{'pulldown':sortArrow[children.attrs.name]==='desc' && showArrow[children.attrs.name],
+              'pullup': sortArrow[children.attrs.name]==='asc' && showArrow[children.attrs.name]}"
               @click="sortByClick(children.attrs.name)">{{
               treeViewFields[treeField][children.attrs.name]?.string
             }}</span>
@@ -186,7 +187,7 @@ const dataLimit = ref(props.action.limit);
 const pagination_ref = ref({})
 const typeStore = useTypeStore();
 const isDigit = typeStore.isDigit;
-const upload = ref<UploadInstance>();
+const upload = ref();
 const table_ref = ref({})
 
 const emits = defineEmits(['getDetailClick', 'fieldOnchange', 'selectClick', 'pageChange',

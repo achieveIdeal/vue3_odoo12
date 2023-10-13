@@ -563,7 +563,7 @@ const loadActiveAction = (menu) => {
 
 
 //  解析xml
-const jsonifyStr = (str) => {
+export const jsonifyStr = (str) => {
     if (!str) {
         return 'false'
     }
