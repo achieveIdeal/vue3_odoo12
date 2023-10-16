@@ -34,12 +34,29 @@ const props = defineProps({
   }, viewType: {
     default: 'form'
   }, model: {
-    default: 'form'
+    default: ''
+  }, formModel: {
+    default: ''
+  }, treeField: {
+    type: String,
+    default: 'text'
+  }, index: {
+    type: Number,
+    default: 0
   },
   data: {
     type: Object,
     default: {}
+  },  formData:{
+    type: Object,
+    default: {}
+  },treeData: {
+    type: Object,
+    default: {}
   }, attrs: {
+    type: Object,
+    default: {}
+  }, viewFields: {
     type: Object,
     default: {}
   },
@@ -57,16 +74,10 @@ const props = defineProps({
   type: {
     type: String,
     default: 'text'
-  }, treeField: {
-    type: String,
-    default: 'text'
   },
   disabled: {
     type: Boolean,
     default: true
-  }, index: {
-    type: Number,
-    default: 0
   },
   loading: {
     type: Boolean,
@@ -87,10 +98,23 @@ const handleFileChange = (field) => async (files) => {
   if (filenameField.value) {
     props.data[filenameField.value] = files.name
   } else {
-    filenameField.value = (props.index||0) + (props.treeField||'self') + field
+    filenameField.value = (props.index || 0) + (props.treeField || 'self') + field
     props.data[filenameField.value] = files.name
   }
-  // fieldOnchange()
+  fieldOnchange({
+    field: props.field,
+    datas: props.data,
+    treeField: props.treeField,
+    formModel: props.formModel,
+    index: props.index,
+    formData: props.formData,
+    attributes: props.attrs,
+    model: props.model,
+    options: props.treeField ? props.treeViewFields[props.treeField] : props.viewFields,
+    treeOptions: props.treeViewFields,
+    formOptions: props.viewFields,
+    treeData: props.treeData
+  })
 }
 const handleExceed: UploadProps['onExceed'] = (field) => (files) => {
   const curFile = upload.value.find(r => {

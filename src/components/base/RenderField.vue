@@ -384,13 +384,14 @@ const createComponent = (arch, parent) => {
         return () => createVNode(
             ElTabs,
             {...newProps, 'modelValue': tabsModel.value},
-            [createVNode('h4', {
-              style:{
-                color:'#808283',
-                paddingTop:'0',
+            () => [createVNode('h4', {
+              style: {
+                color: '#808283',
+                paddingTop: '0',
                 paddingBottom: '13px',
                 borderBottom: '1px solid #eef1fa'
-              }}, arch.attrs.string), slots.default && slots.default()]
+              }
+            }, arch.attrs.string), slots.default && slots.default()]
         );
       }
       if (tag === 'page') {

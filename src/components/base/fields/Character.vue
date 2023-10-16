@@ -7,7 +7,7 @@
               datas: data,
               treeField: treeField,
               formModel: formModel,
-              index: props.index,
+              index: index,
               formData: formData,
               attributes: attrs,
               model: model,

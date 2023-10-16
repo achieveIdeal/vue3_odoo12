@@ -4,7 +4,9 @@ import {RequestConfig} from "./type";
 import {BASEURL, TIMEOUT} from "./config";
 import {ElMessage} from "element-plus";
 import {eventBus} from "../tools";
+
 // 用类封装的好处,可以创建多个axios实例
+
 class Request {
     instance: AxiosInstance;
 
@@ -37,14 +39,11 @@ class Request {
             },
             (err) => {
                 eventBus.emit('responseCallback', err)
-                if (res.data.error) {
-                    ElMessage({
-                        message: err,
-                        type: 'error'
-                    });
-                    return false
-                }
-                return err;
+                ElMessage({
+                    message: err,
+                    type: 'error'
+                });
+                return err
             }
         );
         // 对单个instance添加拦截器
